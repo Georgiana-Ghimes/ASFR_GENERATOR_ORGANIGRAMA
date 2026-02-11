@@ -33,29 +33,10 @@ def create_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("editor"))
 ):
-    from app.models import OrgUnit, UnitType
-    
     version = OrgVersion(**version_data.model_dump())
     db.add(version)
     db.commit()
     db.refresh(version)
-    
-    # Create default "Consiliul de Conducere" unit
-    consiliu = OrgUnit(
-        version_id=version.id,
-        stas_code="50",
-        name="CONSILIUL DE CONDUCERE",
-        unit_type=UnitType.director_general,
-        parent_unit_id=None,
-        order_index=0,
-        management_positions=0,
-        execution_positions=0,
-        total_positions=0,
-        color="#22c55e"
-    )
-    db.add(consiliu)
-    db.commit()
-    
     return version
 
 @router.put("/{version_id}", response_model=OrgVersionSchema)

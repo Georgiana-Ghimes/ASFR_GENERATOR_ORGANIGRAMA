@@ -112,7 +112,6 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
     .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
 
   const directorGeneral = getUnit('100');
-  const consiliuConducere = getUnit('50'); // Consiliul de Conducere - cod 50
   const consiliu = getUnit('330');
   
   // Top level compartimente (direct to DG)
@@ -334,13 +333,15 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
 
         {/* Right side - DG and services */}
         <div className="flex flex-col items-start ml-4">
-          {/* Consiliul de Conducere - fix deasupra */}
-          {consiliuConducere && (
-            <div className="mb-2 self-center">
-              <UnitBox unit={consiliuConducere} onClick={onSelectUnit} width="180px" />
-              <VerticalConnector height={8} />
+          {/* Consiliul de Conducere - header fix */}
+          <div className="mb-3 self-center">
+            <div className="border-2 border-gray-800 bg-white px-4 py-2">
+              <div className="text-center font-bold text-sm">
+                CONSILIUL DE CONDUCERE
+              </div>
             </div>
-          )}
+            <VerticalConnector height={12} />
+          </div>
 
           {/* Top row with compartimente */}
           <div className="flex gap-1 mb-1 items-end">
