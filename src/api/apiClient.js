@@ -94,6 +94,12 @@ class ApiClient {
     });
   }
 
+  async deleteVersion(id) {
+    return this.request(`/versions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Units
   async listUnits(versionId) {
     const query = versionId ? `?version_id=${versionId}` : '';

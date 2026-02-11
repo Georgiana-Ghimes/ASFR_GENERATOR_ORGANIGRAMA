@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { apiClient } from '@/api/apiClient';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { FileCheck, Clock, Edit3, Eye, Calendar, User, Loader2 } from 'lucide-react';
+import { FileCheck, Clock, Edit3, Eye, Calendar, User, Loader2, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const statusConfig = {
   draft: { label: 'Ciornă', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Edit3 },
@@ -18,10 +29,38 @@ const statusConfig = {
 };
 
 export default function VersionsPage() {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [versionToDelete, setVersionToDelete] = useState(null);
+  const queryClient = useQueryClient();
+
   const { data: versions = [], isLoading } = useQuery({
     queryKey: ['versions'],
     queryFn: () => apiClient.listVersions(),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => apiClient.deleteVersion(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['versions']);
+      toast.success('Versiune ștearsă cu succes');
+      setDeleteDialogOpen(false);
+      setVersionToDelete(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Eroare la ștergerea versiunii');
+    },
+  });
+
+  const handleDeleteClick = (version) => {
+    setVersionToDelete(version);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (versionToDelete) {
+      deleteMutation.mutate(versionToDelete.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -102,12 +141,24 @@ export default function VersionsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Link to={`${createPageUrl('OrgChart')}?version=${version.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4 mr-1" />
-                            Vezi
-                          </Button>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link to={`${createPageUrl('OrgChart')}?version=${version.id}`}>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4 mr-1" />
+                              Vezi
+                            </Button>
+                          </Link>
+                          {version.status === 'draft' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteClick(version)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -123,6 +174,37 @@ export default function VersionsPage() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmare ștergere</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sigur doriți să ștergeți versiunea <span className="font-semibold">{versionToDelete?.version_number}</span> ({versionToDelete?.name})?
+                <br /><br />
+                Această acțiune va șterge permanent versiunea și toate datele asociate (unități, posturi, etc.).
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anulare</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Se șterge...
+                  </>
+                ) : (
+                  'Șterge'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
