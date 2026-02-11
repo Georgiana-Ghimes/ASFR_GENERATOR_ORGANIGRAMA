@@ -71,9 +71,9 @@ def delete_version(
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
     
-    if version.status == "approved":
-        raise HTTPException(status_code=400, detail="Cannot delete approved version")
-    
+    # Allow deletion of any version (including approved ones) for admins
+    # Frontend will show appropriate warnings
     db.delete(version)
     db.commit()
     return {"message": "Version deleted"}
+

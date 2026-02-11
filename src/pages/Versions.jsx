@@ -148,16 +148,14 @@ export default function VersionsPage() {
                               Vezi
                             </Button>
                           </Link>
-                          {version.status === 'draft' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleDeleteClick(version)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteClick(version)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -183,7 +181,16 @@ export default function VersionsPage() {
               <AlertDialogDescription>
                 Sigur doriți să ștergeți versiunea <span className="font-semibold">{versionToDelete?.version_number}</span> ({versionToDelete?.name})?
                 <br /><br />
+                {versionToDelete?.status === 'approved' && (
+                  <div className="bg-red-50 border border-red-200 rounded p-2 mb-2">
+                    <span className="text-red-800 font-semibold">⚠️ ATENȚIE: Această versiune este APROBATĂ!</span>
+                    <br />
+                    Ștergerea unei versiuni aprobate poate afecta rapoartele și istoricul oficial.
+                  </div>
+                )}
                 Această acțiune va șterge permanent versiunea și toate datele asociate (unități, posturi, etc.).
+                <br />
+                <span className="font-semibold text-red-600">Această acțiune NU poate fi anulată!</span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
