@@ -70,7 +70,7 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="stas_code">Cod STAS *</Label>
+              <Label htmlFor="stas_code">Cod *</Label>
               <Input
                 id="stas_code"
                 value={formData.stas_code}
