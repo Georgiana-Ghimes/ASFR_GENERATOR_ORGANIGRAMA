@@ -131,10 +131,7 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
   const dirInspectorate = getUnit('2000');
   const dirLicente = getUnit('3000');
 
-  if (!directorGeneral) {
-    return <div className="p-8 text-center text-gray-500">Nu există structură organizațională.</div>;
-  }
-
+  // Consiliul de Conducere apare întotdeauna, chiar dacă nu există alte unități
   return (
     <div className="p-2 overflow-auto bg-white" style={{ minWidth: '1400px', minHeight: '900px' }}>
       {/* Header */}
@@ -155,8 +152,25 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
         </div>
       </div>
 
-      {/* Main content - right side header with DG and services */}
-      <div className="flex">
+      {/* Consiliul de Conducere - ÎNTOTDEAUNA VIZIBIL */}
+      <div className="flex justify-center mb-4">
+        <div className="border-2 border-gray-800 bg-white px-6 py-2 shadow-md">
+          <div className="text-center font-bold text-base">
+            CONSILIUL DE CONDUCERE
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex justify-center mb-6">
+        <VerticalConnector height={20} />
+      </div>
+
+      {!directorGeneral ? (
+        <div className="p-8 text-center text-gray-500">
+          Nu există structură organizațională. Adaugă unități pentru a construi organigrama.
+        </div>
+      ) : (
+        <div className="flex">
         {/* Left side - Directii (vertical) */}
         <div className="flex gap-2 items-start">
           {/* Directia Economica */}
@@ -333,16 +347,6 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
 
         {/* Right side - DG and services */}
         <div className="flex flex-col items-start ml-4">
-          {/* Consiliul de Conducere - header fix */}
-          <div className="mb-3 self-center">
-            <div className="border-2 border-gray-800 bg-white px-4 py-2">
-              <div className="text-center font-bold text-sm">
-                CONSILIUL DE CONDUCERE
-              </div>
-            </div>
-            <VerticalConnector height={12} />
-          </div>
-
           {/* Top row with compartimente */}
           <div className="flex gap-1 mb-1 items-end">
             {auditIntern && <UnitBox unit={auditIntern} onClick={onSelectUnit} />}
@@ -399,6 +403,7 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
           )}
         </div>
       </div>
+      )}
 
       {/* Footer */}
       <div className="text-right text-[9px] text-gray-700 mt-4 mr-4">
