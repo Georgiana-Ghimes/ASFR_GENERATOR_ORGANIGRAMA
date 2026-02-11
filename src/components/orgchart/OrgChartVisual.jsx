@@ -133,23 +133,32 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
 
   // Consiliul de Conducere apare întotdeauna, chiar dacă nu există alte unități
   return (
-    <div className="p-2 overflow-auto bg-white" style={{ minWidth: '1400px', minHeight: '900px' }}>
-      {/* Header */}
-      <div className="text-right text-[8px] mb-1 text-gray-600 mr-4">
-        <div className="font-semibold">AUTORITATEA DE SIGURANȚĂ FEROVIARĂ ROMÂNĂ - ASFR</div>
-        <div>CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026</div>
+    <div className="p-4 overflow-auto bg-white" style={{ minWidth: '1400px', minHeight: '900px' }}>
+      {/* Top row: Legend (stânga) | Director (dreapta) */}
+      <div className="flex justify-between items-start mb-4">
+        {/* Legend - stânga sus */}
+        <div className="text-[9px] border-2 border-gray-800 p-2 bg-gray-50">
+          <div className="font-bold mb-1">TOTAL POSTURI: 230</div>
+          <div className="mb-1">Funcții de conducere: 18</div>
+          <div className="ml-2">- Director general: 1</div>
+          <div className="ml-2">- Director: 3</div>
+          <div className="ml-2">- Șef departament: 1</div>
+          <div className="ml-2">- Inspector șef teritorial: 5</div>
+          <div className="ml-2">- Șef serviciu: 8</div>
+          <div className="mt-1">Posturi de execuție: 212</div>
+        </div>
+
+        {/* Director - dreapta sus */}
+        <div className="text-right text-[10px] text-gray-900">
+          <div className="font-bold">DIRECTOR GENERAL</div>
+          <div>Petru BOGDAN</div>
+        </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex justify-end mb-2 mr-4">
-        <div className="text-[7px] border p-1 bg-gray-50">
-          <div className="font-semibold mb-0.5">TOTAL POSTURI: 200</div>
-          <div>Structuri conducere: 8</div>
-          <div>Servicii execuție: 5</div>
-          <div>Inspectorate: 5</div>
-          <div>Birouri: 1</div>
-          <div>Compartimente: 15</div>
-        </div>
+      {/* Header central - deasupra consiliului */}
+      <div className="text-center text-[10px] mb-3 text-gray-900">
+        <div className="font-bold">AUTORITATEA DE SIGURANȚĂ FEROVIARĂ ROMÂNĂ - ASFR</div>
+        <div>CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026</div>
       </div>
 
       {/* Consiliul de Conducere - ÎNTOTDEAUNA VIZIBIL */}
@@ -404,12 +413,6 @@ export default function OrgChartVisual({ units, onSelectUnit }) {
         </div>
       </div>
       )}
-
-      {/* Footer */}
-      <div className="text-right text-[9px] text-gray-700 mt-4 mr-4">
-        <div className="font-semibold">DIRECTOR GENERAL</div>
-        <div>Petru BOGDAN</div>
-      </div>
     </div>
   );
 }
