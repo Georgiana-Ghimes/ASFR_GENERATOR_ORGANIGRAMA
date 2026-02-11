@@ -50,6 +50,7 @@
 import OrgChart from './pages/OrgChart';
 import Versions from './pages/Versions';
 import Employees from './pages/Employees';
+import Login from './pages/Login';
 import __Layout from './Layout.jsx';
 
 
@@ -57,6 +58,7 @@ export const PAGES = {
     "OrgChart": OrgChart,
     "Versions": Versions,
     "Employees": Employees,
+    "Login": Login,
 }
 
 export const pagesConfig = {

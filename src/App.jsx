@@ -17,9 +17,13 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, user } = useAuth();
+  const location = window.location.pathname;
 
-  // Show loading spinner while checking app public settings or auth
+  // Allow access to login page without authentication
+  const isLoginPage = location === '/Login' || location === '/login';
+
+  // Show loading spinner while checking auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -28,15 +32,16 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
+  // If not authenticated and not on login page, redirect to login
+  if (!user && !isLoginPage) {
+    window.location.href = '/Login';
+    return null;
+  }
+
+  // If authenticated and on login page, redirect to home
+  if (user && isLoginPage) {
+    window.location.href = '/';
+    return null;
   }
 
   // Render the main app
@@ -47,17 +52,30 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
+      {Object.entries(Pages).map(([path, Page]) => {
+        // Login page without layout
+        if (path === 'Login') {
+          return (
+            <Route
+              key={path}
+              path={`/${path}`}
+              element={<Page />}
+            />
+          );
+        }
+        // Other pages with layout
+        return (
+          <Route
+            key={path}
+            path={`/${path}`}
+            element={
+              <LayoutWrapper currentPageName={path}>
+                <Page />
+              </LayoutWrapper>
+            }
+          />
+        );
+      })}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
