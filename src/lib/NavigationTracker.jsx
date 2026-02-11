@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { base44 } from '@/api/base44Client';
 import { pagesConfig } from '@/pages.config';
 
 export default function NavigationTracker() {
     const location = useLocation();
-    const { isAuthenticated } = useAuth();
+    const { user } = useAuth();
     const { Pages, mainPage } = pagesConfig;
     const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 
@@ -31,12 +30,11 @@ export default function NavigationTracker() {
             pageName = matchedKey || null;
         }
 
-        if (isAuthenticated && pageName) {
-            base44.appLogs.logUserInApp(pageName).catch(() => {
-                // Silently fail - logging shouldn't break the app
-            });
+        // Optional: Add analytics logging here if needed
+        if (user && pageName) {
+            console.log(`User ${user.email} navigated to ${pageName}`);
         }
-    }, [location, isAuthenticated, Pages, mainPageKey]);
+    }, [location, user, Pages, mainPageKey]);
 
     return null;
 }

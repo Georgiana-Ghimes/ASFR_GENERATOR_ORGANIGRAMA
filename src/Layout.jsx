@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/apiClient';
+import { useAuth } from '@/lib/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -30,20 +31,12 @@ const navigation = [
 ];
 
 export default function Layout({ children, currentPageName }) {
-  const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const userData = await base44.auth.me();
-      setUser(userData);
-    };
-    fetchUser();
-  }, []);
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    base44.auth.logout();
+    logout();
   };
 
   return (
