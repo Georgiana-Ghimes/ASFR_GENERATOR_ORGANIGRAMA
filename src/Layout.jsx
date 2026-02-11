@@ -61,7 +61,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-gray-900">OrgChart</span>
+              <span className="font-bold text-gray-900">ASFR - Organigrama</span>
             </Link>
             <Button 
               variant="ghost" 
@@ -146,7 +146,7 @@ export default function Layout({ children, currentPageName }) {
           </Button>
           <div className="flex items-center gap-2 ml-3">
             <Building2 className="w-5 h-5 text-blue-600" />
-            <span className="font-bold">OrgChart</span>
+            <span className="font-bold">ASFR - Organigrama</span>
           </div>
         </header>
 
