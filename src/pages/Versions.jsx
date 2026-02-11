@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -20,7 +20,7 @@ const statusConfig = {
 export default function VersionsPage() {
   const { data: versions = [], isLoading } = useQuery({
     queryKey: ['versions'],
-    queryFn: () => base44.entities.OrgVersion.list('-created_date'),
+    queryFn: () => apiClient.listVersions(),
   });
 
   if (isLoading) {

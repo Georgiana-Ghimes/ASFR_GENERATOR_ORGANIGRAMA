@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,11 +36,11 @@ export default function EmployeesPage() {
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees'],
-    queryFn: () => base44.entities.Employee.list('-created_date'),
+    queryFn: () => apiClient.listEmployees(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Employee.create(data),
+    mutationFn: (data) => apiClient.createEmployee(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
       setShowDialog(false);
@@ -50,7 +50,7 @@ export default function EmployeesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Employee.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.updateEmployee(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
       setShowDialog(false);
@@ -60,7 +60,7 @@ export default function EmployeesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Employee.delete(id),
+    mutationFn: (id) => apiClient.deleteEmployee(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']);
       toast.success('Angajat șters');

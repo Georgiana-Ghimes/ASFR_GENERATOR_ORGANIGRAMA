@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,8 +34,12 @@ export default function OrgChartPage() {
   // Fetch current user
   useEffect(() => {
     const fetchUser = async () => {
-      const user = await base44.auth.me();
-      setUserRole(user.role || 'admin');
+      try {
+        const user = await apiClient.me();
+        setUserRole(user.role || 'admin');
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
     };
     fetchUser();
   }, []);
@@ -43,7 +47,7 @@ export default function OrgChartPage() {
   // Fetch versions
   const { data: versions = [], isLoading: loadingVersions } = useQuery({
     queryKey: ['versions'],
-    queryFn: () => base44.entities.OrgVersion.list('-created_date'),
+    queryFn: () => apiClient.listVersions(),
   });
 
   // Set initial version
@@ -56,13 +60,13 @@ export default function OrgChartPage() {
   // Fetch units for selected version
   const { data: units = [], isLoading: loadingUnits } = useQuery({
     queryKey: ['units', selectedVersion?.id],
-    queryFn: () => base44.entities.OrgUnit.filter({ version_id: selectedVersion.id }),
+    queryFn: () => apiClient.listUnits(selectedVersion.id),
     enabled: !!selectedVersion?.id,
   });
 
   // Mutations
   const createVersionMutation = useMutation({
-    mutationFn: (data) => base44.entities.OrgVersion.create(data),
+    mutationFn: (data) => apiClient.createVersion(data),
     onSuccess: (newVer) => {
       queryClient.invalidateQueries(['versions']);
       setSelectedVersion(newVer);
@@ -72,7 +76,7 @@ export default function OrgChartPage() {
   });
 
   const updateVersionMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.OrgVersion.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.updateVersion(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['versions']);
       toast.success('Versiune actualizată');
@@ -80,7 +84,7 @@ export default function OrgChartPage() {
   });
 
   const createUnitMutation = useMutation({
-    mutationFn: (data) => base44.entities.OrgUnit.create(data),
+    mutationFn: (data) => apiClient.createUnit(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['units']);
       setShowUnitForm(false);
@@ -90,7 +94,7 @@ export default function OrgChartPage() {
   });
 
   const updateUnitMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.OrgUnit.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.updateUnit(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['units']);
       setShowUnitForm(false);
@@ -99,7 +103,7 @@ export default function OrgChartPage() {
   });
 
   const deleteUnitMutation = useMutation({
-    mutationFn: (id) => base44.entities.OrgUnit.delete(id),
+    mutationFn: (id) => apiClient.deleteUnit(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['units']);
       setSelectedUnit(null);
@@ -150,40 +154,48 @@ export default function OrgChartPage() {
   };
 
   const handleApprove = async (notes) => {
-    const user = await base44.auth.me();
-    updateVersionMutation.mutate({
-      id: selectedVersion.id,
-      data: {
-        status: 'approved',
-        approved_by: user.email,
-        approved_date: new Date().toISOString(),
-        notes: notes || selectedVersion.notes,
-      },
-    });
+    try {
+      const user = await apiClient.me();
+      updateVersionMutation.mutate({
+        id: selectedVersion.id,
+        data: {
+          status: 'approved',
+          approved_by: user.email,
+          approved_date: new Date().toISOString(),
+          notes: notes || selectedVersion.notes,
+        },
+      });
+    } catch (error) {
+      toast.error('Eroare la aprobare');
+    }
   };
 
   const handleDuplicate = async (versionNumber, versionName) => {
-    // Create new version
-    const newVer = await base44.entities.OrgVersion.create({
-      version_number: versionNumber,
-      name: versionName,
-      status: 'draft',
-      notes: `Duplicat din ${selectedVersion.version_number}`,
-    });
-
-    // Copy all units
-    for (const unit of units) {
-      const { id, created_date, updated_date, created_by, ...unitData } = unit;
-      await base44.entities.OrgUnit.create({
-        ...unitData,
-        version_id: newVer.id,
+    try {
+      // Create new version
+      const newVer = await apiClient.createVersion({
+        version_number: versionNumber,
+        name: versionName,
+        status: 'draft',
+        notes: `Duplicat din ${selectedVersion.version_number}`,
       });
-    }
 
-    queryClient.invalidateQueries(['versions']);
-    queryClient.invalidateQueries(['units']);
-    setSelectedVersion(newVer);
-    toast.success('Versiune duplicată cu succes');
+      // Copy all units
+      for (const unit of units) {
+        const { id, created_date, updated_date, created_by, ...unitData } = unit;
+        await apiClient.createUnit({
+          ...unitData,
+          version_id: newVer.id,
+        });
+      }
+
+      queryClient.invalidateQueries(['versions']);
+      queryClient.invalidateQueries(['units']);
+      setSelectedVersion(newVer);
+      toast.success('Versiune duplicată cu succes');
+    } catch (error) {
+      toast.error('Eroare la duplicare');
+    }
   };
 
   const handleExportPdf = async () => {
