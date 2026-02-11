@@ -1,0 +1,45 @@
+{
+  "name": "Position",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "type": "string",
+      "description": "Reference to OrgVersion"
+    },
+    "unit_id": {
+      "type": "string",
+      "description": "Reference to OrgUnit"
+    },
+    "title": {
+      "type": "string",
+      "description": "Position title"
+    },
+    "position_type": {
+      "type": "string",
+      "enum": [
+        "management",
+        "execution"
+      ],
+      "description": "Type of position"
+    },
+    "grade": {
+      "type": "string",
+      "description": "Position grade/level"
+    },
+    "is_vacant": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether position is vacant"
+    },
+    "order_index": {
+      "type": "number",
+      "description": "Display order within unit"
+    }
+  },
+  "required": [
+    "version_id",
+    "unit_id",
+    "title",
+    "position_type"
+  ]
+}

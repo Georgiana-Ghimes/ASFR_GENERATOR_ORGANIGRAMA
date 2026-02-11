@@ -1,0 +1,46 @@
+{
+  "name": "OrgVersion",
+  "type": "object",
+  "properties": {
+    "version_number": {
+      "type": "string",
+      "description": "Version identifier (e.g., v1.0, v2.0)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Version name/description"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending_approval",
+        "approved"
+      ],
+      "default": "draft",
+      "description": "Version status"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when this version becomes effective"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Email of approver"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of approval"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Version notes/comments"
+    }
+  },
+  "required": [
+    "version_number",
+    "name"
+  ]
+}

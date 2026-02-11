@@ -1,0 +1,63 @@
+{
+  "name": "OrgUnit",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "type": "string",
+      "description": "Reference to OrgVersion"
+    },
+    "stas_code": {
+      "type": "string",
+      "description": "Manual STAS code for the unit"
+    },
+    "name": {
+      "type": "string",
+      "description": "Unit name"
+    },
+    "unit_type": {
+      "type": "string",
+      "enum": [
+        "director_general",
+        "directie",
+        "serviciu",
+        "compartiment",
+        "inspectorat",
+        "birou"
+      ],
+      "description": "Type of organizational unit"
+    },
+    "parent_unit_id": {
+      "type": "string",
+      "description": "Reference to parent OrgUnit (null for root)"
+    },
+    "order_index": {
+      "type": "number",
+      "description": "Display order within parent"
+    },
+    "management_positions": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of management positions"
+    },
+    "execution_positions": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of execution positions"
+    },
+    "total_positions": {
+      "type": "number",
+      "default": 0,
+      "description": "Total positions including management"
+    },
+    "color": {
+      "type": "string",
+      "description": "Display color for the unit box"
+    }
+  },
+  "required": [
+    "version_id",
+    "stas_code",
+    "name",
+    "unit_type"
+  ]
+}
