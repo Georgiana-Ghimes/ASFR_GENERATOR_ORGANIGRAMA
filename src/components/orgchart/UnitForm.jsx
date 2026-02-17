@@ -8,12 +8,11 @@ import { X, Save } from 'lucide-react';
 import { unitTypeLabels } from './UnitCard';
 
 const defaultColors = [
-  { label: 'Verde (Director)', value: '#22c55e' },
-  { label: 'Roz (Direcție)', value: '#ec4899' },
-  { label: 'Galben (Serviciu)', value: '#eab308' },
-  { label: 'Albastru (Inspectorat)', value: '#3b82f6' },
-  { label: 'Mov (Birou)', value: '#a855f7' },
-  { label: 'Gri (Compartiment)', value: '#6b7280' },
+  { label: 'Verde deschis', value: '#86C67C', border: '#6BA85C' },
+  { label: 'Roz', value: '#E8B4D4', border: '#D89CC4' },
+  { label: 'Galben', value: '#F4E03C', border: '#E4D02C' },
+  { label: 'Albastru', value: '#8CB4D4', border: '#6C94B4' },
+  { label: 'Portocaliu', value: '#F4A43C', border: '#E4942C' },
 ];
 
 export default function UnitForm({ unit, units, versionId, onSave, onCancel, isReadOnly }) {
@@ -23,9 +22,8 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
     unit_type: 'compartiment',
     parent_unit_id: '',
     order_index: 0,
-    management_positions: 0,
-    execution_positions: 0,
-    total_positions: 0,
+    leadership_count: 0,
+    execution_count: 0,
     color: '',
   });
 
@@ -37,9 +35,8 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
         unit_type: unit.unit_type || 'compartiment',
         parent_unit_id: unit.parent_unit_id || '',
         order_index: unit.order_index || 0,
-        management_positions: unit.management_positions || 0,
-        execution_positions: unit.execution_positions || 0,
-        total_positions: unit.total_positions || 0,
+        leadership_count: unit.leadership_count || 0,
+        execution_count: unit.execution_count || 0,
         color: unit.color || '',
       });
     }
@@ -132,41 +129,33 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
             </Select>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="management_positions">Posturi Conducere</Label>
-              <Input
-                id="management_positions"
-                type="number"
-                min="0"
-                value={formData.management_positions}
-                onChange={(e) => setFormData({ ...formData, management_positions: parseInt(e.target.value) || 0 })}
-                disabled={isReadOnly}
-              />
+          {/* Position counts - only for non-director_general units */}
+          {formData.unit_type !== 'director_general' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="leadership_count">Posturi Conducere</Label>
+                <Input
+                  id="leadership_count"
+                  type="number"
+                  min="0"
+                  value={formData.leadership_count}
+                  onChange={(e) => setFormData({ ...formData, leadership_count: parseInt(e.target.value) || 0 })}
+                  disabled={isReadOnly}
+                />
+              </div>
+              <div>
+                <Label htmlFor="execution_count">Posturi Execuție</Label>
+                <Input
+                  id="execution_count"
+                  type="number"
+                  min="0"
+                  value={formData.execution_count}
+                  onChange={(e) => setFormData({ ...formData, execution_count: parseInt(e.target.value) || 0 })}
+                  disabled={isReadOnly}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="execution_positions">Posturi Execuție</Label>
-              <Input
-                id="execution_positions"
-                type="number"
-                min="0"
-                value={formData.execution_positions}
-                onChange={(e) => setFormData({ ...formData, execution_positions: parseInt(e.target.value) || 0 })}
-                disabled={isReadOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="total_positions">Total Posturi</Label>
-              <Input
-                id="total_positions"
-                type="number"
-                min="0"
-                value={formData.total_positions}
-                onChange={(e) => setFormData({ ...formData, total_positions: parseInt(e.target.value) || 0 })}
-                disabled={isReadOnly}
-              />
-            </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

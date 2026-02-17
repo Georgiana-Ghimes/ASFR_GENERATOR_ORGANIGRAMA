@@ -33,6 +33,7 @@ class OrgVersion(Base):
     name = Column(String, nullable=False)
     status = Column(Enum(VersionStatus), default=VersionStatus.draft, nullable=False)
     notes = Column(Text)
+    chart_title = Column(String, default="CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026")
     created_date = Column(DateTime, default=datetime.utcnow, nullable=False)
     approved_by = Column(String)
     approved_date = Column(DateTime)
@@ -50,6 +51,9 @@ class OrgUnit(Base):
     unit_type = Column(Enum(UnitType), nullable=False)
     parent_unit_id = Column(UUID(as_uuid=True), ForeignKey("organizational_units.id"))
     order_index = Column(Integer, default=0)
+    leadership_count = Column(Integer, default=0)
+    execution_count = Column(Integer, default=0)
+    color = Column(String)
     
     version = relationship("OrgVersion", back_populates="units")
     parent = relationship("OrgUnit", remote_side=[id], backref="children")

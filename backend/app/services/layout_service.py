@@ -1,5 +1,6 @@
 """
 Layout Engine - Fully Deterministic
+Director General always positioned under Consiliul de Conducere
 Children positioned STRICTLY under parent
 """
 from sqlalchemy.orm import Session
@@ -12,8 +13,12 @@ BOX_WIDTH = 180
 BOX_HEIGHT = 70
 HORIZONTAL_SPACING = 40
 VERTICAL_SPACING = 100
-START_X = 400
-START_Y = 50
+
+# Fixed positions for header elements
+CONSILIU_Y = 35  # Consiliul de Conducere position (space for header text)
+CONSILIU_HEIGHT = 40
+DG_Y = CONSILIU_Y + CONSILIU_HEIGHT + 40  # Director General position
+START_Y = DG_Y + BOX_HEIGHT + VERTICAL_SPACING  # Where children of DG start
 
 
 def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
@@ -27,7 +32,7 @@ def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
     return max(BOX_WIDTH, children_width)
 
 
-def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layout: List[Dict], edges: List[Dict]):
+def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layout: List[Dict], edges: List[Dict], parent_x: int = None, parent_y: int = None, is_root: bool = False):
     """Recursively position unit and children"""
     
     # Position current unit
@@ -42,9 +47,23 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
             'stas_code': unit.stas_code,
             'name': unit.name,
             'unit_type': unit.unit_type.value,
-            'parent_unit_id': str(unit.parent_unit_id) if unit.parent_unit_id else None
+            'parent_unit_id': str(unit.parent_unit_id) if unit.parent_unit_id else None,
+            'color': unit.color,
+            'leadership_count': unit.leadership_count,
+            'execution_count': unit.execution_count
         }
     })
+    
+    # Add edge from parent if exists (but NOT for root - consiliu edge is added separately)
+    if not is_root and parent_x is not None and parent_y is not None:
+        edges.append({
+            'from': str(unit.parent_unit_id) if unit.parent_unit_id else 'consiliu',
+            'to': str(unit.id),
+            'from_x': parent_x + BOX_WIDTH // 2,
+            'from_y': parent_y + BOX_HEIGHT,
+            'to_x': x + BOX_WIDTH // 2,
+            'to_y': y
+        })
     
     if not unit.children:
         return
@@ -66,44 +85,58 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
         child_width = calculate_subtree_width(db, child)
         child_center_x = current_x + child_width // 2 - BOX_WIDTH // 2
         
-        # Add edge from parent to child
-        edges.append({
-            'from': str(unit.id),
-            'to': str(child.id),
-            'from_x': x + BOX_WIDTH // 2,
-            'from_y': y + BOX_HEIGHT,
-            'to_x': child_center_x + BOX_WIDTH // 2,
-            'to_y': child_y
-        })
-        
         # Recursively position child
-        position_unit_and_children(db, child, child_center_x, child_y, layout, edges)
+        position_unit_and_children(db, child, child_center_x, child_y, layout, edges, x, y, False)
         
         current_x += child_width + HORIZONTAL_SPACING
 
 
 def generate_deterministic_layout(db: Session, version_id: UUID) -> Dict:
-    """Generate fully deterministic layout"""
+    """Generate fully deterministic layout with DG under Consiliu"""
     
-    # Find root unit (no parent)
+    # Find root unit (Director General - no parent)
     root = db.query(OrgUnit).filter(
         OrgUnit.version_id == version_id,
         OrgUnit.parent_unit_id == None
     ).first()
     
     if not root:
-        return {'version_id': str(version_id), 'layout': [], 'edges': []}
+        return {'version_id': str(version_id), 'layout': [], 'edges': [], 'canvas_width': 1400}
     
     layout = []
     edges = []
     
-    # Position root and all descendants
-    position_unit_and_children(db, root, START_X, START_Y, layout, edges)
+    # Calculate total width needed for entire tree
+    total_width = calculate_subtree_width(db, root)
+    
+    # Canvas width is at least 1400px
+    canvas_width = max(1400, total_width + 200)
+    
+    # Consiliu and DG are centered in canvas
+    consiliu_center_x = canvas_width // 2
+    consiliu_width = 300
+    
+    # Center the Director General horizontally
+    dg_x = consiliu_center_x - BOX_WIDTH // 2
+    
+    # Add edge from Consiliu to DG - line starts from CENTER of consiliu box
+    edges.append({
+        'from': 'consiliu',
+        'to': str(root.id),
+        'from_x': consiliu_center_x,  # CENTER of consiliu
+        'from_y': CONSILIU_Y + CONSILIU_HEIGHT,  # Bottom of consiliu box
+        'to_x': consiliu_center_x,  # CENTER of DG box (aligned vertically)
+        'to_y': DG_Y
+    })
+    
+    # Position DG and all descendants (mark as root to skip duplicate edge)
+    position_unit_and_children(db, root, dg_x, DG_Y, layout, edges, consiliu_center_x - consiliu_width // 2, CONSILIU_Y, is_root=True)
     
     return {
         'version_id': str(version_id),
         'layout': layout,
-        'edges': edges
+        'edges': edges,
+        'canvas_width': canvas_width
     }
 
 

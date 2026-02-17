@@ -9,6 +9,7 @@ class OrgVersionBase(BaseModel):
     version_number: str
     name: str
     notes: Optional[str] = None
+    chart_title: Optional[str] = "CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026"
 
 class OrgVersionCreate(OrgVersionBase):
     status: VersionStatus = VersionStatus.draft
@@ -18,6 +19,7 @@ class OrgVersionUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[VersionStatus] = None
     notes: Optional[str] = None
+    chart_title: Optional[str] = None
     approved_by: Optional[str] = None
     approved_date: Optional[datetime] = None
 
@@ -25,6 +27,7 @@ class OrgVersion(OrgVersionBase):
     id: UUID
     status: VersionStatus
     created_date: datetime
+    chart_title: Optional[str] = None
     approved_by: Optional[str] = None
     approved_date: Optional[datetime] = None
     
@@ -38,6 +41,9 @@ class OrgUnitBase(BaseModel):
     unit_type: UnitType
     parent_unit_id: Optional[UUID] = None
     order_index: int = 0
+    leadership_count: int = 0
+    execution_count: int = 0
+    color: Optional[str] = None
 
 class OrgUnitCreate(OrgUnitBase):
     version_id: UUID
@@ -48,6 +54,9 @@ class OrgUnitUpdate(BaseModel):
     unit_type: Optional[UnitType] = None
     parent_unit_id: Optional[UUID] = None
     order_index: Optional[int] = None
+    leadership_count: Optional[int] = None
+    execution_count: Optional[int] = None
+    color: Optional[str] = None
 
 class OrgUnit(OrgUnitBase):
     id: UUID

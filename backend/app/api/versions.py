@@ -77,3 +77,19 @@ def delete_version(
     db.commit()
     return {"message": "Version deleted"}
 
+@router.patch("/{version_id}/chart-title")
+def update_chart_title(
+    version_id: UUID,
+    title: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("editor"))
+):
+    version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    
+    version.chart_title = title
+    db.commit()
+    db.refresh(version)
+    return {"chart_title": version.chart_title}
+

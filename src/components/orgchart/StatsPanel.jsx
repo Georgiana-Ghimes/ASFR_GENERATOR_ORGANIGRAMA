@@ -2,12 +2,41 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Users, Briefcase, UserCheck } from 'lucide-react';
 
-export default function StatsPanel({ units, positions, employees }) {
+export default function StatsPanel({ units, layoutData }) {
   const stats = useMemo(() => {
     const totalUnits = units.length;
-    const totalPositions = units.reduce((sum, u) => sum + (u.total_positions || 0), 0);
-    const managementPositions = units.reduce((sum, u) => sum + (u.management_positions || 0), 0);
-    const executionPositions = units.reduce((sum, u) => sum + (u.execution_positions || 0), 0);
+    
+    let totalLeadership = 0;
+    let totalExecution = 0;
+    let dgCount = 0;
+    let directorCount = 0;
+    let deptCount = 0;
+    let inspectorCount = 0;
+    let serviceCount = 0;
+
+    // Calculate from layout aggregates (real positions from database)
+    if (layoutData && layoutData.layout) {
+      layoutData.layout.forEach(node => {
+        if (node.aggregates) {
+          totalLeadership += node.aggregates.leadership_positions_count || 0;
+          totalExecution += node.aggregates.execution_positions_count || 0;
+
+          // Count by type (only leadership positions)
+          const leadershipCount = node.aggregates.leadership_positions_count || 0;
+          if (node.unit.unit_type === 'director_general') {
+            dgCount += leadershipCount;
+          } else if (node.unit.unit_type === 'directie') {
+            directorCount += leadershipCount;
+          } else if (node.unit.unit_type === 'serviciu') {
+            serviceCount += leadershipCount;
+          } else if (node.unit.unit_type === 'inspectorat') {
+            inspectorCount += leadershipCount;
+          }
+        }
+      });
+    }
+
+    const totalPositions = totalLeadership + totalExecution;
     
     const unitsByType = units.reduce((acc, u) => {
       acc[u.unit_type] = (acc[u.unit_type] || 0) + 1;
@@ -17,11 +46,16 @@ export default function StatsPanel({ units, positions, employees }) {
     return {
       totalUnits,
       totalPositions,
-      managementPositions,
-      executionPositions,
+      managementPositions: totalLeadership,
+      executionPositions: totalExecution,
+      dgCount,
+      directorCount,
+      deptCount,
+      inspectorCount,
+      serviceCount,
       unitsByType,
     };
-  }, [units]);
+  }, [units, layoutData]);
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

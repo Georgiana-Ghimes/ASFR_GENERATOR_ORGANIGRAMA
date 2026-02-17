@@ -5,6 +5,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [layoutData, setLayoutData] = useState(null);
   const [aggregates, setAggregates] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editableTitle, setEditableTitle] = useState('CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
+  const [versionData, setVersionData] = useState(null);
 
   useEffect(() => {
     if (!versionId) return;
@@ -25,6 +28,16 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
           }
         });
         setAggregates(aggMap);
+        
+        // Fetch version data to get chart_title
+        const versionResponse = await fetch(`http://localhost:8000/api/versions/${versionId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          }
+        });
+        const versionInfo = await versionResponse.json();
+        setVersionData(versionInfo);
+        setEditableTitle(versionInfo.chart_title || 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
       } catch (error) {
         console.error('Failed to fetch layout:', error);
       } finally {
@@ -35,37 +48,71 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     fetchLayout();
   }, [versionId]);
 
-  const getUnitColor = (unitType, stasCode) => {
-    if (unitType === 'director_general') {
-      return { bg: '#15803d', border: '#14532d', text: '#ffffff' };
+  const saveChartTitle = async (newTitle) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/versions/${versionId}/chart-title?title=${encodeURIComponent(newTitle)}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save chart title');
+      }
+      
+      const data = await response.json();
+      setEditableTitle(data.chart_title);
+    } catch (error) {
+      console.error('Failed to save chart title:', error);
+      // Revert to previous title on error
+      setEditableTitle(versionData?.chart_title || 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
+    }
+  };
+
+  const getUnitColor = (unit) => {
+    // Default colors mapping - exact colors from the image
+    const colorMap = {
+      '#86C67C': { bg: '#86C67C', border: '#6BA85C', text: '#000000' },
+      '#E8B4D4': { bg: '#E8B4D4', border: '#D89CC4', text: '#000000' },
+      '#F4E03C': { bg: '#F4E03C', border: '#E4D02C', text: '#000000' },
+      '#8CB4D4': { bg: '#8CB4D4', border: '#6C94B4', text: '#000000' },
+      '#F4A43C': { bg: '#F4A43C', border: '#E4942C', text: '#000000' },
+    };
+    
+    // If unit has a color set, use it
+    if (unit.color && colorMap[unit.color]) {
+      return colorMap[unit.color];
     }
     
-    if (unitType === 'directie') {
-      const colors = {
-        '1100': { bg: '#ec4899', border: '#db2777', text: '#ffffff' },
-        '1200': { bg: '#eab308', border: '#ca8a04', text: '#000000' },
-        '2000': { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' },
-        '3000': { bg: '#f97316', border: '#ea580c', text: '#ffffff' },
-      };
-      return colors[stasCode] || { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' };
+    // Default color for director_general - dark green
+    if (unit.unit_type === 'director_general') {
+      return { bg: '#4A7C4E', border: '#3A6C3E', text: '#ffffff' };
     }
     
-    if (unitType === 'serviciu') {
-      return { bg: '#22c55e', border: '#16a34a', text: '#000000' };
-    }
-    
-    if (unitType === 'compartiment') {
-      return { bg: '#ffffff', border: '#d1d5db', text: '#000000' };
-    }
-    
-    if (unitType === 'inspectorat') {
-      return { bg: '#3b82f6', border: '#2563eb', text: '#ffffff' };
-    }
-    
+    // Default fallback - white
     return { bg: '#ffffff', border: '#d1d5db', text: '#000000' };
   };
 
   const drawOrthogonalEdge = (edge) => {
+    // Special case for consiliu to DG - simple vertical line
+    if (edge.from === 'consiliu') {
+      return (
+        <g key={`${edge.from}-${edge.to}`}>
+          <line
+            x1={edge.from_x}
+            y1={edge.from_y}
+            x2={edge.to_x}
+            y2={edge.to_y}
+            stroke="#94a3b8"
+            strokeWidth="2"
+          />
+        </g>
+      );
+    }
+    
+    // Regular edges with orthogonal lines
     const midY = (edge.from_y + edge.to_y) / 2;
     
     return (
@@ -109,139 +156,274 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     );
   }
 
-  if (!layoutData || !layoutData.layout.length) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">Nu există unități în această versiune</div>
-      </div>
-    );
-  }
-
-  // Calculate canvas size
-  const maxX = Math.max(...layoutData.layout.map(n => n.x + n.width)) + 100;
-  const maxY = Math.max(...layoutData.layout.map(n => n.y + n.height)) + 100;
+  // Calculate canvas size - ensure minimum width for consiliu
+  const consiliu_height = 150;
+  const minWidth = 1400;
+  const maxX = layoutData && layoutData.layout.length > 0 
+    ? Math.max(minWidth, ...layoutData.layout.map(n => n.x + n.width + 100))
+    : minWidth;
+  const maxY = layoutData && layoutData.layout.length > 0 
+    ? Math.max(...layoutData.layout.map(n => n.y + n.height)) + 100 
+    : 900;
 
   return (
-    <div className="w-full h-full overflow-auto bg-gray-50">
-      <svg width={maxX} height={maxY} className="bg-white">
-        {/* Draw edges first (behind nodes) */}
-        {layoutData.edges && layoutData.edges.map(edge => drawOrthogonalEdge(edge))}
-        
-        {/* Draw nodes */}
-        {layoutData.layout.map(node => {
-          const agg = aggregates[node.unit_id] || {
-            leadership_positions_count: 0,
-            execution_positions_count: 0,
-            total_positions: 0
-          };
-          
-          const colors = getUnitColor(node.unit.unit_type, node.unit.stas_code);
-          
-          return (
-            <g
-              key={node.unit_id}
-              onClick={() => !isReadOnly && onSelectUnit && onSelectUnit(node.unit)}
-              className={!isReadOnly ? "cursor-pointer" : ""}
-            >
-              {/* Box */}
-              <rect
-                x={node.x}
-                y={node.y}
-                width={node.width}
-                height={node.height}
-                fill={colors.bg}
-                stroke={colors.border}
-                strokeWidth="2"
-                rx="4"
-              />
-              
-              {/* Header with code and counts */}
-              <rect
-                x={node.x}
-                y={node.y}
-                width={node.width}
-                height="20"
-                fill={colors.border}
-                rx="4"
-              />
-              
-              {/* Code */}
+    <div className="w-full h-full overflow-auto bg-white">
+      <div className="p-4" style={{ minWidth: '1400px', minHeight: '900px' }}>
+        {/* Top row: Legend (stânga) | Director (dreapta) */}
+        <div className="flex justify-between items-start mb-2">
+          {/* Legend - stânga sus */}
+          <div className="text-[9px] border-2 border-gray-800 p-2 bg-gray-50">
+            {layoutData && layoutData.layout.length > 0 && (() => {
+              // Calculate totals from all units
+              let totalLeadership = 0;
+              let totalExecution = 0;
+              let dgCount = 0;
+              let directorCount = 0;
+              let deptCount = 0;
+              let inspectorCount = 0;
+              let serviceCount = 0;
+
+              layoutData.layout.forEach(node => {
+                const agg = aggregates[node.unit_id] || { leadership_positions_count: 0, execution_positions_count: 0 };
+                totalLeadership += agg.leadership_positions_count;
+                totalExecution += agg.execution_positions_count;
+
+                // Count by type
+                if (node.unit.unit_type === 'director_general') dgCount += agg.leadership_positions_count;
+                else if (node.unit.unit_type === 'directie') directorCount += agg.leadership_positions_count;
+                else if (node.unit.unit_type === 'serviciu') serviceCount += agg.leadership_positions_count;
+                else if (node.unit.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
+              });
+
+              const totalPosts = totalLeadership + totalExecution;
+
+              return (
+                <>
+                  <div className="font-bold mb-1">TOTAL POSTURI: {totalPosts}</div>
+                  <div className="mb-1">Funcții de conducere: {totalLeadership}</div>
+                  <div className="ml-2">- Director general: {dgCount}</div>
+                  <div className="ml-2">- Director: {directorCount}</div>
+                  <div className="ml-2">- Inspector șef teritorial: {inspectorCount}</div>
+                  <div className="ml-2">- Șef serviciu: {serviceCount}</div>
+                  <div className="mt-1">Posturi de execuție: {totalExecution}</div>
+                </>
+              );
+            })()}
+          </div>
+
+          {/* Director - dreapta sus */}
+          <div className="text-right text-[10px] text-gray-900">
+            <div className="font-bold">DIRECTOR GENERAL</div>
+            <div>Petru BOGDAN</div>
+          </div>
+        </div>
+
+        {!layoutData || !layoutData.layout.length ? (
+          <div className="p-8 text-center text-gray-500">
+            Nu există structură organizațională. Adaugă unități pentru a construi organigrama.
+          </div>
+        ) : (
+          <div style={{ position: 'relative' }}>
+            {/* Editing overlay */}
+            {isEditingTitle && (
+              <div style={{ 
+                position: 'absolute', 
+                top: '14px', 
+                left: '50%', 
+                transform: 'translateX(-50%)',
+                zIndex: 10
+              }}>
+                <input
+                  type="text"
+                  value={editableTitle}
+                  onChange={(e) => setEditableTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      saveChartTitle(editableTitle);
+                      setIsEditingTitle(false);
+                    } else if (e.key === 'Escape') {
+                      setEditableTitle(versionData?.chart_title || 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  onBlur={() => {
+                    saveChartTitle(editableTitle);
+                    setIsEditingTitle(false);
+                  }}
+                  autoFocus
+                  className="text-center text-[10px] border border-blue-500 px-2 py-1 rounded outline-none bg-white"
+                  style={{ width: '600px' }}
+                />
+              </div>
+            )}
+            
+            <svg width={maxX} height={maxY} className="bg-white mx-auto">
+              {/* Header text - centered with consiliu */}
               <text
-                x={node.x + 5}
-                y={node.y + 14}
+                x={maxX / 2}
+                y="10"
                 fontSize="10"
                 fontWeight="bold"
-                fill="#ffffff"
-              >
-                {node.unit.stas_code}
-              </text>
-              
-              {/* Leadership count */}
-              <text
-                x={node.x + node.width - 50}
-                y={node.y + 14}
-                fontSize="10"
-                fill="#ffffff"
                 textAnchor="middle"
+                fill="#000000"
               >
-                {agg.leadership_positions_count}
+                AUTORITATEA DE SIGURANȚĂ FEROVIARĂ ROMÂNĂ - ASFR
               </text>
               
-              {/* Execution count */}
-              <text
-                x={node.x + node.width - 30}
-                y={node.y + 14}
-                fontSize="10"
-                fill="#ffffff"
-                textAnchor="middle"
-              >
-                {agg.execution_positions_count}
-              </text>
-              
-              {/* Total */}
-              <text
-                x={node.x + node.width - 10}
-                y={node.y + 14}
-                fontSize="10"
-                fontWeight="bold"
-                fill="#ffffff"
-                textAnchor="middle"
-              >
-                {agg.total_positions}
-              </text>
-              
-              {/* Unit name */}
-              <text
-                x={node.x + node.width / 2}
-                y={node.y + 40}
-                fontSize="11"
-                fontWeight="600"
-                fill={colors.text}
-                textAnchor="middle"
-              >
-                {node.unit.name.length > 25 
-                  ? node.unit.name.substring(0, 25) + '...'
-                  : node.unit.name
-                }
-              </text>
-              
-              {/* Recursive total (if has children) */}
-              {agg.recursive_total_subordinates > agg.total_positions && (
+              {/* Editable title with hover background */}
+              <g>
+                {!isReadOnly && (
+                  <rect
+                    x={maxX / 2 - 300}
+                    y="14"
+                    width="600"
+                    height="14"
+                    fill="transparent"
+                    className="hover:fill-gray-100"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setIsEditingTitle(true)}
+                  />
+                )}
+                
                 <text
-                  x={node.x + node.width / 2}
-                  y={node.y + 60}
-                  fontSize="9"
-                  fill={colors.text}
+                  x={maxX / 2}
+                  y="24"
+                  fontSize="10"
                   textAnchor="middle"
-                  opacity="0.7"
+                  fill="#000000"
+                  style={{ 
+                    opacity: isEditingTitle ? 0 : 1,
+                    pointerEvents: 'none'
+                  }}
                 >
-                  Total: {agg.recursive_total_subordinates}
+                  {editableTitle}
                 </text>
-              )}
+                
+                {!isReadOnly && !isEditingTitle && (
+                  <title>Click pentru a edita</title>
+                )}
+              </g>
+            
+            {/* Draw consiliu box in SVG - CENTERED in canvas */}
+            <g>
+              <rect
+                x={(maxX - 300) / 2}
+                y="35"
+                width="300"
+                height="40"
+                fill="white"
+                stroke="#1f2937"
+                strokeWidth="2"
+              />
+              <text
+                x={maxX / 2}
+                y="60"
+                fontSize="16"
+                fontWeight="bold"
+                textAnchor="middle"
+                fill="#000000"
+              >
+                CONSILIUL DE CONDUCERE
+              </text>
             </g>
-          );
-        })}
-      </svg>
+            
+            {/* Draw edges (including consiliu to DG) */}
+            {layoutData.edges && layoutData.edges.map(edge => drawOrthogonalEdge(edge))}
+            
+            {/* Draw nodes */}
+            {layoutData.layout.map(node => {
+              const agg = aggregates[node.unit_id] || {
+                leadership_positions_count: 0,
+                execution_positions_count: 0,
+                total_positions: 0
+              };
+              
+              const colors = getUnitColor(node.unit);
+              
+              return (
+                <g
+                  key={node.unit_id}
+                  onClick={() => !isReadOnly && onSelectUnit && onSelectUnit(node.unit)}
+                  className={!isReadOnly ? "cursor-pointer" : ""}
+                >
+                  {/* Box */}
+                  <rect
+                    x={node.x}
+                    y={node.y}
+                    width={node.width}
+                    height={node.height}
+                    fill={colors.bg}
+                    stroke={colors.border}
+                    strokeWidth="2"
+                    rx="4"
+                  />
+                  
+                  {/* Header with code and counts */}
+                  <rect
+                    x={node.x}
+                    y={node.y}
+                    width={node.width}
+                    height="20"
+                    fill={colors.border}
+                    rx="4"
+                  />
+                  
+                  {/* Code */}
+                  <text
+                    x={node.x + 5}
+                    y={node.y + 14}
+                    fontSize="10"
+                    fontWeight="bold"
+                    fill="#ffffff"
+                  >
+                    {node.unit.stas_code}
+                  </text>
+                  
+                  {/* Leadership count */}
+                  <text
+                    x={node.x + node.width - 30}
+                    y={node.y + 14}
+                    fontSize="10"
+                    fill="#ffffff"
+                    textAnchor="middle"
+                  >
+                    {agg.leadership_positions_count}
+                  </text>
+                  
+                  {/* Execution count or recursive total for parent units */}
+                  <text
+                    x={node.x + node.width - 10}
+                    y={node.y + 14}
+                    fontSize="10"
+                    fill="#ffffff"
+                    textAnchor="middle"
+                  >
+                    {agg.recursive_total_subordinates > agg.total_positions
+                      ? agg.recursive_total_subordinates - agg.leadership_positions_count
+                      : agg.execution_positions_count}
+                  </text>
+                  
+                  {/* Unit name */}
+                  <text
+                    x={node.x + node.width / 2}
+                    y={node.y + 40}
+                    fontSize="11"
+                    fontWeight="600"
+                    fill={colors.text}
+                    textAnchor="middle"
+                  >
+                    {node.unit.name.length > 25 
+                      ? node.unit.name.substring(0, 25) + '...'
+                      : node.unit.name
+                    }
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

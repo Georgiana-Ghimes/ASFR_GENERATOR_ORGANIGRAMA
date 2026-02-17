@@ -22,10 +22,12 @@ import {
   Menu,
   X,
   ChevronRight,
+  Layers,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Organigramă', href: 'OrgChart', icon: Building2 },
+  { name: 'Unități Organizaționale', href: 'Units', icon: Layers },
   { name: 'Angajați', href: 'Employees', icon: Users },
   { name: 'Versiuni', href: 'Versions', icon: History },
 ];
