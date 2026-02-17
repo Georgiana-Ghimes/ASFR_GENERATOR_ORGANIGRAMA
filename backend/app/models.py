@@ -20,10 +20,6 @@ class VersionStatus(str, enum.Enum):
     approved = "approved"
     archived = "archived"
 
-class PositionType(str, enum.Enum):
-    management = "management"
-    execution = "execution"
-
 class EmployeeStatus(str, enum.Enum):
     active = "active"
     on_leave = "on_leave"

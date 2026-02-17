@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, date
 from uuid import UUID
-from app.models import UnitType, VersionStatus, PositionType, EmployeeStatus
+from app.models import UnitType, VersionStatus, EmployeeStatus
 
 # Version Schemas
 class OrgVersionBase(BaseModel):
@@ -38,10 +38,6 @@ class OrgUnitBase(BaseModel):
     unit_type: UnitType
     parent_unit_id: Optional[UUID] = None
     order_index: int = 0
-    management_positions: int = 0
-    execution_positions: int = 0
-    total_positions: int = 0
-    color: Optional[str] = None
 
 class OrgUnitCreate(OrgUnitBase):
     version_id: UUID
@@ -52,10 +48,6 @@ class OrgUnitUpdate(BaseModel):
     unit_type: Optional[UnitType] = None
     parent_unit_id: Optional[UUID] = None
     order_index: Optional[int] = None
-    management_positions: Optional[int] = None
-    execution_positions: Optional[int] = None
-    total_positions: Optional[int] = None
-    color: Optional[str] = None
 
 class OrgUnit(OrgUnitBase):
     id: UUID
@@ -67,7 +59,7 @@ class OrgUnit(OrgUnitBase):
 # Position Schemas
 class PositionBase(BaseModel):
     title: str
-    position_type: PositionType
+    is_leadership: bool = False
     grade: Optional[str] = None
     is_vacant: bool = True
     order_index: int = 0
@@ -78,7 +70,7 @@ class PositionCreate(PositionBase):
 
 class PositionUpdate(BaseModel):
     title: Optional[str] = None
-    position_type: Optional[PositionType] = None
+    is_leadership: Optional[bool] = None
     grade: Optional[str] = None
     is_vacant: Optional[bool] = None
     order_index: Optional[int] = None
