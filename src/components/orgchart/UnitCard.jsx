@@ -57,9 +57,9 @@ export default function UnitCard({ unit, onClick, isSelected, childCount = 0, to
           </span>
           <div className="flex items-center gap-1 text-gray-600">
             <Users className="w-3 h-3" />
-            <span>{unit.management_positions || 0}</span>
+            <span>{unit.leadership_count || 0}</span>
             <span>/</span>
-            <span>{unit.total_positions || 0}</span>
+            <span>{(unit.leadership_count || 0) + (unit.execution_count || 0)}</span>
           </div>
         </div>
       </div>

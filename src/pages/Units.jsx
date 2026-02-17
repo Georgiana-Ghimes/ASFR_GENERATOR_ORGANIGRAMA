@@ -27,6 +27,13 @@ export default function UnitsPage() {
     enabled: !!selectedVersion?.id,
   });
 
+  // Auto-select first version
+  React.useEffect(() => {
+    if (versions.length > 0 && !selectedVersion) {
+      setSelectedVersion(versions[0]);
+    }
+  }, [versions, selectedVersion]);
+
   const createUnitMutation = useMutation({
     mutationFn: (data) => apiClient.createUnit(data),
     onSuccess: () => {
@@ -111,7 +118,14 @@ export default function UnitsPage() {
             <div className="flex-1 overflow-auto">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Lista Unități</CardTitle>
+                  <div>
+                    <CardTitle>Lista Unități</CardTitle>
+                    {selectedVersion && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Versiune: <span className="font-semibold text-gray-700">{selectedVersion.name}</span>
+                      </p>
+                    )}
+                  </div>
                   {!isReadOnly && (
                     <Button
                       size="sm"
