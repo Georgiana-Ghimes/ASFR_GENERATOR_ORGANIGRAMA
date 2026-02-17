@@ -66,7 +66,7 @@ class Position(Base):
     version_id = Column(UUID(as_uuid=True), ForeignKey("org_versions.id"), nullable=False)
     unit_id = Column(UUID(as_uuid=True), ForeignKey("organizational_units.id"), nullable=False)
     title = Column(String, nullable=False)
-    position_type = Column(Enum(PositionType), nullable=False)
+    is_leadership = Column(Boolean, default=False, nullable=False)
     grade = Column(String)
     is_vacant = Column(Boolean, default=True)
     order_index = Column(Integer, default=0)

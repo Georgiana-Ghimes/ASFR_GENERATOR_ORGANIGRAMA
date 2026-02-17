@@ -5,18 +5,12 @@ Calculates all totals dynamically from positions and hierarchy
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Dict
-from app.models import OrgUnit, Position, PositionType
+from app.models import OrgUnit, Position
 
 
 def calculate_unit_aggregates(db: Session, unit_id: UUID) -> Dict:
     """
     Calculate aggregates for a single unit
-    Returns: {
-        leadership_positions_count,
-        execution_positions_count,
-        total_positions,
-        recursive_total_subordinates
-    }
     """
     unit = db.query(OrgUnit).filter(OrgUnit.id == unit_id).first()
     if not unit:
@@ -29,11 +23,11 @@ def calculate_unit_aggregates(db: Session, unit_id: UUID) -> Dict:
     
     # Count direct positions
     positions = db.query(Position).filter(Position.unit_id == unit_id).all()
-    leadership_count = sum(1 for p in positions if p.position_type == PositionType.management)
-    execution_count = sum(1 for p in positions if p.position_type == PositionType.execution)
+    leadership_count = sum(1 for p in positions if p.is_leadership)
+    execution_count = sum(1 for p in positions if not p.is_leadership)
     direct_total = leadership_count + execution_count
     
-    # Calculate recursive total (including all descendants)
+    # Calculate recursive total
     recursive_total = direct_total
     for child in unit.children:
         child_agg = calculate_unit_aggregates(db, child.id)
