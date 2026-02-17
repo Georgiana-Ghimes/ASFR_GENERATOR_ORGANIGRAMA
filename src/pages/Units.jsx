@@ -135,18 +135,41 @@ export default function UnitsPage() {
                       Nu există unități. Adaugă prima unitate.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {units.map((unit) => (
-                        <UnitCard
-                          key={unit.id}
-                          unit={unit}
-                          onSelect={(unit) => {
-                            setSelectedUnit(unit);
-                            setShowUnitForm(true);
-                          }}
-                          selectedId={selectedUnit?.id}
-                        />
-                      ))}
+                    <div className="space-y-6">
+                      {(() => {
+                        // Group units by color
+                        const groupedUnits = units.reduce((acc, unit) => {
+                          const color = unit.color || 'no-color';
+                          if (!acc[color]) acc[color] = [];
+                          acc[color].push(unit);
+                          return acc;
+                        }, {});
+
+                        // Sort groups: no-color first, then by color
+                        const sortedGroups = Object.entries(groupedUnits).sort(([a], [b]) => {
+                          if (a === 'no-color') return -1;
+                          if (b === 'no-color') return 1;
+                          return a.localeCompare(b);
+                        });
+
+                        return sortedGroups.map(([color, groupUnits]) => (
+                          <div key={color} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {groupUnits.map((unit) => (
+                                <UnitCard
+                                  key={unit.id}
+                                  unit={unit}
+                                  onSelect={(unit) => {
+                                    setSelectedUnit(unit);
+                                    setShowUnitForm(true);
+                                  }}
+                                  selectedId={selectedUnit?.id}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()}
                     </div>
                   )}
                 </CardContent>
