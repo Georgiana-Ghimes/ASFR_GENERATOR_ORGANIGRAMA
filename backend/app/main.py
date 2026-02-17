@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import versions, units, positions, employees, assignments, auth
+from app.api import versions, units, positions, employees, assignments, auth, layout
 
 app = FastAPI(
     title="Organigrama API",
@@ -24,6 +24,7 @@ app.include_router(units.router, prefix="/api/units", tags=["units"])
 app.include_router(positions.router, prefix="/api/positions", tags=["positions"])
 app.include_router(employees.router, prefix="/api/employees", tags=["employees"])
 app.include_router(assignments.router, prefix="/api/assignments", tags=["assignments"])
+app.include_router(layout.router, prefix="/api", tags=["layout"])
 
 @app.get("/")
 def root():

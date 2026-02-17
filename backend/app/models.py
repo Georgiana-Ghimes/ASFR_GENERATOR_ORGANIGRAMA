@@ -54,10 +54,6 @@ class OrgUnit(Base):
     unit_type = Column(Enum(UnitType), nullable=False)
     parent_unit_id = Column(UUID(as_uuid=True), ForeignKey("organizational_units.id"))
     order_index = Column(Integer, default=0)
-    management_positions = Column(Integer, default=0)
-    execution_positions = Column(Integer, default=0)
-    total_positions = Column(Integer, default=0)
-    color = Column(String)
     
     version = relationship("OrgVersion", back_populates="units")
     parent = relationship("OrgUnit", remote_side=[id], backref="children")
