@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 import OrgTree from '@/components/orgchart/OrgTree';
 import OrgChartVisual from '@/components/orgchart/OrgChartVisual';
+import DeterministicOrgChart from '@/components/orgchart/DeterministicOrgChart';
 import UnitCard from '@/components/orgchart/UnitCard';
 import UnitForm from '@/components/orgchart/UnitForm';
 import VersionSelector from '@/components/orgchart/VersionSelector';
@@ -27,7 +28,7 @@ export default function OrgChartPage() {
   const [newVersion, setNewVersion] = useState({ version_number: '', name: '', notes: '' });
   const [isExporting, setIsExporting] = useState(false);
   const [userRole, setUserRole] = useState('admin'); // Default to admin for now
-  const [viewMode, setViewMode] = useState('visual'); // 'visual' or 'tree'
+  const [viewMode, setViewMode] = useState('deterministic'); // 'deterministic', 'visual' or 'tree'
   
   const queryClient = useQueryClient();
 
@@ -266,6 +267,15 @@ export default function OrgChartPage() {
                   <div className="flex items-center gap-2">
                     <div className="flex border rounded-lg overflow-hidden">
                       <Button
+                        variant={viewMode === 'deterministic' ? 'default' : 'ghost'}
+                        size="sm"
+                        className="rounded-none"
+                        onClick={() => setViewMode('deterministic')}
+                      >
+                        <LayoutGrid className="w-4 h-4 mr-1" />
+                        Organigramă
+                      </Button>
+                      <Button
                         variant={viewMode === 'visual' ? 'default' : 'ghost'}
                         size="sm"
                         className="rounded-none"
@@ -303,6 +313,15 @@ export default function OrgChartPage() {
                     <div className="flex items-center justify-center h-full">
                       <Loader2 className="w-6 h-6 animate-spin" />
                     </div>
+                  ) : viewMode === 'deterministic' ? (
+                    <DeterministicOrgChart
+                      versionId={selectedVersion.id}
+                      onSelectUnit={(unit) => {
+                        setSelectedUnit(unit);
+                        setShowUnitForm(true);
+                      }}
+                      isReadOnly={isReadOnly}
+                    />
                   ) : viewMode === 'visual' ? (
                     <OrgChartVisual
                       units={units}
