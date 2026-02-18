@@ -346,25 +346,25 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   onClick={() => !isReadOnly && onSelectUnit && onSelectUnit(node.unit)}
                   className={!isReadOnly ? "cursor-pointer" : ""}
                 >
-                  {/* Box */}
+                  {/* Main box - white background */}
                   <rect
                     x={node.x}
                     y={node.y}
                     width={node.width}
                     height={node.height}
-                    fill={colors.bg}
+                    fill="#ffffff"
                     stroke={colors.border}
                     strokeWidth="2"
                     rx="4"
                   />
                   
-                  {/* Header with code and counts */}
+                  {/* Header with code and counts - colored */}
                   <rect
                     x={node.x}
                     y={node.y}
                     width={node.width}
                     height="20"
-                    fill={colors.border}
+                    fill={colors.bg}
                     rx="4"
                   />
                   
@@ -403,7 +403,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       : agg.execution_positions_count}
                   </text>
                   
-                  {/* Unit name - multi-line with foreignObject */}
+                  {/* Unit name - multi-line with foreignObject on white background */}
                   <foreignObject
                     x={node.x + 4}
                     y={node.y + 22}
@@ -420,7 +420,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                         textAlign: 'center',
                         fontSize: '10px',
                         fontWeight: '600',
-                        color: colors.text,
+                        color: '#000000',
                         lineHeight: '1.3',
                         padding: '4px',
                         wordWrap: 'break-word',
