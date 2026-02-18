@@ -374,7 +374,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     y={node.y + 14}
                     fontSize="10"
                     fontWeight="bold"
-                    fill="#ffffff"
+                    fill="#000000"
                   >
                     {node.unit.stas_code}
                   </text>
@@ -384,7 +384,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     x={node.x + node.width - 30}
                     y={node.y + 14}
                     fontSize="10"
-                    fill="#ffffff"
+                    fill="#000000"
                     textAnchor="middle"
                   >
                     {agg.leadership_positions_count}
@@ -395,7 +395,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     x={node.x + node.width - 10}
                     y={node.y + 14}
                     fontSize="10"
-                    fill="#ffffff"
+                    fill="#000000"
                     textAnchor="middle"
                   >
                     {agg.recursive_total_subordinates > agg.total_positions
