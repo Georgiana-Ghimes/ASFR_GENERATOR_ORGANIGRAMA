@@ -14,6 +14,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [nearestParent, setNearestParent] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  console.log('DeterministicOrgChart render:', { isReadOnly, draggedNode: !!draggedNode, tempPosition });
+
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
   const GRID_SIZE = 20; // Grid cell size in pixels
   
@@ -86,12 +88,23 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   };
 
   const handleMouseDown = (e, node) => {
-    if (isReadOnly) return;
+    console.log('handleMouseDown called:', { isReadOnly, node: node.unit.name });
+    
+    if (isReadOnly) {
+      console.log('Blocked by isReadOnly');
+      return;
+    }
     
     e.stopPropagation();
     e.preventDefault();
     
-    const svgRect = e.currentTarget.closest('svg').getBoundingClientRect();
+    const svg = e.currentTarget.closest('svg');
+    if (!svg) {
+      console.log('SVG not found!');
+      return;
+    }
+    
+    const svgRect = svg.getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
