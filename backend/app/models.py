@@ -54,6 +54,8 @@ class OrgUnit(Base):
     leadership_count = Column(Integer, default=0)
     execution_count = Column(Integer, default=0)
     color = Column(String)
+    custom_x = Column(Integer)  # Custom X position for manual layout
+    custom_y = Column(Integer)  # Custom Y position for manual layout
     
     version = relationship("OrgVersion", back_populates="units")
     parent = relationship("OrgUnit", remote_side=[id], backref="children")

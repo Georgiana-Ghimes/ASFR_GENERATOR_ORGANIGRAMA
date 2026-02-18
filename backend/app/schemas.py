@@ -44,6 +44,8 @@ class OrgUnitBase(BaseModel):
     leadership_count: int = 0
     execution_count: int = 0
     color: Optional[str] = None
+    custom_x: Optional[int] = None
+    custom_y: Optional[int] = None
 
 class OrgUnitCreate(OrgUnitBase):
     version_id: UUID

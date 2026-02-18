@@ -116,39 +116,45 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   };
 
   const handleMouseUp = async () => {
-    if (!draggedNode) return;
+    if (!draggedNode || !tempPosition) return;
     
-    // If near another node, attach as child
-    if (nearestParent) {
-      try {
-        const response = await fetch(`http://localhost:8000/api/units/${draggedNode.unit_id}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            parent_unit_id: nearestParent.unit_id
-          })
-        });
-        
-        if (response.ok) {
-          // Refresh layout
-          const layoutResponse = await fetch(`http://localhost:8000/api/layout/${versionId}`);
-          const data = await layoutResponse.json();
-          setLayoutData(data);
-          
-          const aggMap = {};
-          data.layout.forEach(node => {
-            if (node.aggregates) {
-              aggMap[node.unit_id] = node.aggregates;
-            }
-          });
-          setAggregates(aggMap);
-        }
-      } catch (error) {
-        console.error('Failed to update parent:', error);
+    try {
+      // Always save the custom position
+      const updateData = {
+        custom_x: Math.round(tempPosition.x),
+        custom_y: Math.round(tempPosition.y)
+      };
+      
+      // If near another node, also update parent
+      if (nearestParent) {
+        updateData.parent_unit_id = nearestParent.unit_id;
       }
+      
+      const response = await fetch(`http://localhost:8000/api/units/${draggedNode.unit_id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (response.ok) {
+        // Refresh layout
+        const layoutResponse = await fetch(`http://localhost:8000/api/layout/${versionId}`);
+        const data = await layoutResponse.json();
+        setLayoutData(data);
+        
+        const aggMap = {};
+        data.layout.forEach(node => {
+          if (node.aggregates) {
+            aggMap[node.unit_id] = node.aggregates;
+          }
+        });
+        setAggregates(aggMap);
+      }
+    } catch (error) {
+      console.error('Failed to update position:', error);
     }
     
     setDraggedNode(null);

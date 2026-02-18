@@ -33,13 +33,17 @@ def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
 
 
 def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layout: List[Dict], edges: List[Dict], parent_x: int = None, parent_y: int = None, is_root: bool = False):
-    """Recursively position unit and children"""
+    """Recursively position unit and children - use custom positions if available"""
+    
+    # Use custom position if available, otherwise use calculated position
+    actual_x = unit.custom_x if unit.custom_x is not None else x
+    actual_y = unit.custom_y if unit.custom_y is not None else y
     
     # Position current unit
     layout.append({
         'unit_id': str(unit.id),
-        'x': x,
-        'y': y,
+        'x': actual_x,
+        'y': actual_y,
         'width': BOX_WIDTH,
         'height': BOX_HEIGHT,
         'unit': {
@@ -50,7 +54,9 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
             'parent_unit_id': str(unit.parent_unit_id) if unit.parent_unit_id else None,
             'color': unit.color,
             'leadership_count': unit.leadership_count,
-            'execution_count': unit.execution_count
+            'execution_count': unit.execution_count,
+            'custom_x': unit.custom_x,
+            'custom_y': unit.custom_y
         }
     })
     
@@ -61,8 +67,8 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
             'to': str(unit.id),
             'from_x': parent_x + BOX_WIDTH // 2,
             'from_y': parent_y + BOX_HEIGHT,
-            'to_x': x + BOX_WIDTH // 2,
-            'to_y': y
+            'to_x': actual_x + BOX_WIDTH // 2,
+            'to_y': actual_y
         })
     
     if not unit.children:
@@ -76,8 +82,8 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
     total_width += HORIZONTAL_SPACING * (len(children) - 1)
     
     # Start position for children (centered under parent)
-    child_start_x = x + (BOX_WIDTH - total_width) // 2
-    child_y = y + BOX_HEIGHT + VERTICAL_SPACING
+    child_start_x = actual_x + (BOX_WIDTH - total_width) // 2
+    child_y = actual_y + BOX_HEIGHT + VERTICAL_SPACING
     
     current_x = child_start_x
     
@@ -86,7 +92,7 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
         child_center_x = current_x + child_width // 2 - BOX_WIDTH // 2
         
         # Recursively position child
-        position_unit_and_children(db, child, child_center_x, child_y, layout, edges, x, y, False)
+        position_unit_and_children(db, child, child_center_x, child_y, layout, edges, actual_x, actual_y, False)
         
         current_x += child_width + HORIZONTAL_SPACING
 
