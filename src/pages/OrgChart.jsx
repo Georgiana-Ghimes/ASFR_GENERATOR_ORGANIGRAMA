@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/api/apiClient';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Building2, Info } from 'lucide-react';
+import { toast } from 'sonner';
 
 import DeterministicOrgChart from '@/components/orgchart/DeterministicOrgChart';
 import VersionSelector from '@/components/orgchart/VersionSelector';
 import StatsPanel from '@/components/orgchart/StatsPanel';
-import { unitTypeLabels } from '@/components/orgchart/UnitCard';
+import UnitForm from '@/components/orgchart/UnitForm';
 
 export default function OrgChartPage() {
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [layoutData, setLayoutData] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const queryClient = useQueryClient();
 
   // Fetch versions
   const { data: versions = [], isLoading: loadingVersions } = useQuery({
@@ -21,7 +23,7 @@ export default function OrgChartPage() {
     queryFn: () => apiClient.listVersions(),
   });
 
-  // Fetch units for stats
+  // Fetch units
   const { data: units = [] } = useQuery({
     queryKey: ['units', selectedVersion?.id],
     queryFn: () => apiClient.listUnits(selectedVersion?.id),
@@ -43,7 +45,7 @@ export default function OrgChartPage() {
     };
     
     fetchLayout();
-  }, [selectedVersion?.id]);
+  }, [selectedVersion?.id, refreshKey]);
 
   // Auto-select first version
   useEffect(() => {
@@ -51,6 +53,20 @@ export default function OrgChartPage() {
       setSelectedVersion(versions[0]);
     }
   }, [versions, selectedVersion]);
+
+  // Update unit mutation
+  const updateUnitMutation = useMutation({
+    mutationFn: ({ unitId, data }) => apiClient.updateUnit(unitId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['units', selectedVersion?.id]);
+      setRefreshKey(prev => prev + 1);
+      toast.success('Unitatea a fost actualizată cu succes');
+      setSelectedUnit(null);
+    },
+    onError: (error) => {
+      toast.error('Eroare la actualizarea unității: ' + error.message);
+    },
+  });
 
   const handleVersionSelect = (versionId) => {
     const version = versions.find(v => v.id === versionId);
@@ -64,6 +80,12 @@ export default function OrgChartPage() {
 
   const handleClosePanel = () => {
     setSelectedUnit(null);
+  };
+
+  const handleSaveUnit = (data) => {
+    if (selectedUnit?.id) {
+      updateUnitMutation.mutate({ unitId: selectedUnit.id, data });
+    }
   };
 
   // Handle Escape key
@@ -115,20 +137,21 @@ export default function OrgChartPage() {
           <>
             {/* Organigramă - se restrânge când e selectată o unitate */}
             <div 
-              className={`h-full transition-all duration-300 ${
-                selectedUnit ? 'mr-96' : 'mr-0'
+              className={`h-full transition-all duration-300 ease-in-out ${
+                selectedUnit ? 'mr-[500px]' : 'mr-0'
               }`}
             >
               <DeterministicOrgChart
+                key={refreshKey}
                 versionId={selectedVersion.id}
                 onSelectUnit={handleSelectUnit}
-                isReadOnly={true}
+                isReadOnly={isReadOnly}
               />
             </div>
 
             {/* Side Panel - slide in from right */}
             <div
-              className={`absolute top-0 right-0 h-full w-96 bg-white border-l shadow-2xl transform transition-transform duration-300 ${
+              className={`absolute top-0 right-0 h-full w-[500px] bg-white border-l shadow-2xl transform transition-transform duration-300 ease-in-out ${
                 selectedUnit ? 'translate-x-0' : 'translate-x-full'
               }`}
             >
@@ -138,7 +161,9 @@ export default function OrgChartPage() {
                   <div className="flex items-center justify-between p-4 border-b bg-blue-50">
                     <div className="flex items-center gap-2">
                       <Info className="w-5 h-5 text-blue-600" />
-                      <h2 className="font-semibold text-gray-900">Detalii Unitate</h2>
+                      <h2 className="font-semibold text-gray-900">
+                        {isReadOnly ? 'Detalii Unitate' : 'Editare Unitate'}
+                      </h2>
                     </div>
                     <Button
                       variant="ghost"
@@ -151,42 +176,14 @@ export default function OrgChartPage() {
 
                   {/* Panel Content */}
                   <div className="flex-1 overflow-auto p-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{selectedUnit.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Cod STAS</label>
-                          <p className="text-base font-semibold">{selectedUnit.stas_code}</p>
-                        </div>
-                        
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Tip Unitate</label>
-                          <p className="text-base">{unitTypeLabels[selectedUnit.unit_type] || selectedUnit.unit_type}</p>
-                        </div>
-
-                        {selectedUnit.leadership_count !== undefined && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Posturi Conducere</label>
-                            <p className="text-base font-semibold text-blue-600">{selectedUnit.leadership_count}</p>
-                          </div>
-                        )}
-
-                        {selectedUnit.execution_count !== undefined && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Posturi Execuție</label>
-                            <p className="text-base font-semibold text-green-600">{selectedUnit.execution_count}</p>
-                          </div>
-                        )}
-
-                        <div className="pt-4 border-t">
-                          <p className="text-sm text-gray-500">
-                            Pentru a edita această unitate, accesează meniul <span className="font-semibold">Unități Organizaționale</span>.
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <UnitForm
+                      unit={selectedUnit}
+                      units={units}
+                      versionId={selectedVersion.id}
+                      onSave={handleSaveUnit}
+                      onCancel={handleClosePanel}
+                      isReadOnly={isReadOnly}
+                    />
                   </div>
 
                   {/* Panel Footer */}
