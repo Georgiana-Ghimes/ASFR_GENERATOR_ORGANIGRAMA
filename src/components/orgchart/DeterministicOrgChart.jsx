@@ -522,6 +522,20 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               const x = isBeingDragged && tempPosition ? tempPosition.x : node.x;
               const y = isBeingDragged && tempPosition ? tempPosition.y : node.y;
               
+              // Debug log for first node only
+              if (node.unit.unit_type === 'director_general' && draggedNode) {
+                console.log('Rendering DG:', { 
+                  isBeingDragged, 
+                  draggedNodeId: draggedNode?.unit_id, 
+                  nodeId: node.unit_id,
+                  tempPosition,
+                  x, 
+                  y,
+                  originalX: node.x,
+                  originalY: node.y
+                });
+              }
+              
               // Highlight if this is the nearest parent
               const isNearestParent = nearestParent?.unit_id === node.unit_id;
               
