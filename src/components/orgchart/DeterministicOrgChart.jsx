@@ -403,20 +403,34 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       : agg.execution_positions_count}
                   </text>
                   
-                  {/* Unit name */}
-                  <text
-                    x={node.x + node.width / 2}
-                    y={node.y + 40}
-                    fontSize="11"
-                    fontWeight="600"
-                    fill={colors.text}
-                    textAnchor="middle"
+                  {/* Unit name - multi-line with foreignObject */}
+                  <foreignObject
+                    x={node.x + 4}
+                    y={node.y + 22}
+                    width={node.width - 8}
+                    height={node.height - 24}
                   >
-                    {node.unit.name.length > 25 
-                      ? node.unit.name.substring(0, 25) + '...'
-                      : node.unit.name
-                    }
-                  </text>
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                        fontSize: '10px',
+                        fontWeight: '600',
+                        color: colors.text,
+                        lineHeight: '1.3',
+                        padding: '4px',
+                        wordWrap: 'break-word',
+                        overflow: 'hidden',
+                        hyphens: 'auto'
+                      }}
+                    >
+                      {node.unit.name}
+                    </div>
+                  </foreignObject>
                 </g>
               );
             })}
