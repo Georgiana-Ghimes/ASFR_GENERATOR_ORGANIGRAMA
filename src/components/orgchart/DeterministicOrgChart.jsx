@@ -14,6 +14,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [nearestParent, setNearestParent] = useState(null);
 
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
+  const GRID_SIZE = 20; // Grid cell size in pixels
+  
+  const snapToGrid = (value) => {
+    return Math.round(value / GRID_SIZE) * GRID_SIZE;
+  };
 
   useEffect(() => {
     if (!versionId) return;
@@ -103,8 +108,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
-    const newX = mouseX - dragOffset.x;
-    const newY = mouseY - dragOffset.y;
+    const rawX = mouseX - dragOffset.x;
+    const rawY = mouseY - dragOffset.y;
+    
+    // Snap to grid
+    const newX = snapToGrid(rawX);
+    const newY = snapToGrid(rawY);
     
     setTempPosition({ x: newX, y: newY });
     
@@ -379,6 +388,32 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
             >
+              {/* Grid pattern */}
+              <defs>
+                <pattern
+                  id="grid"
+                  width={GRID_SIZE}
+                  height={GRID_SIZE}
+                  patternUnits="userSpaceOnUse"
+                >
+                  <path
+                    d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="0.5"
+                  />
+                </pattern>
+              </defs>
+              
+              {/* Grid background - only show when dragging */}
+              {draggedNode && (
+                <rect
+                  width={maxX}
+                  height={maxY}
+                  fill="url(#grid)"
+                />
+              )}
+              
               {/* Header text - centered with consiliu */}
               <text
                 x={maxX / 2}
