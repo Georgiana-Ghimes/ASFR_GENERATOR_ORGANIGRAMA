@@ -14,8 +14,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [nearestParent, setNearestParent] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  console.log('DeterministicOrgChart render:', { isReadOnly, draggedNode: !!draggedNode, tempPosition });
-
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
   const GRID_SIZE = 20; // Grid cell size in pixels
   
@@ -88,30 +86,20 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   };
 
   const handleMouseDown = (e, node) => {
-    console.log('handleMouseDown called:', { isReadOnly, node: node.unit.name });
-    
-    if (isReadOnly) {
-      console.log('Blocked by isReadOnly');
-      return;
-    }
+    if (isReadOnly) return;
     
     e.stopPropagation();
     e.preventDefault();
     
     const svg = e.currentTarget.closest('svg');
-    if (!svg) {
-      console.log('SVG not found!');
-      return;
-    }
+    if (!svg) return;
     
     const svgRect = svg.getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
-    console.log('Mouse down:', { mouseX, mouseY, nodeX: node.x, nodeY: node.y });
-    
     setDraggedNode(node);
-    setIsDragging(false); // Reset dragging flag
+    setIsDragging(false);
     setDragOffset({
       x: mouseX - node.x,
       y: mouseY - node.y
@@ -124,7 +112,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     
     e.preventDefault();
     
-    setIsDragging(true); // Mark as dragging
+    setIsDragging(true);
     
     const svgRect = e.currentTarget.getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
@@ -136,8 +124,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     // Snap to grid
     const newX = snapToGrid(rawX);
     const newY = snapToGrid(rawY);
-    
-    console.log('Mouse move:', { mouseX, mouseY, newX, newY });
     
     setTempPosition({ x: newX, y: newY });
     
@@ -543,7 +529,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 <g
                   key={node.unit_id}
                   onMouseDown={(e) => {
-                    console.log('G element mousedown');
                     if (!isReadOnly) {
                       handleMouseDown(e, node);
                     }
