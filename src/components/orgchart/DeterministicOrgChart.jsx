@@ -12,6 +12,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [tempPosition, setTempPosition] = useState(null);
   const [nearestParent, setNearestParent] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
   const GRID_SIZE = 20; // Grid cell size in pixels
@@ -90,19 +91,14 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     e.stopPropagation();
     e.preventDefault();
     
-    // Find the SVG element
-    let svgElement = e.target;
-    while (svgElement && svgElement.tagName !== 'svg') {
-      svgElement = svgElement.parentElement;
-    }
-    
-    if (!svgElement) return;
-    
-    const svgRect = svgElement.getBoundingClientRect();
+    const svgRect = e.currentTarget.closest('svg').getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
+    console.log('Mouse down:', { mouseX, mouseY, nodeX: node.x, nodeY: node.y });
+    
     setDraggedNode(node);
+    setIsDragging(false); // Reset dragging flag
     setDragOffset({
       x: mouseX - node.x,
       y: mouseY - node.y
@@ -113,15 +109,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const handleMouseMove = (e) => {
     if (!draggedNode) return;
     
-    // Find the SVG element
-    let svgElement = e.target;
-    while (svgElement && svgElement.tagName !== 'svg') {
-      svgElement = svgElement.parentElement;
-    }
+    e.preventDefault();
     
-    if (!svgElement) return;
+    setIsDragging(true); // Mark as dragging
     
-    const svgRect = svgElement.getBoundingClientRect();
+    const svgRect = e.currentTarget.getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
@@ -131,6 +123,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     // Snap to grid
     const newX = snapToGrid(rawX);
     const newY = snapToGrid(rawY);
+    
+    console.log('Mouse move:', { mouseX, mouseY, newX, newY });
     
     setTempPosition({ x: newX, y: newY });
     
@@ -144,48 +138,59 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const handleMouseUp = async () => {
     if (!draggedNode || !tempPosition) return;
     
-    try {
-      // Always save the custom position
-      const updateData = {
-        custom_x: Math.round(tempPosition.x),
-        custom_y: Math.round(tempPosition.y)
-      };
-      
-      // If near another node, also update parent
-      if (nearestParent) {
-        updateData.parent_unit_id = nearestParent.unit_id;
-      }
-      
-      const response = await fetch(`http://localhost:8000/api/units/${draggedNode.unit_id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateData)
-      });
-      
-      if (response.ok) {
-        // Refresh layout
-        const layoutResponse = await fetch(`http://localhost:8000/api/layout/${versionId}`);
-        const data = await layoutResponse.json();
-        setLayoutData(data);
+    const wasDragging = isDragging;
+    
+    // If was actually dragging (not just a click), save position
+    if (wasDragging) {
+      try {
+        // Always save the custom position
+        const updateData = {
+          custom_x: Math.round(tempPosition.x),
+          custom_y: Math.round(tempPosition.y)
+        };
         
-        const aggMap = {};
-        data.layout.forEach(node => {
-          if (node.aggregates) {
-            aggMap[node.unit_id] = node.aggregates;
-          }
+        // If near another node, also update parent
+        if (nearestParent) {
+          updateData.parent_unit_id = nearestParent.unit_id;
+        }
+        
+        const response = await fetch(`http://localhost:8000/api/units/${draggedNode.unit_id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updateData)
         });
-        setAggregates(aggMap);
+        
+        if (response.ok) {
+          // Refresh layout
+          const layoutResponse = await fetch(`http://localhost:8000/api/layout/${versionId}`);
+          const data = await layoutResponse.json();
+          setLayoutData(data);
+          
+          const aggMap = {};
+          data.layout.forEach(node => {
+            if (node.aggregates) {
+              aggMap[node.unit_id] = node.aggregates;
+            }
+          });
+          setAggregates(aggMap);
+        }
+      } catch (error) {
+        console.error('Failed to update position:', error);
       }
-    } catch (error) {
-      console.error('Failed to update position:', error);
+    } else {
+      // Was just a click, open panel
+      if (onSelectUnit && draggedNode.unit) {
+        onSelectUnit(draggedNode.unit);
+      }
     }
     
     setDraggedNode(null);
     setTempPosition(null);
     setNearestParent(null);
+    setIsDragging(false);
   };
 
   const saveChartTitle = async (newTitle) => {
@@ -514,9 +519,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               const colors = getUnitColor(node.unit);
               
               // Use temp position if this node is being dragged
-              const isDragging = draggedNode?.unit_id === node.unit_id;
-              const x = isDragging && tempPosition ? tempPosition.x : node.x;
-              const y = isDragging && tempPosition ? tempPosition.y : node.y;
+              const isBeingDragged = draggedNode?.unit_id === node.unit_id;
+              const x = isBeingDragged && tempPosition ? tempPosition.x : node.x;
+              const y = isBeingDragged && tempPosition ? tempPosition.y : node.y;
               
               // Highlight if this is the nearest parent
               const isNearestParent = nearestParent?.unit_id === node.unit_id;
@@ -524,9 +529,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               return (
                 <g
                   key={node.unit_id}
-                  onMouseDown={(e) => handleMouseDown(e, node)}
-                  onClick={() => !isDragging && !isReadOnly && onSelectUnit && onSelectUnit(node.unit)}
-                  className={!isReadOnly ? "cursor-move" : ""}
+                  onMouseDown={(e) => {
+                    if (!isReadOnly) {
+                      handleMouseDown(e, node);
+                    }
+                  }}
                   style={{ cursor: !isReadOnly ? 'move' : 'default' }}
                 >
                   {/* Main box - white background */}
@@ -539,7 +546,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     stroke={isNearestParent ? "#10b981" : colors.border}
                     strokeWidth={isNearestParent ? "4" : "2"}
                     rx="4"
-                    opacity={isDragging ? 0.7 : 1}
+                    opacity={isBeingDragged ? 0.7 : 1}
                   />
                   
                   {/* Header with code and counts - colored */}
@@ -550,7 +557,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     height="20"
                     fill={colors.bg}
                     rx="4"
-                    opacity={isDragging ? 0.7 : 1}
+                    opacity={isBeingDragged ? 0.7 : 1}
                   />
                   
                   {/* Code */}
@@ -615,7 +622,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                         wordWrap: 'break-word',
                         overflow: 'hidden',
                         hyphens: 'auto',
-                        opacity: isDragging ? 0.7 : 1
+                        opacity: isBeingDragged ? 0.7 : 1
                       }}
                     >
                       {node.unit.name}
