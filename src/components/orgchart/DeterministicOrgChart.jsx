@@ -8,6 +8,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editableTitle, setEditableTitle] = useState('CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
   const [versionData, setVersionData] = useState(null);
+  const [draggedNode, setDraggedNode] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [tempPosition, setTempPosition] = useState(null);
+  const [nearestParent, setNearestParent] = useState(null);
+
+  const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
 
   useEffect(() => {
     if (!versionId) return;
@@ -47,6 +53,108 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     
     fetchLayout();
   }, [versionId]);
+
+  const findNearestNode = (x, y, excludeId) => {
+    if (!layoutData) return null;
+    
+    let nearest = null;
+    let minDistance = SNAP_DISTANCE;
+    
+    layoutData.layout.forEach(node => {
+      if (node.unit_id === excludeId) return;
+      
+      // Calculate distance from dragged node center to this node center
+      const nodeCenterX = node.x + node.width / 2;
+      const nodeCenterY = node.y + node.height / 2;
+      const distance = Math.sqrt(
+        Math.pow(x - nodeCenterX, 2) + Math.pow(y - nodeCenterY, 2)
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearest = node;
+      }
+    });
+    
+    return nearest;
+  };
+
+  const handleMouseDown = (e, node) => {
+    if (isReadOnly) return;
+    
+    e.stopPropagation();
+    
+    const svgRect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    setDraggedNode(node);
+    setDragOffset({
+      x: mouseX - node.x,
+      y: mouseY - node.y
+    });
+    setTempPosition({ x: node.x, y: node.y });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!draggedNode) return;
+    
+    const svgRect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    const newX = mouseX - dragOffset.x;
+    const newY = mouseY - dragOffset.y;
+    
+    setTempPosition({ x: newX, y: newY });
+    
+    // Find nearest node for snap preview
+    const centerX = newX + draggedNode.width / 2;
+    const centerY = newY + draggedNode.height / 2;
+    const nearest = findNearestNode(centerX, centerY, draggedNode.unit_id);
+    setNearestParent(nearest);
+  };
+
+  const handleMouseUp = async () => {
+    if (!draggedNode) return;
+    
+    // If near another node, attach as child
+    if (nearestParent) {
+      try {
+        const response = await fetch(`http://localhost:8000/api/units/${draggedNode.unit_id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            parent_unit_id: nearestParent.unit_id
+          })
+        });
+        
+        if (response.ok) {
+          // Refresh layout
+          const layoutResponse = await fetch(`http://localhost:8000/api/layout/${versionId}`);
+          const data = await layoutResponse.json();
+          setLayoutData(data);
+          
+          const aggMap = {};
+          data.layout.forEach(node => {
+            if (node.aggregates) {
+              aggMap[node.unit_id] = node.aggregates;
+            }
+          });
+          setAggregates(aggMap);
+        }
+      } catch (error) {
+        console.error('Failed to update parent:', error);
+      }
+    }
+    
+    setDraggedNode(null);
+    setTempPosition(null);
+    setNearestParent(null);
+  };
 
   const saveChartTitle = async (newTitle) => {
     try {
@@ -257,7 +365,14 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               </div>
             )}
             
-            <svg width={maxX} height={maxY} className="bg-white mx-auto">
+            <svg 
+              width={maxX} 
+              height={maxY} 
+              className="bg-white mx-auto"
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
               {/* Header text - centered with consiliu */}
               <text
                 x={maxX / 2}
@@ -340,63 +455,78 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               
               const colors = getUnitColor(node.unit);
               
+              // Use temp position if this node is being dragged
+              const isDragging = draggedNode?.unit_id === node.unit_id;
+              const x = isDragging && tempPosition ? tempPosition.x : node.x;
+              const y = isDragging && tempPosition ? tempPosition.y : node.y;
+              
+              // Highlight if this is the nearest parent
+              const isNearestParent = nearestParent?.unit_id === node.unit_id;
+              
               return (
                 <g
                   key={node.unit_id}
-                  onClick={() => !isReadOnly && onSelectUnit && onSelectUnit(node.unit)}
-                  className={!isReadOnly ? "cursor-pointer" : ""}
+                  onMouseDown={(e) => handleMouseDown(e, node)}
+                  onClick={() => !isDragging && !isReadOnly && onSelectUnit && onSelectUnit(node.unit)}
+                  className={!isReadOnly ? "cursor-move" : ""}
+                  style={{ cursor: !isReadOnly ? 'move' : 'default' }}
                 >
                   {/* Main box - white background */}
                   <rect
-                    x={node.x}
-                    y={node.y}
+                    x={x}
+                    y={y}
                     width={node.width}
                     height={node.height}
                     fill="#ffffff"
-                    stroke={colors.border}
-                    strokeWidth="2"
+                    stroke={isNearestParent ? "#10b981" : colors.border}
+                    strokeWidth={isNearestParent ? "4" : "2"}
                     rx="4"
+                    opacity={isDragging ? 0.7 : 1}
                   />
                   
                   {/* Header with code and counts - colored */}
                   <rect
-                    x={node.x}
-                    y={node.y}
+                    x={x}
+                    y={y}
                     width={node.width}
                     height="20"
                     fill={colors.bg}
                     rx="4"
+                    opacity={isDragging ? 0.7 : 1}
                   />
                   
                   {/* Code */}
                   <text
-                    x={node.x + 5}
-                    y={node.y + 14}
+                    x={x + 5}
+                    y={y + 14}
                     fontSize="10"
                     fontWeight="bold"
                     fill="#000000"
+                    style={{ pointerEvents: 'none' }}
                   >
                     {node.unit.stas_code}
                   </text>
                   
                   {/* Leadership count */}
                   <text
-                    x={node.x + node.width - 30}
-                    y={node.y + 14}
+                    x={x + node.width - 30}
+                    y={y + 14}
                     fontSize="10"
                     fill="#000000"
                     textAnchor="middle"
+                    style={{ pointerEvents: 'none' }}
                   >
                     {agg.leadership_positions_count}
                   </text>
                   
                   {/* Execution count or recursive total for parent units */}
                   <text
-                    x={node.x + node.width - 10}
-                    y={node.y + 14}
+                    x={x + node.width - 10}
+                    y={y + 14}
                     fontSize="10"
                     fill="#000000"
                     textAnchor="middle"
+                    style={{ pointerEvents: 'none' }}
                   >
                     {agg.recursive_total_subordinates > agg.total_positions
                       ? agg.recursive_total_subordinates - agg.leadership_positions_count
@@ -405,10 +535,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Unit name - multi-line with foreignObject on white background */}
                   <foreignObject
-                    x={node.x + 4}
-                    y={node.y + 22}
+                    x={x + 4}
+                    y={y + 22}
                     width={node.width - 8}
                     height={node.height - 24}
+                    style={{ pointerEvents: 'none' }}
                   >
                     <div
                       style={{
@@ -425,7 +556,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                         padding: '4px',
                         wordWrap: 'break-word',
                         overflow: 'hidden',
-                        hyphens: 'auto'
+                        hyphens: 'auto',
+                        opacity: isDragging ? 0.7 : 1
                       }}
                     >
                       {node.unit.name}
