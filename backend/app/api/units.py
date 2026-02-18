@@ -200,6 +200,32 @@ def update_unit(
     db.refresh(unit)
     return unit
 
+@router.patch("/{unit_id}", response_model=OrgUnitSchema)
+def patch_unit(
+    unit_id: UUID,
+    unit_data: OrgUnitUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("editor"))
+):
+    """Partial update for unit - used for drag & drop position updates"""
+    unit = db.query(OrgUnit).filter(OrgUnit.id == unit_id).first()
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    # Check version is draft
+    version = db.query(OrgVersion).filter(OrgVersion.id == unit.version_id).first()
+    if version.status != "draft":
+        raise HTTPException(status_code=400, detail="Cannot modify non-draft version")
+    
+    # Update only provided fields
+    update_data = unit_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(unit, key, value)
+    
+    db.commit()
+    db.refresh(unit)
+    return unit
+
 @router.delete("/{unit_id}")
 def delete_unit(
     unit_id: UUID,
