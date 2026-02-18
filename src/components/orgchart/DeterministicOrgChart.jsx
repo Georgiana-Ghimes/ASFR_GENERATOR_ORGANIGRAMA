@@ -543,11 +543,15 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 <g
                   key={node.unit_id}
                   onMouseDown={(e) => {
+                    console.log('G element mousedown');
                     if (!isReadOnly) {
                       handleMouseDown(e, node);
                     }
                   }}
-                  style={{ cursor: !isReadOnly ? 'move' : 'default' }}
+                  style={{ 
+                    cursor: !isReadOnly ? 'move' : 'default',
+                    pointerEvents: 'all'
+                  }}
                 >
                   {/* Main box - white background */}
                   <rect
@@ -580,7 +584,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     fontSize="10"
                     fontWeight="bold"
                     fill="#000000"
-                    style={{ pointerEvents: 'none' }}
                   >
                     {node.unit.stas_code}
                   </text>
@@ -592,7 +595,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     fontSize="10"
                     fill="#000000"
                     textAnchor="middle"
-                    style={{ pointerEvents: 'none' }}
                   >
                     {agg.leadership_positions_count}
                   </text>
@@ -604,7 +606,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     fontSize="10"
                     fill="#000000"
                     textAnchor="middle"
-                    style={{ pointerEvents: 'none' }}
                   >
                     {agg.recursive_total_subordinates > agg.total_positions
                       ? agg.recursive_total_subordinates - agg.leadership_positions_count
@@ -617,7 +618,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     y={y + 22}
                     width={node.width - 8}
                     height={node.height - 24}
-                    style={{ pointerEvents: 'none' }}
                   >
                     <div
                       style={{
