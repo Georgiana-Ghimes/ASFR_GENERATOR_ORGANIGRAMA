@@ -88,8 +88,17 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     if (isReadOnly) return;
     
     e.stopPropagation();
+    e.preventDefault();
     
-    const svgRect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
+    // Find the SVG element
+    let svgElement = e.target;
+    while (svgElement && svgElement.tagName !== 'svg') {
+      svgElement = svgElement.parentElement;
+    }
+    
+    if (!svgElement) return;
+    
+    const svgRect = svgElement.getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
@@ -104,7 +113,15 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const handleMouseMove = (e) => {
     if (!draggedNode) return;
     
-    const svgRect = e.currentTarget.getBoundingClientRect();
+    // Find the SVG element
+    let svgElement = e.target;
+    while (svgElement && svgElement.tagName !== 'svg') {
+      svgElement = svgElement.parentElement;
+    }
+    
+    if (!svgElement) return;
+    
+    const svgRect = svgElement.getBoundingClientRect();
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
