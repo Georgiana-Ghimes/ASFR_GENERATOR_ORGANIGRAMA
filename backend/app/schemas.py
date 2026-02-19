@@ -59,6 +59,8 @@ class OrgUnitUpdate(BaseModel):
     leadership_count: Optional[int] = None
     execution_count: Optional[int] = None
     color: Optional[str] = None
+    custom_x: Optional[int] = None
+    custom_y: Optional[int] = None
 
 class OrgUnit(OrgUnitBase):
     id: UUID

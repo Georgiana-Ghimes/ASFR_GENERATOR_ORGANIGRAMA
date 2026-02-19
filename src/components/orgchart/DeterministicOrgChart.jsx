@@ -13,6 +13,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [tempPosition, setTempPosition] = useState(null);
   const [nearestParent, setNearestParent] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const svgRef = React.useRef(null);
 
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
   const GRID_SIZE = 20; // Grid cell size in pixels
@@ -402,6 +403,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             )}
             
             <svg 
+              ref={svgRef}
               width={maxX} 
               height={maxY} 
               className="bg-white mx-auto"
@@ -542,6 +544,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               return (
                 <g
                   key={node.unit_id}
+                  data-unit-id={node.unit_id}
                   onMouseDown={(e) => {
                     if (!isReadOnly) {
                       handleMouseDown(e, node);
