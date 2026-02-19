@@ -212,7 +212,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     setIsResizing(false);
     setTempHeight(node.height);
     setTempWidth(node.width);
-    setResizeStartPos({ x: node.x + node.width, y: node.y + node.height });
+    // Store initial mouse position for delta calculation
+    setResizeStartPos({ x: mouseX, y: mouseY });
   };
 
   const handleResizeMouseMove = (e) => {
@@ -225,9 +226,13 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     const mouseX = e.clientX - svgRect.left;
     const mouseY = e.clientY - svgRect.top;
     
-    // Calculate new dimensions from the bottom-right corner
-    const newWidth = mouseX - resizingNode.x;
-    const newHeight = mouseY - resizingNode.y;
+    // Calculate delta from initial mouse position
+    const deltaX = mouseX - resizeStartPos.x;
+    const deltaY = mouseY - resizeStartPos.y;
+    
+    // Apply delta to original dimensions and then snap
+    const newWidth = resizingNode.width + deltaX;
+    const newHeight = resizingNode.height + deltaY;
     
     // Snap to grid (20px increments) and enforce minimums
     const snappedWidth = Math.max(200, snapToGrid(newWidth));  // Minimum 200px width
@@ -642,14 +647,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               const width = isBeingResized && tempWidth ? tempWidth : node.width;
               
               // Calculate font size dynamically based on available space
-              // Available width for text: width - 100px (left strip) - 16px (padding)
-              // Available height: height - 8px (padding)
+              // Standardize font size for boxes with same height and similar line count
               const text_length = node.unit.name.length;
               const availableWidth = width - 116;
-              const availableHeight = height - 8;
+              const availableHeight = height - 12;
               
-              // Calculate optimal font size based on space
-              // Use height as primary factor for font size, then check if text fits width
               let fontSize = '10px';
               let lineHeight = '1.2';
               
@@ -659,11 +661,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 return Math.ceil(text_length / charsPerLine);
               };
               
-              // Calculate font size based on available height
-              // More height = larger font possible
-              const maxFontByHeight = Math.floor(availableHeight / 1.5); // Conservative estimate
-              
-              // Try progressively larger fonts and pick the largest that fits
+              // Define font sizes with their properties
               const fontSizes = [
                 { size: 16, charWidth: 8, lineHeight: 1.3 },
                 { size: 14, charWidth: 7, lineHeight: 1.3 },
@@ -676,18 +674,46 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 { size: 7, charWidth: 3.5, lineHeight: 1.1 }
               ];
               
-              // Find the largest font that fits both width and height
+              // Find the largest font where text fits in available space
               let selectedFont = fontSizes[fontSizes.length - 1]; // Default to smallest
               
               for (const font of fontSizes) {
-                if (font.size > maxFontByHeight) continue; // Skip if too large for height
-                
                 const lines = estimateLines(font.size, font.charWidth);
                 const totalHeight = lines * font.size * font.lineHeight;
                 
+                // Check if this font size fits
                 if (totalHeight <= availableHeight) {
                   selectedFont = font;
                   break; // Found the largest that fits
+                }
+              }
+              
+              // CONSISTENCY FIX: For standard 40px height boxes, normalize font by line count
+              // This ensures boxes with same height and line count have same font size
+              if (height === 40) {
+                const estimatedLines = estimateLines(selectedFont.size, selectedFont.charWidth);
+                
+                // Standard fonts for 40px height boxes based on line count
+                if (estimatedLines === 1) {
+                  // Single line: use 14px
+                  selectedFont = fontSizes.find(f => f.size === 14) || selectedFont;
+                } else if (estimatedLines === 2) {
+                  // Two lines: use 11px
+                  selectedFont = fontSizes.find(f => f.size === 11) || selectedFont;
+                } else {
+                  // Three+ lines: use 9px
+                  selectedFont = fontSizes.find(f => f.size === 9) || selectedFont;
+                }
+              } else if (height === 60) {
+                // For 60px height boxes, normalize by line count
+                const estimatedLines = estimateLines(selectedFont.size, selectedFont.charWidth);
+                
+                if (estimatedLines <= 2) {
+                  selectedFont = fontSizes.find(f => f.size === 13) || selectedFont;
+                } else if (estimatedLines === 3) {
+                  selectedFont = fontSizes.find(f => f.size === 11) || selectedFont;
+                } else {
+                  selectedFont = fontSizes.find(f => f.size === 9) || selectedFont;
                 }
               }
               
@@ -823,9 +849,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   {/* Unit name - dynamic font size based on available space */}
                   <foreignObject
                     x={x + 104}
-                    y={y + 4}
+                    y={y + 3}
                     width={width - 108}
-                    height={height - 8}
+                    height={height - 6}
                   >
                     <div
                       style={{
@@ -839,7 +865,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                         fontWeight: '600',
                         color: '#000000',
                         lineHeight: lineHeight,
-                        padding: '4px 8px',
+                        padding: '6px 8px',
                         wordWrap: 'break-word',
                         overflow: 'hidden',
                         hyphens: 'auto',
