@@ -157,25 +157,32 @@ def generate_deterministic_layout(db: Session, version_id: UUID) -> Dict:
     canvas_width = max(1400, total_width + 200)
     
     # Consiliu and DG are centered in canvas
-    consiliu_center_x = canvas_width // 2
-    consiliu_width = 300
+    consiliu_width = 300  # 15 grid cells (300px)
     dg_width = 300  # DG has same width as Consiliu
     
+    # Calculate consiliu position snapped to grid
+    consiliu_x_raw = (canvas_width - consiliu_width) // 2
+    consiliu_x = (consiliu_x_raw // 20) * 20  # Snap to nearest grid line
+    consiliu_center_x = consiliu_x + consiliu_width // 2  # Actual center of consiliu box
+    
     # Center the Director General horizontally (same width as Consiliu)
-    dg_x = consiliu_center_x - dg_width // 2
+    # Calculate position and snap to grid (20px) to align with grid lines
+    dg_x_raw = consiliu_center_x - dg_width // 2
+    dg_x = (dg_x_raw // 20) * 20  # Snap to nearest grid line
+    dg_center_x = dg_x + dg_width // 2  # Actual center of DG box
     
     # Add edge from Consiliu to DG - line starts from CENTER of consiliu box
     edges.append({
         'from': 'consiliu',
         'to': str(root.id),
-        'from_x': consiliu_center_x,  # CENTER of consiliu
+        'from_x': consiliu_center_x,  # CENTER of consiliu (actual center after snap)
         'from_y': CONSILIU_Y + CONSILIU_HEIGHT,  # Bottom of consiliu box
-        'to_x': consiliu_center_x,  # CENTER of DG box (aligned vertically)
+        'to_x': dg_center_x,  # CENTER of DG box (actual center after snap)
         'to_y': DG_Y
     })
     
     # Position DG and all descendants (mark as root to skip duplicate edge)
-    position_unit_and_children(db, root, dg_x, DG_Y, layout, edges, consiliu_center_x - consiliu_width // 2, CONSILIU_Y, CONSILIU_HEIGHT, is_root=True)
+    position_unit_and_children(db, root, dg_x, DG_Y, layout, edges, consiliu_x, CONSILIU_Y, CONSILIU_HEIGHT, is_root=True)
     
     return {
         'version_id': str(version_id),

@@ -355,17 +355,20 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       const dgNode = layoutData.layout.find(n => n.unit.unit_type === 'director_general');
       if (!dgNode) return null;
       
-      // Check if DG is being dragged
+      // Check if DG is being dragged or resized
       const isDGDragged = draggedNode?.unit_id === dgNode.unit_id;
+      const isDGResized = resizingNode?.unit_id === dgNode.unit_id;
       const dgX = isDGDragged && tempPosition ? tempPosition.x : dgNode.x;
       const dgY = isDGDragged && tempPosition ? tempPosition.y : dgNode.y;
+      const dgWidth = isDGResized && tempWidth ? tempWidth : dgNode.width;
       
-      // Consiliu center X (always centered in canvas)
-      const consiliuCenterX = maxX / 2;
+      // Calculate actual consiliu position (snapped to grid)
+      const consiliuX = Math.floor((maxX - 300) / 2 / 20) * 20;
+      const consiliuCenterX = consiliuX + 150; // Center of 300px wide consiliu
       const consiliuBottomY = 80; // 40 + 40 (aligned to grid)
       
       // DG center X
-      const dgCenterX = dgX + dgNode.width / 2;
+      const dgCenterX = dgX + dgWidth / 2;
       
       return (
         <g key={`${edge.from}-${edge.to}`}>
@@ -600,10 +603,10 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 )}
               </g>
             
-            {/* Draw consiliu box in SVG - CENTERED in canvas, aligned to grid */}
+            {/* Draw consiliu box in SVG - CENTERED in canvas, snapped to grid */}
             <g>
               <rect
-                x={(maxX - 300) / 2}
+                x={Math.floor((maxX - 300) / 2 / 20) * 20}
                 y="40"
                 width="300"
                 height="40"
@@ -612,7 +615,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 strokeWidth="2"
               />
               <text
-                x={maxX / 2}
+                x={Math.floor((maxX - 300) / 2 / 20) * 20 + 150}
                 y="65"
                 fontSize="16"
                 fontWeight="bold"
