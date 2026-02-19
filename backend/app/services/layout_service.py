@@ -10,7 +10,7 @@ from app.models import OrgUnit
 from app.services.aggregation_service import get_hierarchy_level
 
 BOX_WIDTH = 180
-BOX_HEIGHT = 70
+BOX_HEIGHT = 90
 HORIZONTAL_SPACING = 40
 VERTICAL_SPACING = 100
 

@@ -614,9 +614,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   {/* Unit name - multi-line with foreignObject on white background */}
                   <foreignObject
                     x={x + 4}
-                    y={y + 22}
+                    y={y + 24}
                     width={node.width - 8}
-                    height={node.height - 24}
+                    height={node.height - 26}
                   >
                     <div
                       style={{
@@ -629,8 +629,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                         fontSize: '10px',
                         fontWeight: '600',
                         color: '#000000',
-                        lineHeight: '1.3',
-                        padding: '4px',
+                        lineHeight: '1.4',
+                        padding: '6px 4px',
                         wordWrap: 'break-word',
                         overflow: 'hidden',
                         hyphens: 'auto',
