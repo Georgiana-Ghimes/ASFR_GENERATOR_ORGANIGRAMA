@@ -13,6 +13,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [tempPosition, setTempPosition] = useState(null);
   const [nearestParent, setNearestParent] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [resizingNode, setResizingNode] = useState(null);
+  const [tempHeight, setTempHeight] = useState(null);
+  const [tempWidth, setTempWidth] = useState(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
   const svgRef = React.useRef(null);
 
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
@@ -191,6 +196,89 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     setTempPosition(null);
     setNearestParent(null);
     setIsDragging(false);
+  };
+
+  const handleResizeMouseDown = (e, node) => {
+    if (isReadOnly) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const svgRect = e.currentTarget.closest('svg').getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    setResizingNode(node);
+    setIsResizing(false);
+    setTempHeight(node.height);
+    setTempWidth(node.width);
+    setResizeStartPos({ x: node.x + node.width, y: node.y + node.height });
+  };
+
+  const handleResizeMouseMove = (e) => {
+    if (!resizingNode) return;
+    
+    e.preventDefault();
+    setIsResizing(true);
+    
+    const svgRect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    // Calculate new dimensions from the bottom-right corner
+    const newWidth = mouseX - resizingNode.x;
+    const newHeight = mouseY - resizingNode.y;
+    
+    // Snap to grid (20px increments) and enforce minimums
+    const snappedWidth = Math.max(200, snapToGrid(newWidth));  // Minimum 200px width
+    const snappedHeight = Math.max(40, snapToGrid(newHeight)); // Minimum 40px height (2 grid cells)
+    
+    setTempWidth(snappedWidth);
+    setTempHeight(snappedHeight);
+  };
+
+  const handleResizeMouseUp = async () => {
+    if (!resizingNode || !tempHeight || !tempWidth) return;
+    
+    const wasResizing = isResizing;
+    
+    if (wasResizing) {
+      try {
+        const response = await fetch(`http://localhost:8000/api/units/${resizingNode.unit_id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            custom_height: tempHeight,
+            custom_width: tempWidth
+          })
+        });
+        
+        if (response.ok) {
+          // Refresh layout
+          const layoutResponse = await fetch(`http://localhost:8000/api/layout/${versionId}`);
+          const data = await layoutResponse.json();
+          setLayoutData(data);
+          
+          const aggMap = {};
+          data.layout.forEach(node => {
+            if (node.aggregates) {
+              aggMap[node.unit_id] = node.aggregates;
+            }
+          });
+          setAggregates(aggMap);
+        }
+      } catch (error) {
+        console.error('Failed to update dimensions:', error);
+      }
+    }
+    
+    setResizingNode(null);
+    setTempHeight(null);
+    setTempWidth(null);
+    setIsResizing(false);
   };
 
   const saveChartTitle = async (newTitle) => {
@@ -422,9 +510,18 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               viewBox={`0 0 ${maxX} ${maxY}`}
               preserveAspectRatio="xMidYMin meet"
               className="bg-white"
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
+              onMouseMove={(e) => {
+                handleMouseMove(e);
+                handleResizeMouseMove(e);
+              }}
+              onMouseUp={() => {
+                handleMouseUp();
+                handleResizeMouseUp();
+              }}
+              onMouseLeave={() => {
+                handleMouseUp();
+                handleResizeMouseUp();
+              }}
             >
               {/* Grid pattern */}
               <defs>
@@ -443,8 +540,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 </pattern>
               </defs>
               
-              {/* Grid background - only show when dragging */}
-              {draggedNode && (
+              {/* Grid background - show when dragging or resizing */}
+              {(draggedNode || resizingNode) && (
                 <rect
                   width={maxX}
                   height={maxY}
@@ -534,30 +631,55 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               
               const colors = getUnitColor(node.unit);
               
-              // Calculate font size based on text length for unit name only
-              const chars_per_line = 33;
-              const estimated_lines = Math.max(1, Math.ceil(node.unit.name.length / chars_per_line));
-              let fontSize = '11px';
-              let lineHeight = '1.4';
-              
-              if (estimated_lines === 1) {
-                fontSize = '13px'; // Larger for single line
-                lineHeight = '1.3';
-              } else if (estimated_lines === 2) {
-                fontSize = '12px'; // Medium for 2 lines
-                lineHeight = '1.3';
-              } else if (estimated_lines === 3) {
-                fontSize = '11px'; // Standard for 3 lines
-                lineHeight = '1.3';
-              } else {
-                fontSize = '10px'; // Smaller for 4+ lines
-                lineHeight = '1.3';
-              }
-              
               // Use temp position if this node is being dragged
               const isBeingDragged = draggedNode?.unit_id === node.unit_id;
               const x = isBeingDragged && tempPosition ? tempPosition.x : node.x;
               const y = isBeingDragged && tempPosition ? tempPosition.y : node.y;
+              
+              // Use temp dimensions if this node is being resized
+              const isBeingResized = resizingNode?.unit_id === node.unit_id;
+              const height = isBeingResized && tempHeight ? tempHeight : node.height;
+              const width = isBeingResized && tempWidth ? tempWidth : node.width;
+              
+              // Calculate font size dynamically based on available space
+              // Available width for text: width - 100px (left strip) - 16px (padding)
+              // Available height: height - 8px (padding)
+              const text_length = node.unit.name.length;
+              const availableWidth = width - 116;
+              const availableHeight = height - 8;
+              
+              // Calculate optimal font size based on space
+              // Start with larger font and reduce if needed
+              let fontSize = '12px';
+              let lineHeight = '1.2';
+              
+              // Estimate how many characters fit per line at different font sizes
+              // 12px font: ~6px per char, 10px font: ~5px per char, 8px font: ~4px per char
+              const estimateLines = (fontPx, charWidth) => {
+                const charsPerLine = Math.floor(availableWidth / charWidth);
+                return Math.ceil(text_length / charsPerLine);
+              };
+              
+              // Try different font sizes and pick the largest that fits
+              if (estimateLines(12, 6) * 12 * 1.2 <= availableHeight) {
+                fontSize = '12px';
+                lineHeight = '1.2';
+              } else if (estimateLines(11, 5.5) * 11 * 1.2 <= availableHeight) {
+                fontSize = '11px';
+                lineHeight = '1.2';
+              } else if (estimateLines(10, 5) * 10 * 1.2 <= availableHeight) {
+                fontSize = '10px';
+                lineHeight = '1.2';
+              } else if (estimateLines(9, 4.5) * 9 * 1.15 <= availableHeight) {
+                fontSize = '9px';
+                lineHeight = '1.15';
+              } else if (estimateLines(8, 4) * 8 * 1.1 <= availableHeight) {
+                fontSize = '8px';
+                lineHeight = '1.1';
+              } else {
+                fontSize = '7px';
+                lineHeight = '1.1';
+              }
               
               // Debug log for first node only
               if (node.unit.unit_type === 'director_general' && draggedNode) {
@@ -594,8 +716,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   <rect
                     x={x}
                     y={y}
-                    width={node.width}
-                    height={node.height}
+                    width={width}
+                    height={height}
                     fill={colors.stripOnly ? "#ffffff" : colors.bg}
                     stroke={isNearestParent ? "#10b981" : "#000000"}
                     strokeWidth={isNearestParent ? "4" : "3"}
@@ -609,7 +731,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       x={x + 1.5}
                       y={y + 1.5}
                       width="98.5"
-                      height={node.height - 3}
+                      height={height - 3}
                       fill={colors.bg}
                       stroke="none"
                       rx="4.5"
@@ -622,7 +744,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     x1={x + 40}
                     y1={y}
                     x2={x + 40}
-                    y2={y + node.height}
+                    y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
                   />
@@ -632,7 +754,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     x1={x + 70}
                     y1={y}
                     x2={x + 70}
-                    y2={y + node.height}
+                    y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
                   />
@@ -642,7 +764,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     x1={x + 100}
                     y1={y}
                     x2={x + 100}
-                    y2={y + node.height}
+                    y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
                   />
@@ -650,7 +772,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   {/* Code - first column in left strip (wider) */}
                   <text
                     x={x + 20}
-                    y={y + node.height / 2 + 4}
+                    y={y + height / 2 + 4}
                     fontSize="11"
                     fontWeight="bold"
                     fill="#000000"
@@ -662,7 +784,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   {/* Leadership count - second column in left strip */}
                   <text
                     x={x + 55}
-                    y={y + node.height / 2 + 4}
+                    y={y + height / 2 + 4}
                     fontSize="12"
                     fontWeight="bold"
                     fill="#000000"
@@ -674,7 +796,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   {/* Execution count - third column in left strip */}
                   <text
                     x={x + 85}
-                    y={y + node.height / 2 + 4}
+                    y={y + height / 2 + 4}
                     fontSize="12"
                     fontWeight="bold"
                     fill="#000000"
@@ -685,12 +807,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       : agg.execution_positions_count}
                   </text>
                   
-                  {/* Unit name - dynamic font size based on text length */}
+                  {/* Unit name - dynamic font size based on available space */}
                   <foreignObject
                     x={x + 104}
                     y={y + 4}
-                    width={node.width - 108}
-                    height={node.height - 8}
+                    width={width - 108}
+                    height={height - 8}
                   >
                     <div
                       style={{
@@ -714,6 +836,41 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       {node.unit.name}
                     </div>
                   </foreignObject>
+                  
+                  {/* Resize handle - bottom right corner as colored triangle */}
+                  {!isReadOnly && (
+                    <g
+                      onMouseDown={(e) => handleResizeMouseDown(e, node)}
+                      style={{ cursor: 'nwse-resize' }}
+                    >
+                      {/* Colored triangle matching unit color */}
+                      <path
+                        d={`M ${x + width - 20} ${y + height} L ${x + width} ${y + height} L ${x + width} ${y + height - 20} Z`}
+                        fill={colors.bg}
+                        opacity="0.8"
+                        style={{ pointerEvents: 'all' }}
+                      />
+                      {/* Small grip lines for visual feedback */}
+                      <line
+                        x1={x + width - 6}
+                        y1={y + height - 3}
+                        x2={x + width - 3}
+                        y2={y + height - 6}
+                        stroke="#ffffff"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1={x + width - 10}
+                        y1={y + height - 3}
+                        x2={x + width - 3}
+                        y2={y + height - 10}
+                        stroke="#ffffff"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </g>
+                  )}
                 </g>
               );
             })}

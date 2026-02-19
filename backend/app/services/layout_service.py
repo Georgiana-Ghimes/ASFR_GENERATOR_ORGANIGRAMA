@@ -23,24 +23,24 @@ START_Y = DG_Y + BOX_HEIGHT + VERTICAL_SPACING  # Where children of DG start
 
 def calculate_box_height(unit_name: str) -> int:
     """Calculate dynamic box height based on text length, aligned to 20px grid"""
-    # Approximate: 11px font, ~200px usable width (320 - 100 for left strip - margins)
-    # Average character width ~6px, so ~33 chars per line
-    chars_per_line = 33
-    estimated_lines = max(1, len(unit_name) // chars_per_line + (1 if len(unit_name) % chars_per_line > 0 else 0))
+    # MAXIMUM HEIGHT: 60px (3 grid cells)
+    # For longer text, we reduce font size instead of increasing height
+    # Use character count ranges calibrated for 10px font with word wrapping
     
-    # Each line aligned to 20px grid
-    # 1 line = 40px (2 grid cells)
-    # 2 lines = 40px (2 grid cells)
-    # 3 lines = 60px (3 grid cells)
-    # 4+ lines = 20px * lines
-    if estimated_lines == 1:
+    text_length = len(unit_name)
+    
+    # Character ranges calibrated to actual browser rendering
+    # Maximum height is 60px (3 grid cells)
+    if text_length <= 35:
+        # Short names: 1 line
         return 40  # 2 grid cells
-    elif estimated_lines == 2:
+    elif text_length <= 50:
+        # Medium names: 2 lines
         return 40  # 2 grid cells
-    elif estimated_lines == 3:
-        return 60  # 3 grid cells
     else:
-        return estimated_lines * 20  # 20px per line
+        # Longer names: 3 lines (MAXIMUM)
+        # Font will be reduced for very long text to fit in 3 lines
+        return 60  # 3 grid cells (MAXIMUM)
 
 
 def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
@@ -54,18 +54,26 @@ def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
     return max(BOX_WIDTH, children_width)
 
 
-def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layout: List[Dict], edges: List[Dict], parent_x: int = None, parent_y: int = None, is_root: bool = False):
+def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layout: List[Dict], edges: List[Dict], parent_x: int = None, parent_y: int = None, parent_height: int = None, is_root: bool = False):
     """Recursively position unit and children - use custom positions if available"""
     
     # Use custom position if available, otherwise use calculated position
     actual_x = unit.custom_x if unit.custom_x is not None else x
     actual_y = unit.custom_y if unit.custom_y is not None else y
     
-    # Calculate dynamic height based on name length
-    box_height = calculate_box_height(unit.name)
+    # Calculate dynamic height based on name length, or use custom height if set
+    if unit.custom_height is not None:
+        box_height = unit.custom_height
+    else:
+        box_height = calculate_box_height(unit.name)
     
-    # Director General always has width of 300px (same as Consiliu)
-    box_width = 300 if unit.unit_type.value == 'director_general' else BOX_WIDTH
+    # Director General always has width of 300px (same as Consiliu), or use custom width
+    if unit.custom_width is not None:
+        box_width = unit.custom_width
+    elif unit.unit_type.value == 'director_general':
+        box_width = 300
+    else:
+        box_width = BOX_WIDTH
     
     # Position current unit
     layout.append({
@@ -84,17 +92,19 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
             'leadership_count': unit.leadership_count,
             'execution_count': unit.execution_count,
             'custom_x': unit.custom_x,
-            'custom_y': unit.custom_y
+            'custom_y': unit.custom_y,
+            'custom_height': unit.custom_height,
+            'custom_width': unit.custom_width
         }
     })
     
     # Add edge from parent if exists (but NOT for root - consiliu edge is added separately)
-    if not is_root and parent_x is not None and parent_y is not None:
+    if not is_root and parent_x is not None and parent_y is not None and parent_height is not None:
         edges.append({
             'from': str(unit.parent_unit_id) if unit.parent_unit_id else 'consiliu',
             'to': str(unit.id),
             'from_x': parent_x + box_width // 2,
-            'from_y': parent_y + BOX_HEIGHT,
+            'from_y': parent_y + parent_height,
             'to_x': actual_x + box_width // 2,
             'to_y': actual_y
         })
@@ -120,7 +130,7 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
         child_center_x = current_x + child_width // 2 - BOX_WIDTH // 2
         
         # Recursively position child
-        position_unit_and_children(db, child, child_center_x, child_y, layout, edges, actual_x, actual_y, False)
+        position_unit_and_children(db, child, child_center_x, child_y, layout, edges, actual_x, actual_y, box_height, False)
         
         current_x += child_width + HORIZONTAL_SPACING
 
@@ -165,7 +175,7 @@ def generate_deterministic_layout(db: Session, version_id: UUID) -> Dict:
     })
     
     # Position DG and all descendants (mark as root to skip duplicate edge)
-    position_unit_and_children(db, root, dg_x, DG_Y, layout, edges, consiliu_center_x - consiliu_width // 2, CONSILIU_Y, is_root=True)
+    position_unit_and_children(db, root, dg_x, DG_Y, layout, edges, consiliu_center_x - consiliu_width // 2, CONSILIU_Y, CONSILIU_HEIGHT, is_root=True)
     
     return {
         'version_id': str(version_id),

@@ -56,6 +56,8 @@ class OrgUnit(Base):
     color = Column(String)
     custom_x = Column(Integer)  # Custom X position for manual layout
     custom_y = Column(Integer)  # Custom Y position for manual layout
+    custom_height = Column(Integer)  # Custom height for manual sizing (in pixels, must be multiple of 20)
+    custom_width = Column(Integer)  # Custom width for manual sizing (in pixels, must be multiple of 20)
     
     version = relationship("OrgVersion", back_populates="units")
     parent = relationship("OrgUnit", remote_side=[id], backref="children")

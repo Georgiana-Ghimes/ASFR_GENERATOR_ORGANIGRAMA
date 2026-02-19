@@ -46,6 +46,8 @@ class OrgUnitBase(BaseModel):
     color: Optional[str] = None
     custom_x: Optional[int] = None
     custom_y: Optional[int] = None
+    custom_height: Optional[int] = None
+    custom_width: Optional[int] = None
 
 class OrgUnitCreate(OrgUnitBase):
     version_id: UUID
@@ -61,6 +63,8 @@ class OrgUnitUpdate(BaseModel):
     color: Optional[str] = None
     custom_x: Optional[int] = None
     custom_y: Optional[int] = None
+    custom_height: Optional[int] = None
+    custom_width: Optional[int] = None
 
 class OrgUnit(OrgUnitBase):
     id: UUID
