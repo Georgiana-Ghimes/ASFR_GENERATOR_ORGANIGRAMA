@@ -269,7 +269,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       
       // Consiliu center X (always centered in canvas)
       const consiliuCenterX = maxX / 2;
-      const consiliuBottomY = 75; // 35 + 40
+      const consiliuBottomY = 80; // 40 + 40 (aligned to grid)
       
       // DG center X
       const dgCenterX = dgX + dgNode.width / 2;
@@ -498,11 +498,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 )}
               </g>
             
-            {/* Draw consiliu box in SVG - CENTERED in canvas */}
+            {/* Draw consiliu box in SVG - CENTERED in canvas, aligned to grid */}
             <g>
               <rect
                 x={(maxX - 300) / 2}
-                y="35"
+                y="40"
                 width="300"
                 height="40"
                 fill="white"
@@ -511,7 +511,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               />
               <text
                 x={maxX / 2}
-                y="60"
+                y="65"
                 fontSize="16"
                 fontWeight="bold"
                 textAnchor="middle"
@@ -533,6 +533,26 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               };
               
               const colors = getUnitColor(node.unit);
+              
+              // Calculate font size based on text length for unit name only
+              const chars_per_line = 33;
+              const estimated_lines = Math.max(1, Math.ceil(node.unit.name.length / chars_per_line));
+              let fontSize = '11px';
+              let lineHeight = '1.4';
+              
+              if (estimated_lines === 1) {
+                fontSize = '13px'; // Larger for single line
+                lineHeight = '1.3';
+              } else if (estimated_lines === 2) {
+                fontSize = '12px'; // Medium for 2 lines
+                lineHeight = '1.3';
+              } else if (estimated_lines === 3) {
+                fontSize = '11px'; // Standard for 3 lines
+                lineHeight = '1.3';
+              } else {
+                fontSize = '10px'; // Smaller for 4+ lines
+                lineHeight = '1.3';
+              }
               
               // Use temp position if this node is being dragged
               const isBeingDragged = draggedNode?.unit_id === node.unit_id;
@@ -665,7 +685,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       : agg.execution_positions_count}
                   </text>
                   
-                  {/* Unit name - text color adapts to background */}
+                  {/* Unit name - dynamic font size based on text length */}
                   <foreignObject
                     x={x + 104}
                     y={y + 4}
@@ -680,10 +700,10 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         textAlign: 'center',
-                        fontSize: '11px',
+                        fontSize: fontSize,
                         fontWeight: '600',
                         color: '#000000',
-                        lineHeight: '1.4',
+                        lineHeight: lineHeight,
                         padding: '4px 8px',
                         wordWrap: 'break-word',
                         overflow: 'hidden',

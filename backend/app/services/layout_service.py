@@ -15,26 +15,32 @@ HORIZONTAL_SPACING = 40
 VERTICAL_SPACING = 100
 
 # Fixed positions for header elements
-CONSILIU_Y = 35  # Consiliul de Conducere position (space for header text)
+CONSILIU_Y = 40  # Consiliul de Conducere position (aligned to 20px grid: 2 cells)
 CONSILIU_HEIGHT = 40
 DG_Y = CONSILIU_Y + CONSILIU_HEIGHT + 40  # Director General position
 START_Y = DG_Y + BOX_HEIGHT + VERTICAL_SPACING  # Where children of DG start
 
 
 def calculate_box_height(unit_name: str) -> int:
-    """Calculate dynamic box height based on text length"""
+    """Calculate dynamic box height based on text length, aligned to 20px grid"""
     # Approximate: 11px font, ~200px usable width (320 - 100 for left strip - margins)
     # Average character width ~6px, so ~33 chars per line
     chars_per_line = 33
     estimated_lines = max(1, len(unit_name) // chars_per_line + (1 if len(unit_name) % chars_per_line > 0 else 0))
     
-    # Single line: compact height (45px)
-    # Multiple lines: 15px per line + padding
+    # Each line aligned to 20px grid
+    # 1 line = 40px (2 grid cells)
+    # 2 lines = 40px (2 grid cells)
+    # 3 lines = 60px (3 grid cells)
+    # 4+ lines = 20px * lines
     if estimated_lines == 1:
-        return 45
+        return 40  # 2 grid cells
+    elif estimated_lines == 2:
+        return 40  # 2 grid cells
+    elif estimated_lines == 3:
+        return 60  # 3 grid cells
     else:
-        text_height = estimated_lines * 15 + 20  # More padding for multi-line
-        return max(50, text_height)
+        return estimated_lines * 20  # 20px per line
 
 
 def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
@@ -58,12 +64,15 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
     # Calculate dynamic height based on name length
     box_height = calculate_box_height(unit.name)
     
+    # Director General always has width of 300px (same as Consiliu)
+    box_width = 300 if unit.unit_type.value == 'director_general' else BOX_WIDTH
+    
     # Position current unit
     layout.append({
         'unit_id': str(unit.id),
         'x': actual_x,
         'y': actual_y,
-        'width': BOX_WIDTH,
+        'width': box_width,
         'height': box_height,
         'unit': {
             'id': str(unit.id),
@@ -84,9 +93,9 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
         edges.append({
             'from': str(unit.parent_unit_id) if unit.parent_unit_id else 'consiliu',
             'to': str(unit.id),
-            'from_x': parent_x + BOX_WIDTH // 2,
+            'from_x': parent_x + box_width // 2,
             'from_y': parent_y + BOX_HEIGHT,
-            'to_x': actual_x + BOX_WIDTH // 2,
+            'to_x': actual_x + box_width // 2,
             'to_y': actual_y
         })
     
@@ -101,7 +110,7 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
     total_width += HORIZONTAL_SPACING * (len(children) - 1)
     
     # Start position for children (centered under parent)
-    child_start_x = actual_x + (BOX_WIDTH - total_width) // 2
+    child_start_x = actual_x + (box_width - total_width) // 2
     child_y = actual_y + box_height + VERTICAL_SPACING
     
     current_x = child_start_x
@@ -140,9 +149,10 @@ def generate_deterministic_layout(db: Session, version_id: UUID) -> Dict:
     # Consiliu and DG are centered in canvas
     consiliu_center_x = canvas_width // 2
     consiliu_width = 300
+    dg_width = 300  # DG has same width as Consiliu
     
-    # Center the Director General horizontally
-    dg_x = consiliu_center_x - BOX_WIDTH // 2
+    # Center the Director General horizontally (same width as Consiliu)
+    dg_x = consiliu_center_x - dg_width // 2
     
     # Add edge from Consiliu to DG - line starts from CENTER of consiliu box
     edges.append({
