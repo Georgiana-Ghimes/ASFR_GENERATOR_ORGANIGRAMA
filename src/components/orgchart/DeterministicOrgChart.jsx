@@ -649,37 +649,50 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               const availableHeight = height - 8;
               
               // Calculate optimal font size based on space
-              // Start with larger font and reduce if needed
-              let fontSize = '12px';
+              // Use height as primary factor for font size, then check if text fits width
+              let fontSize = '10px';
               let lineHeight = '1.2';
               
               // Estimate how many characters fit per line at different font sizes
-              // 12px font: ~6px per char, 10px font: ~5px per char, 8px font: ~4px per char
               const estimateLines = (fontPx, charWidth) => {
                 const charsPerLine = Math.floor(availableWidth / charWidth);
                 return Math.ceil(text_length / charsPerLine);
               };
               
-              // Try different font sizes and pick the largest that fits
-              if (estimateLines(12, 6) * 12 * 1.2 <= availableHeight) {
-                fontSize = '12px';
-                lineHeight = '1.2';
-              } else if (estimateLines(11, 5.5) * 11 * 1.2 <= availableHeight) {
-                fontSize = '11px';
-                lineHeight = '1.2';
-              } else if (estimateLines(10, 5) * 10 * 1.2 <= availableHeight) {
-                fontSize = '10px';
-                lineHeight = '1.2';
-              } else if (estimateLines(9, 4.5) * 9 * 1.15 <= availableHeight) {
-                fontSize = '9px';
-                lineHeight = '1.15';
-              } else if (estimateLines(8, 4) * 8 * 1.1 <= availableHeight) {
-                fontSize = '8px';
-                lineHeight = '1.1';
-              } else {
-                fontSize = '7px';
-                lineHeight = '1.1';
+              // Calculate font size based on available height
+              // More height = larger font possible
+              const maxFontByHeight = Math.floor(availableHeight / 1.5); // Conservative estimate
+              
+              // Try progressively larger fonts and pick the largest that fits
+              const fontSizes = [
+                { size: 16, charWidth: 8, lineHeight: 1.3 },
+                { size: 14, charWidth: 7, lineHeight: 1.3 },
+                { size: 13, charWidth: 6.5, lineHeight: 1.2 },
+                { size: 12, charWidth: 6, lineHeight: 1.2 },
+                { size: 11, charWidth: 5.5, lineHeight: 1.2 },
+                { size: 10, charWidth: 5, lineHeight: 1.2 },
+                { size: 9, charWidth: 4.5, lineHeight: 1.15 },
+                { size: 8, charWidth: 4, lineHeight: 1.1 },
+                { size: 7, charWidth: 3.5, lineHeight: 1.1 }
+              ];
+              
+              // Find the largest font that fits both width and height
+              let selectedFont = fontSizes[fontSizes.length - 1]; // Default to smallest
+              
+              for (const font of fontSizes) {
+                if (font.size > maxFontByHeight) continue; // Skip if too large for height
+                
+                const lines = estimateLines(font.size, font.charWidth);
+                const totalHeight = lines * font.size * font.lineHeight;
+                
+                if (totalHeight <= availableHeight) {
+                  selectedFont = font;
+                  break; // Found the largest that fits
+                }
               }
+              
+              fontSize = `${selectedFont.size}px`;
+              lineHeight = `${selectedFont.lineHeight}`;
               
               // Debug log for first node only
               if (node.unit.unit_type === 'director_general' && draggedNode) {
