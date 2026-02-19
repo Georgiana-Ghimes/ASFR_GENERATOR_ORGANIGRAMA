@@ -312,8 +312,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     : 900;
 
   return (
-    <div className="w-full h-full overflow-auto bg-white">
-      <div className="p-4" style={{ minWidth: '1400px', minHeight: '900px' }}>
+    <div className="w-full h-full overflow-hidden bg-white">
+      <div className="w-full h-full overflow-auto p-4">
         {/* Top row: Legend (stânga) | Director (dreapta) */}
         <div className="flex justify-between items-start mb-2">
           {/* Legend - stânga sus */}
@@ -404,9 +404,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             
             <svg 
               ref={svgRef}
-              width={maxX} 
-              height={maxY} 
-              className="bg-white mx-auto"
+              width="100%" 
+              height="100%" 
+              viewBox={`0 0 ${maxX} ${maxY}`}
+              preserveAspectRatio="xMidYMin meet"
+              className="bg-white"
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
