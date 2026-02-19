@@ -565,44 +565,48 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     opacity={isBeingDragged ? 0.7 : 1}
                   />
                   
-                  {/* Header with code and counts - colored */}
+                  {/* Left colored strip with code and numbers */}
                   <rect
                     x={x}
                     y={y}
-                    width={node.width}
-                    height="20"
+                    width="30"
+                    height={node.height}
                     fill={colors.bg}
                     rx="4"
                     opacity={isBeingDragged ? 0.7 : 1}
                   />
                   
-                  {/* Code */}
+                  {/* Code - vertical text in left strip */}
                   <text
-                    x={x + 5}
-                    y={y + 14}
-                    fontSize="10"
+                    x={x + 15}
+                    y={y + 20}
+                    fontSize="9"
                     fontWeight="bold"
                     fill="#000000"
+                    textAnchor="middle"
+                    writingMode="tb"
                   >
                     {node.unit.stas_code}
                   </text>
                   
-                  {/* Leadership count */}
+                  {/* Leadership count - in left strip */}
                   <text
-                    x={x + node.width - 30}
-                    y={y + 14}
+                    x={x + 15}
+                    y={y + node.height - 35}
                     fontSize="10"
+                    fontWeight="bold"
                     fill="#000000"
                     textAnchor="middle"
                   >
                     {agg.leadership_positions_count}
                   </text>
                   
-                  {/* Execution count or recursive total for parent units */}
+                  {/* Execution count - in left strip */}
                   <text
-                    x={x + node.width - 10}
-                    y={y + 14}
+                    x={x + 15}
+                    y={y + node.height - 15}
                     fontSize="10"
+                    fontWeight="bold"
                     fill="#000000"
                     textAnchor="middle"
                   >
@@ -611,12 +615,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       : agg.execution_positions_count}
                   </text>
                   
-                  {/* Unit name - multi-line with foreignObject on white background */}
+                  {/* Unit name - on white background to the right */}
                   <foreignObject
-                    x={x + 4}
-                    y={y + 24}
-                    width={node.width - 8}
-                    height={node.height - 26}
+                    x={x + 34}
+                    y={y + 4}
+                    width={node.width - 38}
+                    height={node.height - 8}
                   >
                     <div
                       style={{
@@ -630,7 +634,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                         fontWeight: '600',
                         color: '#000000',
                         lineHeight: '1.4',
-                        padding: '6px 4px',
+                        padding: '4px',
                         wordWrap: 'break-word',
                         overflow: 'hidden',
                         hyphens: 'auto',
