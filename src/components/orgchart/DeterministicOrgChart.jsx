@@ -649,7 +649,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               // Calculate font size dynamically based on available space
               // Standardize font size for boxes with same height and similar line count
               const text_length = node.unit.name.length;
-              const availableWidth = width - 116;
+              const availableWidth = width - 91; // Updated: 75px left strip + 16px padding
               const availableHeight = height - 12;
               
               let fontSize = '10px';
@@ -769,7 +769,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     <rect
                       x={x + 1.5}
                       y={y + 1.5}
-                      width="98.5"
+                      width="73.5"
                       height={height - 3}
                       fill={colors.bg}
                       stroke="none"
@@ -780,9 +780,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Vertical line between code and leadership count - full height */}
                   <line
-                    x1={x + 40}
+                    x1={x + 25}
                     y1={y}
-                    x2={x + 40}
+                    x2={x + 25}
                     y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
@@ -790,9 +790,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Vertical line between leadership and execution count - full height */}
                   <line
-                    x1={x + 70}
+                    x1={x + 50}
                     y1={y}
-                    x2={x + 70}
+                    x2={x + 50}
                     y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
@@ -800,29 +800,31 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Vertical line between numbers and name - full height */}
                   <line
-                    x1={x + 100}
+                    x1={x + 75}
                     y1={y}
-                    x2={x + 100}
+                    x2={x + 75}
                     y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
                   />
                   
-                  {/* Code - first column in left strip (wider) */}
+                  {/* Code - first column in left strip (narrower, vertical text centered) */}
                   <text
-                    x={x + 20}
-                    y={y + height / 2 + 4}
+                    x={x + 12.5}
+                    y={y + height / 2}
                     fontSize="11"
                     fontWeight="bold"
                     fill="#000000"
                     textAnchor="middle"
+                    dominantBaseline="middle"
+                    transform={`rotate(-90, ${x + 12.5}, ${y + height / 2})`}
                   >
                     {node.unit.stas_code}
                   </text>
                   
                   {/* Leadership count - second column in left strip */}
                   <text
-                    x={x + 55}
+                    x={x + 37.5}
                     y={y + height / 2 + 4}
                     fontSize="12"
                     fontWeight="bold"
@@ -834,7 +836,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Execution count - third column in left strip */}
                   <text
-                    x={x + 85}
+                    x={x + 62.5}
                     y={y + height / 2 + 4}
                     fontSize="12"
                     fontWeight="bold"
@@ -848,9 +850,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Unit name - dynamic font size based on available space */}
                   <foreignObject
-                    x={x + 104}
+                    x={x + 79}
                     y={y + 3}
-                    width={width - 108}
+                    width={width - 83}
                     height={height - 6}
                   >
                     <div
