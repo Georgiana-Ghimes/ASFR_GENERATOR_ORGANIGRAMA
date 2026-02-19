@@ -240,16 +240,42 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     return { bg: '#ffffff', border: '#d1d5db', text: '#000000' };
   };
 
+  // Calculate canvas size - ensure minimum width for consiliu
+  const consiliu_height = 150;
+  const minWidth = 1400;
+  const maxX = layoutData && layoutData.layout.length > 0 
+    ? Math.max(minWidth, ...layoutData.layout.map(n => n.x + n.width + 100))
+    : minWidth;
+  const maxY = layoutData && layoutData.layout.length > 0 
+    ? Math.max(...layoutData.layout.map(n => n.y + n.height)) + 100 
+    : 900;
+
   const drawOrthogonalEdge = (edge) => {
-    // Special case for consiliu to DG - simple vertical line
+    // Special case for consiliu to DG - dynamic vertical line
     if (edge.from === 'consiliu') {
+      // Find the actual DG node position (might be custom or temp)
+      const dgNode = layoutData.layout.find(n => n.unit.unit_type === 'director_general');
+      if (!dgNode) return null;
+      
+      // Check if DG is being dragged
+      const isDGDragged = draggedNode?.unit_id === dgNode.unit_id;
+      const dgX = isDGDragged && tempPosition ? tempPosition.x : dgNode.x;
+      const dgY = isDGDragged && tempPosition ? tempPosition.y : dgNode.y;
+      
+      // Consiliu center X (always centered in canvas)
+      const consiliuCenterX = maxX / 2;
+      const consiliuBottomY = 75; // 35 + 40
+      
+      // DG center X
+      const dgCenterX = dgX + dgNode.width / 2;
+      
       return (
         <g key={`${edge.from}-${edge.to}`}>
           <line
-            x1={edge.from_x}
-            y1={edge.from_y}
-            x2={edge.to_x}
-            y2={edge.to_y}
+            x1={consiliuCenterX}
+            y1={consiliuBottomY}
+            x2={dgCenterX}
+            y2={dgY}
             stroke="#94a3b8"
             strokeWidth="2"
           />
@@ -292,24 +318,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       </g>
     );
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">Generare organigramă...</div>
-      </div>
-    );
-  }
-
-  // Calculate canvas size - ensure minimum width for consiliu
-  const consiliu_height = 150;
-  const minWidth = 1400;
-  const maxX = layoutData && layoutData.layout.length > 0 
-    ? Math.max(minWidth, ...layoutData.layout.map(n => n.x + n.width + 100))
-    : minWidth;
-  const maxY = layoutData && layoutData.layout.length > 0 
-    ? Math.max(...layoutData.layout.map(n => n.y + n.height)) + 100 
-    : 900;
 
   return (
     <div className="w-full h-full overflow-hidden bg-white">
