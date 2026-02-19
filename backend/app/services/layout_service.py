@@ -9,8 +9,8 @@ from typing import List, Dict, Tuple
 from app.models import OrgUnit
 from app.services.aggregation_service import get_hierarchy_level
 
-BOX_WIDTH = 180
-BOX_HEIGHT = 90
+BOX_WIDTH = 320
+BOX_HEIGHT = 45  # Minimum height for single line text
 HORIZONTAL_SPACING = 40
 VERTICAL_SPACING = 100
 
@@ -19,6 +19,22 @@ CONSILIU_Y = 35  # Consiliul de Conducere position (space for header text)
 CONSILIU_HEIGHT = 40
 DG_Y = CONSILIU_Y + CONSILIU_HEIGHT + 40  # Director General position
 START_Y = DG_Y + BOX_HEIGHT + VERTICAL_SPACING  # Where children of DG start
+
+
+def calculate_box_height(unit_name: str) -> int:
+    """Calculate dynamic box height based on text length"""
+    # Approximate: 11px font, ~200px usable width (320 - 100 for left strip - margins)
+    # Average character width ~6px, so ~33 chars per line
+    chars_per_line = 33
+    estimated_lines = max(1, len(unit_name) // chars_per_line + (1 if len(unit_name) % chars_per_line > 0 else 0))
+    
+    # Single line: compact height (45px)
+    # Multiple lines: 15px per line + padding
+    if estimated_lines == 1:
+        return 45
+    else:
+        text_height = estimated_lines * 15 + 20  # More padding for multi-line
+        return max(50, text_height)
 
 
 def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
@@ -39,13 +55,16 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
     actual_x = unit.custom_x if unit.custom_x is not None else x
     actual_y = unit.custom_y if unit.custom_y is not None else y
     
+    # Calculate dynamic height based on name length
+    box_height = calculate_box_height(unit.name)
+    
     # Position current unit
     layout.append({
         'unit_id': str(unit.id),
         'x': actual_x,
         'y': actual_y,
         'width': BOX_WIDTH,
-        'height': BOX_HEIGHT,
+        'height': box_height,
         'unit': {
             'id': str(unit.id),
             'stas_code': unit.stas_code,
@@ -83,7 +102,7 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
     
     # Start position for children (centered under parent)
     child_start_x = actual_x + (BOX_WIDTH - total_width) // 2
-    child_y = actual_y + BOX_HEIGHT + VERTICAL_SPACING
+    child_y = actual_y + box_height + VERTICAL_SPACING
     
     current_x = child_start_x
     
