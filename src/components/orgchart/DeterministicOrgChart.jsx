@@ -426,7 +426,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         {/* Top row: Legend (stânga) | Director (dreapta) */}
         <div className="flex justify-between items-start mb-2">
           {/* Legend - stânga sus */}
-          <div className="text-[9px] border-2 border-gray-800 p-2 bg-gray-50">
+          <div className="text-[11px] border-2 border-gray-800 p-3 bg-gray-50">
             {layoutData && layoutData.layout.length > 0 && (() => {
               // Calculate totals from all units
               let totalLeadership = 0;
@@ -453,20 +453,20 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
 
               return (
                 <>
-                  <div className="font-bold mb-1">TOTAL POSTURI: {totalPosts}</div>
+                  <div className="font-bold mb-1.5">TOTAL POSTURI: {totalPosts}</div>
                   <div className="mb-1">Funcții de conducere: {totalLeadership}</div>
-                  <div className="ml-2">- Director general: {dgCount}</div>
-                  <div className="ml-2">- Director: {directorCount}</div>
-                  <div className="ml-2">- Inspector șef teritorial: {inspectorCount}</div>
-                  <div className="ml-2">- Șef serviciu: {serviceCount}</div>
-                  <div className="mt-1">Posturi de execuție: {totalExecution}</div>
+                  <div className="ml-3">- Director general: {dgCount}</div>
+                  <div className="ml-3">- Director: {directorCount}</div>
+                  <div className="ml-3">- Inspector șef teritorial: {inspectorCount}</div>
+                  <div className="ml-3">- Șef serviciu: {serviceCount}</div>
+                  <div className="mt-1.5">Posturi de execuție: {totalExecution}</div>
                 </>
               );
             })()}
           </div>
 
           {/* Director - dreapta sus */}
-          <div className="text-right text-[10px] text-gray-900">
+          <div className="text-right text-[13px] text-gray-900">
             <div className="font-bold">DIRECTOR GENERAL</div>
             <div>Petru BOGDAN</div>
           </div>
