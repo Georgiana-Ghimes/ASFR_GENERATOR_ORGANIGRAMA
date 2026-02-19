@@ -9,6 +9,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [editableTitle, setEditableTitle] = useState('CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
   const [versionData, setVersionData] = useState(null);
   const [draggedNode, setDraggedNode] = useState(null);
+  const [draggedFixedElement, setDraggedFixedElement] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [tempPosition, setTempPosition] = useState(null);
   const [nearestParent, setNearestParent] = useState(null);
@@ -20,6 +21,15 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
   const svgRef = React.useRef(null);
 
+  // Fixed elements positions (legend, director, consiliu, headers)
+  const [fixedElements, setFixedElements] = useState({
+    legend: { x: 20, y: 20, width: 200, height: 100 },
+    director: { x: 1180, y: 20, width: 200, height: 60 },
+    header1: { x: 500, y: 120, width: 400, height: 20 },
+    header2: { x: 500, y: 140, width: 400, height: 20 },
+    consiliu: { x: 600, y: 180, width: 300, height: 60 }
+  });
+
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
   const GRID_SIZE = 20; // Grid cell size in pixels
   
@@ -29,6 +39,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
 
   useEffect(() => {
     if (!versionId) return;
+    
+    // Load fixed elements positions from localStorage
+    const savedPositions = localStorage.getItem(`fixed_elements_${versionId}`);
+    if (savedPositions) {
+      setFixedElements(JSON.parse(savedPositions));
+    }
     
     const fetchLayout = async () => {
       try {
@@ -195,6 +211,74 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     setDraggedNode(null);
     setTempPosition(null);
     setNearestParent(null);
+    setIsDragging(false);
+  };
+
+  // Fixed elements drag handlers
+  const handleFixedElementMouseDown = (e, elementKey) => {
+    if (isReadOnly) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const svg = e.currentTarget.closest('svg');
+    if (!svg) return;
+    
+    const svgRect = svg.getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    const element = fixedElements[elementKey];
+    setDraggedFixedElement(elementKey);
+    setIsDragging(false);
+    setDragOffset({
+      x: mouseX - element.x,
+      y: mouseY - element.y
+    });
+    setTempPosition({ x: element.x, y: element.y });
+  };
+
+  const handleFixedElementMouseMove = (e) => {
+    if (!draggedFixedElement) return;
+    
+    e.preventDefault();
+    setIsDragging(true);
+    
+    const svgRect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    const rawX = mouseX - dragOffset.x;
+    const rawY = mouseY - dragOffset.y;
+    
+    // Snap to grid
+    const newX = snapToGrid(rawX);
+    const newY = snapToGrid(rawY);
+    
+    setTempPosition({ x: newX, y: newY });
+  };
+
+  const handleFixedElementMouseUp = () => {
+    if (!draggedFixedElement || !tempPosition) return;
+    
+    const wasDragging = isDragging;
+    
+    if (wasDragging) {
+      // Save new position
+      const newPositions = {
+        ...fixedElements,
+        [draggedFixedElement]: {
+          ...fixedElements[draggedFixedElement],
+          x: tempPosition.x,
+          y: tempPosition.y
+        }
+      };
+      setFixedElements(newPositions);
+      localStorage.setItem(`fixed_elements_${versionId}`, JSON.stringify(newPositions));
+    }
+    
+    setDraggedFixedElement(null);
+    setTempPosition(null);
     setIsDragging(false);
   };
 
@@ -423,55 +507,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   return (
     <div className="w-full h-full overflow-hidden bg-white">
       <div className="w-full h-full overflow-auto p-4">
-        {/* Top row: Legend (stânga) | Director (dreapta) */}
-        <div className="flex justify-between items-start mb-2">
-          {/* Legend - stânga sus */}
-          <div className="text-[11px] border-2 border-gray-800 p-3 bg-gray-50">
-            {layoutData && layoutData.layout.length > 0 && (() => {
-              // Calculate totals from all units
-              let totalLeadership = 0;
-              let totalExecution = 0;
-              let dgCount = 0;
-              let directorCount = 0;
-              let deptCount = 0;
-              let inspectorCount = 0;
-              let serviceCount = 0;
-
-              layoutData.layout.forEach(node => {
-                const agg = aggregates[node.unit_id] || { leadership_positions_count: 0, execution_positions_count: 0 };
-                totalLeadership += agg.leadership_positions_count;
-                totalExecution += agg.execution_positions_count;
-
-                // Count by type
-                if (node.unit.unit_type === 'director_general') dgCount += agg.leadership_positions_count;
-                else if (node.unit.unit_type === 'directie') directorCount += agg.leadership_positions_count;
-                else if (node.unit.unit_type === 'serviciu') serviceCount += agg.leadership_positions_count;
-                else if (node.unit.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
-              });
-
-              const totalPosts = totalLeadership + totalExecution;
-
-              return (
-                <>
-                  <div className="font-bold mb-1.5">TOTAL POSTURI: {totalPosts}</div>
-                  <div className="mb-1">Funcții de conducere: {totalLeadership}</div>
-                  <div className="ml-3">- Director general: {dgCount}</div>
-                  <div className="ml-3">- Director: {directorCount}</div>
-                  <div className="ml-3">- Inspector șef teritorial: {inspectorCount}</div>
-                  <div className="ml-3">- Șef serviciu: {serviceCount}</div>
-                  <div className="mt-1.5">Posturi de execuție: {totalExecution}</div>
-                </>
-              );
-            })()}
-          </div>
-
-          {/* Director - dreapta sus */}
-          <div className="text-right text-[13px] text-gray-900">
-            <div className="font-bold">DIRECTOR GENERAL</div>
-            <div>Petru BOGDAN</div>
-          </div>
-        </div>
-
         {!layoutData || !layoutData.layout.length ? (
           <div className="p-8 text-center text-gray-500">
             Nu există structură organizațională. Adaugă unități pentru a construi organigrama.
@@ -520,14 +555,17 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               className="bg-white"
               onMouseMove={(e) => {
                 handleMouseMove(e);
+                handleFixedElementMouseMove(e);
                 handleResizeMouseMove(e);
               }}
               onMouseUp={() => {
                 handleMouseUp();
+                handleFixedElementMouseUp();
                 handleResizeMouseUp();
               }}
               onMouseLeave={() => {
                 handleMouseUp();
+                handleFixedElementMouseUp();
                 handleResizeMouseUp();
               }}
             >
@@ -549,44 +587,173 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               </defs>
               
               {/* Grid background - show when dragging or resizing */}
-              {(draggedNode || resizingNode) && (
+              {(draggedNode || draggedFixedElement || resizingNode) && (
                 <rect
+                  x="0"
+                  y="0"
                   width={maxX}
                   height={maxY}
                   fill="url(#grid)"
                 />
               )}
-              
-              {/* Header text - centered with consiliu */}
-              <text
-                x={maxX / 2}
-                y="10"
-                fontSize="10"
-                fontWeight="bold"
-                textAnchor="middle"
-                fill="#000000"
+
+              {/* Legend - draggable box */}
+              <g
+                onMouseDown={(e) => handleFixedElementMouseDown(e, 'legend')}
+                style={{ cursor: isReadOnly ? 'default' : 'move' }}
               >
-                AUTORITATEA DE SIGURANȚĂ FEROVIARĂ ROMÂNĂ - ASFR
-              </text>
+                <rect
+                  x={draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x}
+                  y={draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y}
+                  width={fixedElements.legend.width}
+                  height={fixedElements.legend.height}
+                  fill="transparent"
+                  stroke={draggedFixedElement === 'legend' ? '#3b82f6' : 'transparent'}
+                  strokeWidth="2"
+                />
+                <foreignObject 
+                  x={draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x} 
+                  y={draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y} 
+                  width={fixedElements.legend.width} 
+                  height={fixedElements.legend.height}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  <div className="text-[9px] border-2 border-gray-800 p-2 bg-gray-50 h-full">
+                    {(() => {
+                      // Calculate totals from all units
+                      let totalLeadership = 0;
+                      let totalExecution = 0;
+                      let dgCount = 0;
+                      let directorCount = 0;
+                      let inspectorCount = 0;
+                      let serviceCount = 0;
+
+                      layoutData.layout.forEach(node => {
+                        const agg = aggregates[node.unit_id] || { leadership_positions_count: 0, execution_positions_count: 0 };
+                        totalLeadership += agg.leadership_positions_count;
+                        totalExecution += agg.execution_positions_count;
+
+                        // Count by type
+                        if (node.unit.unit_type === 'director_general') dgCount += agg.leadership_positions_count;
+                        else if (node.unit.unit_type === 'directie') directorCount += agg.leadership_positions_count;
+                        else if (node.unit.unit_type === 'serviciu') serviceCount += agg.leadership_positions_count;
+                        else if (node.unit.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
+                      });
+
+                      const totalPosts = totalLeadership + totalExecution;
+
+                      return (
+                        <>
+                          <div className="font-bold mb-1">TOTAL POSTURI: {totalPosts}</div>
+                          <div className="mb-0.5 text-[8px]">Funcții de conducere: {totalLeadership}</div>
+                          <div className="ml-2 text-[7px]">- Director general: {dgCount}</div>
+                          <div className="ml-2 text-[7px]">- Director: {directorCount}</div>
+                          <div className="ml-2 text-[7px]">- Inspector șef: {inspectorCount}</div>
+                          <div className="ml-2 text-[7px]">- Șef serviciu: {serviceCount}</div>
+                          <div className="mt-0.5 text-[8px]">Posturi de execuție: {totalExecution}</div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </foreignObject>
+              </g>
+
+              {/* Director - draggable box */}
+              <g
+                onMouseDown={(e) => handleFixedElementMouseDown(e, 'director')}
+                style={{ cursor: isReadOnly ? 'default' : 'move' }}
+              >
+                <rect
+                  x={draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x}
+                  y={draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y}
+                  width={fixedElements.director.width}
+                  height={fixedElements.director.height}
+                  fill="white"
+                  stroke={draggedFixedElement === 'director' ? '#3b82f6' : '#d1d5db'}
+                  strokeWidth="1"
+                />
+                <text
+                  x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + fixedElements.director.width - 10}
+                  y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 20}
+                  fontSize="11"
+                  fontWeight="bold"
+                  textAnchor="end"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  DIRECTOR GENERAL
+                </text>
+                <text
+                  x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + fixedElements.director.width - 10}
+                  y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 40}
+                  fontSize="11"
+                  textAnchor="end"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  Petru BOGDAN
+                </text>
+              </g>
+
+              {/* Header 1 - draggable */}
+              <g
+                onMouseDown={(e) => handleFixedElementMouseDown(e, 'header1')}
+                style={{ cursor: isReadOnly ? 'default' : 'move' }}
+              >
+                <rect
+                  x={draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x}
+                  y={draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y}
+                  width={fixedElements.header1.width}
+                  height={fixedElements.header1.height}
+                  fill="transparent"
+                  stroke={draggedFixedElement === 'header1' ? '#3b82f6' : 'transparent'}
+                  strokeWidth="2"
+                />
+                <text
+                  x={(draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x) + fixedElements.header1.width / 2}
+                  y={(draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y) + 14}
+                  fontSize="10"
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  AUTORITATEA DE SIGURANȚĂ FEROVIARĂ ROMÂNĂ - ASFR
+                </text>
+              </g>
               
-              {/* Editable title with hover background */}
-              <g>
+              {/* Header 2 - draggable and editable title */}
+              <g
+                onMouseDown={(e) => handleFixedElementMouseDown(e, 'header2')}
+                style={{ cursor: isReadOnly ? 'default' : 'move' }}
+              >
+                <rect
+                  x={draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x}
+                  y={draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y}
+                  width={fixedElements.header2.width}
+                  height={fixedElements.header2.height}
+                  fill="transparent"
+                  stroke={draggedFixedElement === 'header2' ? '#3b82f6' : 'transparent'}
+                  strokeWidth="2"
+                />
                 {!isReadOnly && (
                   <rect
-                    x={maxX / 2 - 300}
-                    y="14"
-                    width="600"
-                    height="14"
+                    x={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x)}
+                    y={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y)}
+                    width={fixedElements.header2.width}
+                    height={fixedElements.header2.height}
                     fill="transparent"
                     className="hover:fill-gray-100"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setIsEditingTitle(true)}
+                    style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditingTitle(true);
+                    }}
                   />
                 )}
-                
                 <text
-                  x={maxX / 2}
-                  y="24"
+                  x={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x) + fixedElements.header2.width / 2}
+                  y={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y) + 14}
                   fontSize="10"
                   textAnchor="middle"
                   fill="#000000"
@@ -597,30 +764,33 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 >
                   {editableTitle}
                 </text>
-                
                 {!isReadOnly && !isEditingTitle && (
                   <title>Click pentru a edita</title>
                 )}
               </g>
             
-            {/* Draw consiliu box in SVG - CENTERED in canvas, snapped to grid */}
-            <g>
+            {/* Consiliu - draggable box */}
+            <g
+              onMouseDown={(e) => handleFixedElementMouseDown(e, 'consiliu')}
+              style={{ cursor: isReadOnly ? 'default' : 'move' }}
+            >
               <rect
-                x={Math.floor((maxX - 300) / 2 / 20) * 20}
-                y="40"
-                width="300"
-                height="40"
+                x={draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x}
+                y={draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y}
+                width={fixedElements.consiliu.width}
+                height={fixedElements.consiliu.height}
                 fill="white"
                 stroke="#1f2937"
                 strokeWidth="2"
               />
               <text
-                x={Math.floor((maxX - 300) / 2 / 20) * 20 + 150}
-                y="65"
+                x={(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x) + fixedElements.consiliu.width / 2}
+                y={(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y) + 35}
                 fontSize="16"
                 fontWeight="bold"
                 textAnchor="middle"
                 fill="#000000"
+                style={{ pointerEvents: 'none' }}
               >
                 CONSILIUL DE CONDUCERE
               </text>
