@@ -219,11 +219,16 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const getUnitColor = (unit) => {
     // Default colors mapping - exact colors from the image
     const colorMap = {
-      '#86C67C': { bg: '#86C67C', border: '#6BA85C', text: '#000000' },
-      '#E8B4D4': { bg: '#E8B4D4', border: '#D89CC4', text: '#000000' },
-      '#F4E03C': { bg: '#F4E03C', border: '#E4D02C', text: '#000000' },
-      '#8CB4D4': { bg: '#8CB4D4', border: '#6C94B4', text: '#000000' },
-      '#F4A43C': { bg: '#F4A43C', border: '#E4942C', text: '#000000' },
+      '#86C67C': { bg: '#86C67C', border: '#6BA85C', text: '#000000', stripOnly: true },
+      '#86C67C-full': { bg: '#86C67C', border: '#6BA85C', text: '#000000', stripOnly: false },
+      '#E8B4D4': { bg: '#E8B4D4', border: '#D89CC4', text: '#000000', stripOnly: true },
+      '#E8B4D4-full': { bg: '#E8B4D4', border: '#D89CC4', text: '#000000', stripOnly: false },
+      '#F4E03C': { bg: '#F4E03C', border: '#E4D02C', text: '#000000', stripOnly: true },
+      '#F4E03C-full': { bg: '#F4E03C', border: '#E4D02C', text: '#000000', stripOnly: false },
+      '#8CB4D4': { bg: '#8CB4D4', border: '#6C94B4', text: '#000000', stripOnly: true },
+      '#8CB4D4-full': { bg: '#8CB4D4', border: '#6C94B4', text: '#000000', stripOnly: false },
+      '#F4A43C': { bg: '#F4A43C', border: '#E4942C', text: '#000000', stripOnly: true },
+      '#F4A43C-full': { bg: '#F4A43C', border: '#E4942C', text: '#000000', stripOnly: false },
     };
     
     // If unit has a color set, use it
@@ -233,11 +238,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     
     // Default color for director_general - dark green
     if (unit.unit_type === 'director_general') {
-      return { bg: '#4A7C4E', border: '#3A6C3E', text: '#ffffff' };
+      return { bg: '#4A7C4E', border: '#3A6C3E', text: '#ffffff', stripOnly: false };
     }
     
     // Default fallback - white
-    return { bg: '#ffffff', border: '#d1d5db', text: '#000000' };
+    return { bg: '#ffffff', border: '#d1d5db', text: '#000000', stripOnly: true };
   };
 
   // Calculate canvas size - ensure minimum width for consiliu
@@ -432,8 +437,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   <path
                     d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
                     fill="none"
-                    stroke="#e5e7eb"
-                    strokeWidth="0.5"
+                    stroke="#9ca3af"
+                    strokeWidth="1"
                   />
                 </pattern>
               </defs>
@@ -565,30 +570,32 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     pointerEvents: 'all'
                   }}
                 >
-                  {/* Main box - white background with thick black border */}
+                  {/* Main box - colored or white background with thick black border */}
                   <rect
                     x={x}
                     y={y}
                     width={node.width}
                     height={node.height}
-                    fill="#ffffff"
+                    fill={colors.stripOnly ? "#ffffff" : colors.bg}
                     stroke={isNearestParent ? "#10b981" : "#000000"}
                     strokeWidth={isNearestParent ? "4" : "3"}
                     rx="6"
                     opacity={isBeingDragged ? 0.7 : 1}
                   />
                   
-                  {/* Left colored strip - vertical with 3 columns of numbers (with rounded corners to match border) */}
-                  <rect
-                    x={x + 1.5}
-                    y={y + 1.5}
-                    width="98.5"
-                    height={node.height - 3}
-                    fill={colors.bg}
-                    stroke="none"
-                    rx="4.5"
-                    opacity={isBeingDragged ? 0.7 : 1}
-                  />
+                  {/* Left colored strip - vertical with 3 columns of numbers (only if stripOnly) */}
+                  {colors.stripOnly && (
+                    <rect
+                      x={x + 1.5}
+                      y={y + 1.5}
+                      width="98.5"
+                      height={node.height - 3}
+                      fill={colors.bg}
+                      stroke="none"
+                      rx="4.5"
+                      opacity={isBeingDragged ? 0.7 : 1}
+                    />
+                  )}
                   
                   {/* Vertical line between code and leadership count - full height */}
                   <line
@@ -658,7 +665,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                       : agg.execution_positions_count}
                   </text>
                   
-                  {/* Unit name - on white background to the right */}
+                  {/* Unit name - text color adapts to background */}
                   <foreignObject
                     x={x + 104}
                     y={y + 4}

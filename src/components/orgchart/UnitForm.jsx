@@ -9,10 +9,15 @@ import { unitTypeLabels } from './UnitCard';
 
 const defaultColors = [
   { label: 'Verde deschis', value: '#86C67C', border: '#6BA85C' },
+  { label: 'Verde complet', value: '#86C67C-full', border: '#6BA85C' },
   { label: 'Roz', value: '#E8B4D4', border: '#D89CC4' },
+  { label: 'Roz complet', value: '#E8B4D4-full', border: '#D89CC4' },
   { label: 'Galben', value: '#F4E03C', border: '#E4D02C' },
+  { label: 'Galben complet', value: '#F4E03C-full', border: '#E4D02C' },
   { label: 'Albastru', value: '#8CB4D4', border: '#6C94B4' },
+  { label: 'Albastru complet', value: '#8CB4D4-full', border: '#6C94B4' },
   { label: 'Portocaliu', value: '#F4A43C', border: '#E4942C' },
+  { label: 'Portocaliu complet', value: '#F4A43C-full', border: '#E4942C' },
 ];
 
 export default function UnitForm({ unit, units, versionId, onSave, onCancel, isReadOnly }) {
@@ -170,14 +175,17 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="default">Culoare implicită</SelectItem>
-                  {defaultColors.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded" style={{ backgroundColor: c.value }} />
-                        {c.label}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {defaultColors.map((c) => {
+                    const baseColor = c.value.replace('-full', '');
+                    return (
+                      <SelectItem key={c.value} value={c.value}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: baseColor }} />
+                          {c.label}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
