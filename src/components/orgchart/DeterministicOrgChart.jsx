@@ -691,7 +691,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     ? Math.max(...layoutData.layout.map(n => n.y + n.height)) + 100 
     : 900;
 
-  // Draw edges with proper parent-children grouping
+  // Draw edges with proper parent-children grouping (orgchart style)
   const drawEdges = () => {
     if (!layoutData.edges) return null;
     
@@ -786,55 +786,77 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       
       if (children.length === 0) return;
       
-      // Find leftmost and rightmost children
-      const leftmostX = Math.min(...children.map(c => c.centerX));
-      const rightmostX = Math.max(...children.map(c => c.centerX));
-      
       // Calculate horizontal line Y position (midpoint between parent bottom and children top)
       const childrenTopY = Math.min(...children.map(c => c.topY));
       const horizontalY = (parentBottomY + childrenTopY) / 2;
       
-      // Draw vertical line from parent down to horizontal line
-      edgeElements.push(
-        <line
-          key={`${parentId}-vertical`}
-          x1={parentCenterX}
-          y1={parentBottomY}
-          x2={parentCenterX}
-          y2={horizontalY}
-          stroke="#94a3b8"
-          strokeWidth="2"
-        />
-      );
-      
-      // Draw horizontal line from parent center to leftmost and rightmost children
-      // This creates a T-shape where the vertical line meets the horizontal
-      edgeElements.push(
-        <line
-          key={`${parentId}-horizontal`}
-          x1={leftmostX}
-          y1={horizontalY}
-          x2={rightmostX}
-          y2={horizontalY}
-          stroke="#94a3b8"
-          strokeWidth="2"
-        />
-      );
-      
-      // Draw vertical lines from horizontal line to each child
-      children.forEach(child => {
+      if (children.length === 1) {
+        // Single child: direct vertical line from parent to child
+        const child = children[0];
         edgeElements.push(
           <line
             key={`${parentId}-${child.id}`}
-            x1={child.centerX}
-            y1={horizontalY}
+            x1={parentCenterX}
+            y1={parentBottomY}
             x2={child.centerX}
             y2={child.topY}
             stroke="#94a3b8"
             strokeWidth="2"
           />
         );
-      });
+      } else {
+        // Multiple children: T-shape connection
+        
+        // Find leftmost and rightmost children
+        const childrenX = children.map(c => c.centerX);
+        const leftmostX = Math.min(...childrenX);
+        const rightmostX = Math.max(...childrenX);
+        
+        // Horizontal line must extend from leftmost to rightmost, including parent center
+        const horizontalStartX = Math.min(leftmostX, parentCenterX);
+        const horizontalEndX = Math.max(rightmostX, parentCenterX);
+        
+        // Draw vertical line from parent down to horizontal line
+        edgeElements.push(
+          <line
+            key={`${parentId}-vertical`}
+            x1={parentCenterX}
+            y1={parentBottomY}
+            x2={parentCenterX}
+            y2={horizontalY}
+            stroke="#94a3b8"
+            strokeWidth="2"
+          />
+        );
+        
+        // Draw horizontal line (T-bar)
+        edgeElements.push(
+          <line
+            key={`${parentId}-horizontal`}
+            x1={horizontalStartX}
+            y1={horizontalY}
+            x2={horizontalEndX}
+            y2={horizontalY}
+            stroke="#94a3b8"
+            strokeWidth="2"
+          />
+        );
+        
+        // Draw vertical lines from horizontal line to each child
+        children.forEach(child => {
+          edgeElements.push(
+            <line
+              key={`${parentId}-${child.id}`}
+              x1={child.centerX}
+              y1={horizontalY}
+              x2={child.centerX}
+              y2={child.topY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+        });
+      }
     });
     
     return edgeElements;
