@@ -11,6 +11,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [consiliuUnit, setConsiliuUnit] = useState(null);
   const [directorGeneralUnit, setDirectorGeneralUnit] = useState(null);
   const [legendUnit, setLegendUnit] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null); // For highlighting selected unit
   const [draggedNode, setDraggedNode] = useState(null);
   const [draggedFixedElement, setDraggedFixedElement] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -135,6 +136,66 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     fetchLayout();
   }, [versionId]);
 
+  // Keyboard listener for R key to rotate selected unit
+  useEffect(() => {
+    const handleKeyPress = async (e) => {
+      // ESC key to deselect
+      if (e.key === 'Escape') {
+        setSelectedNode(null);
+        return;
+      }
+      
+      console.log('Key pressed:', e.key, 'Selected node:', selectedNode);
+      if (e.key === 'r' || e.key === 'R') {
+        if (selectedNode && !isReadOnly) {
+          console.log('Rotating unit:', selectedNode.unit_id);
+          try {
+            // Toggle rotation
+            const newRotation = !selectedNode.unit.is_rotated;
+            console.log('New rotation state:', newRotation);
+            
+            const response = await fetch(`http://localhost:8000/api/units/${selectedNode.unit_id}`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ is_rotated: newRotation })
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (response.ok) {
+              // Refresh layout
+              const layoutResponse = await fetch(`http://localhost:8000/api/layout/${versionId}`);
+              const data = await layoutResponse.json();
+              setLayoutData(data);
+              
+              const aggMap = {};
+              data.layout.forEach(node => {
+                if (node.aggregates) {
+                  aggMap[node.unit_id] = node.aggregates;
+                }
+              });
+              setAggregates(aggMap);
+              
+              // Update selected node
+              const updatedNode = data.layout.find(n => n.unit_id === selectedNode.unit_id);
+              if (updatedNode) {
+                setSelectedNode(updatedNode);
+              }
+            }
+          } catch (error) {
+            console.error('Failed to rotate unit:', error);
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedNode, versionId, isReadOnly]);
+
   const findNearestNode = (x, y, excludeId) => {
     if (!layoutData) return null;
     
@@ -163,23 +224,36 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const handleMouseDown = (e, node) => {
     if (isReadOnly) return;
     
-    e.stopPropagation();
-    e.preventDefault();
+    // Right click - open edit panel
+    if (e.button === 2) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (onSelectUnit) {
+        onSelectUnit(node.unit);
+      }
+      return;
+    }
     
-    const svg = e.currentTarget.closest('svg');
-    if (!svg) return;
-    
-    const svgRect = svg.getBoundingClientRect();
-    const mouseX = e.clientX - svgRect.left;
-    const mouseY = e.clientY - svgRect.top;
-    
-    setDraggedNode(node);
-    setIsDragging(false);
-    setDragOffset({
-      x: mouseX - node.x,
-      y: mouseY - node.y
-    });
-    setTempPosition({ x: node.x, y: node.y });
+    // Left click - select or start drag
+    if (e.button === 0) {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const svg = e.currentTarget.closest('svg');
+      if (!svg) return;
+      
+      const svgRect = svg.getBoundingClientRect();
+      const mouseX = e.clientX - svgRect.left;
+      const mouseY = e.clientY - svgRect.top;
+      
+      setDraggedNode(node);
+      setIsDragging(false);
+      setDragOffset({
+        x: mouseX - node.x,
+        y: mouseY - node.y
+      });
+      setTempPosition({ x: node.x, y: node.y });
+    }
   };
 
   const handleMouseMove = (e) => {
@@ -255,10 +329,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         console.error('Failed to update position:', error);
       }
     } else {
-      // Was just a click, open panel
-      if (onSelectUnit && draggedNode.unit) {
-        onSelectUnit(draggedNode.unit);
-      }
+      // Was just a click, select the node (highlight it)
+      setSelectedNode(draggedNode);
     }
     
     setDraggedNode(null);
@@ -741,6 +813,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               viewBox={`0 0 ${maxX} ${maxY}`}
               preserveAspectRatio="xMidYMin meet"
               className="bg-white"
+              onClick={(e) => {
+                // Deselect if clicking on canvas (not on a unit)
+                if (e.target === e.currentTarget || e.target.tagName === 'svg') {
+                  setSelectedNode(null);
+                }
+              }}
               onMouseMove={(e) => {
                 handleMouseMove(e);
                 handleFixedElementMouseMove(e);
@@ -1214,6 +1292,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               const height = isBeingResized && tempHeight ? tempHeight : node.height;
               const width = isBeingResized && tempWidth ? tempWidth : node.width;
               
+              // Check if rotated
+              const isRotated = node.unit.is_rotated;
+              
               // Calculate font size dynamically based on available space
               // Standardize font size for boxes with same height and similar line count
               const text_length = node.unit.name.length;
@@ -1291,13 +1372,28 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               // Highlight if this is the nearest parent
               const isNearestParent = nearestParent?.unit_id === node.unit_id;
               
+              // Check if this node is selected
+              const isSelected = selectedNode?.unit_id === node.unit_id;
+              
+              // Calculate rotation transform
+              const rotationTransform = isRotated 
+                ? `rotate(-90, ${x + width / 2}, ${y + height / 2})` 
+                : '';
+              
               return (
                 <g
                   key={node.unit_id}
                   data-unit-id={node.unit_id}
+                  transform={rotationTransform}
                   onMouseDown={(e) => {
                     if (!isReadOnly) {
                       handleMouseDown(e, node);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isReadOnly && onSelectUnit) {
+                      onSelectUnit(node.unit);
                     }
                   }}
                   style={{ 
@@ -1312,8 +1408,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     width={width}
                     height={height}
                     fill={colors.stripOnly ? "#ffffff" : colors.bg}
-                    stroke={isNearestParent ? "#10b981" : "#000000"}
-                    strokeWidth={isNearestParent ? "4" : "3"}
+                    stroke={isSelected ? "#3b82f6" : (isNearestParent ? "#10b981" : "#000000")}
+                    strokeWidth={isSelected ? "5" : (isNearestParent ? "4" : "3")}
                     rx="6"
                     opacity={isBeingDragged ? 0.7 : 1}
                   />

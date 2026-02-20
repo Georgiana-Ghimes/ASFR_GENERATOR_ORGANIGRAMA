@@ -53,6 +53,7 @@ class OrgUnitBase(BaseModel):
     legend_col1: Optional[str] = None
     legend_col2: Optional[str] = None
     legend_col3: Optional[str] = None
+    is_rotated: bool = False
 
 class OrgUnitCreate(OrgUnitBase):
     version_id: UUID
@@ -75,6 +76,7 @@ class OrgUnitUpdate(BaseModel):
     legend_col1: Optional[str] = None
     legend_col2: Optional[str] = None
     legend_col3: Optional[str] = None
+    is_rotated: Optional[bool] = None
 
 class OrgUnit(OrgUnitBase):
     id: UUID

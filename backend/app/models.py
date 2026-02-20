@@ -65,6 +65,7 @@ class OrgUnit(Base):
     legend_col1 = Column(String)  # Legend column 1 text
     legend_col2 = Column(String)  # Legend column 2 text
     legend_col3 = Column(String)  # Legend column 3 text
+    is_rotated = Column(Boolean, default=False)  # Whether unit is rotated vertically
     
     version = relationship("OrgVersion", back_populates="units")
     parent = relationship("OrgUnit", remote_side=[id], backref="children")

@@ -94,7 +94,8 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
             'custom_x': unit.custom_x,
             'custom_y': unit.custom_y,
             'custom_height': unit.custom_height,
-            'custom_width': unit.custom_width
+            'custom_width': unit.custom_width,
+            'is_rotated': unit.is_rotated if hasattr(unit, 'is_rotated') else False
         }
     })
     
