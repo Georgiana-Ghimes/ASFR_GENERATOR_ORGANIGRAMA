@@ -32,6 +32,9 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
     color: '',
   });
 
+  // Check if this is the special consiliu unit
+  const isConsiliu = unit?.unit_type === 'consiliu' || unit?.stas_code === '330';
+
   useEffect(() => {
     if (unit) {
       setFormData({
@@ -69,6 +72,41 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
         </Button>
       </CardHeader>
       <CardContent>
+        {isConsiliu ? (
+          // Special simplified form for Consiliu
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+              <p className="text-sm text-blue-800">
+                Aceasta este o unitate specială. Puteți modifica doar denumirea.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="name">Denumire *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Denumirea consiliului"
+                required
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Anulează
+              </Button>
+              {!isReadOnly && (
+                <Button type="submit">
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvează
+                </Button>
+              )}
+            </div>
+          </form>
+        ) : (
+          // Regular form for normal units
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -213,6 +251,7 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
             </div>
           )}
         </form>
+        )}
       </CardContent>
     </Card>
   );

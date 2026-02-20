@@ -11,6 +11,7 @@ const unitTypeColors = {
   compartiment: 'bg-white border-gray-400 text-gray-800',
   inspectorat: 'bg-blue-100 border-blue-500 text-blue-800',
   birou: 'bg-purple-100 border-purple-500 text-purple-800',
+  consiliu: 'bg-gray-100 border-gray-500 text-gray-800',
 };
 
 const unitTypeLabels = {
@@ -20,6 +21,7 @@ const unitTypeLabels = {
   compartiment: 'Compartiment',
   inspectorat: 'Inspectorat',
   birou: 'Birou',
+  consiliu: 'Consiliu de Conducere',
 };
 
 export default function UnitCard({ unit, onClick, isSelected, childCount = 0, totalEmployees = 0 }) {

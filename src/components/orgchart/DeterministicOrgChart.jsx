@@ -8,6 +8,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editableTitle, setEditableTitle] = useState('CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
   const [versionData, setVersionData] = useState(null);
+  const [consiliuUnit, setConsiliuUnit] = useState(null);
   const [draggedNode, setDraggedNode] = useState(null);
   const [draggedFixedElement, setDraggedFixedElement] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -15,6 +16,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [nearestParent, setNearestParent] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [resizingNode, setResizingNode] = useState(null);
+  const [resizingFixedElement, setResizingFixedElement] = useState(null);
   const [tempHeight, setTempHeight] = useState(null);
   const [tempWidth, setTempWidth] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -35,6 +37,37 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   
   const snapToGrid = (value) => {
     return Math.round(value / GRID_SIZE) * GRID_SIZE;
+  };
+
+  // Calculate dynamic font size based on element dimensions
+  const getDynamicFontSize = (elementKey, baseFontSize = 10) => {
+    const element = resizingFixedElement === elementKey && tempWidth && tempHeight
+      ? { width: tempWidth, height: tempHeight }
+      : fixedElements[elementKey];
+    
+    // Base dimensions for reference (initial dimensions)
+    const initialDimensions = {
+      legend: { width: 200, height: 100 },
+      director: { width: 200, height: 60 },
+      header1: { width: 400, height: 20 },
+      header2: { width: 400, height: 20 },
+      consiliu: { width: 300, height: 60 }
+    };
+    
+    const baseWidth = initialDimensions[elementKey].width;
+    const baseHeight = initialDimensions[elementKey].height;
+    
+    // Calculate scale factor (use the smaller of width/height scale)
+    const scaleX = element.width / baseWidth;
+    const scaleY = element.height / baseHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    // For legend, use larger base font and better scaling
+    if (elementKey === 'legend') {
+      return Math.max(8, Math.min(baseFontSize * scale, 32)); // Clamp between 8px and 32px
+    }
+    
+    return Math.max(6, Math.min(baseFontSize * scale, 24)); // Clamp between 6px and 24px
   };
 
   useEffect(() => {
@@ -72,6 +105,11 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         const versionInfo = await versionResponse.json();
         setVersionData(versionInfo);
         setEditableTitle(versionInfo.chart_title || 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
+        
+        // Fetch consiliu unit
+        const units = await apiClient.listUnits(versionId);
+        const consiliu = units.find(u => u.stas_code === '330' || u.unit_type === 'consiliu');
+        setConsiliuUnit(consiliu);
       } catch (error) {
         console.error('Failed to fetch layout:', error);
       } finally {
@@ -258,12 +296,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     setTempPosition({ x: newX, y: newY });
   };
 
-  const handleFixedElementMouseUp = () => {
-    if (!draggedFixedElement || !tempPosition) return;
+  const handleFixedElementMouseUp = async () => {
+    if (!draggedFixedElement) return;
     
     const wasDragging = isDragging;
     
-    if (wasDragging) {
+    if (wasDragging && tempPosition) {
       // Save new position
       const newPositions = {
         ...fixedElements,
@@ -275,11 +313,105 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       };
       setFixedElements(newPositions);
       localStorage.setItem(`fixed_elements_${versionId}`, JSON.stringify(newPositions));
+    } else if (!wasDragging) {
+      // Was just a click, open panel for consiliu
+      if (draggedFixedElement === 'consiliu' && onSelectUnit) {
+        try {
+          // Fetch consiliu unit directly from API using apiClient for auth
+          const units = await apiClient.listUnits(versionId);
+          const consiliu = units.find(u => u.stas_code === '330' || u.unit_type === 'consiliu');
+          
+          if (consiliu) {
+            onSelectUnit(consiliu);
+          }
+        } catch (error) {
+          console.error('Error fetching consiliu unit:', error);
+        }
+      }
     }
     
     setDraggedFixedElement(null);
     setTempPosition(null);
     setIsDragging(false);
+  };
+  
+  // Refresh consiliu data when needed (called from parent after save)
+  const refreshConsiliuData = async () => {
+    try {
+      const units = await apiClient.listUnits(versionId);
+      const consiliu = units.find(u => u.stas_code === '330' || u.unit_type === 'consiliu');
+      setConsiliuUnit(consiliu);
+    } catch (error) {
+      console.error('Error refreshing consiliu:', error);
+    }
+  };
+
+  // Fixed elements resize handlers
+  const handleFixedElementResizeMouseDown = (e, elementKey) => {
+    if (isReadOnly) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const svgRect = e.currentTarget.closest('svg').getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    const element = fixedElements[elementKey];
+    setResizingFixedElement(elementKey);
+    setIsResizing(false);
+    setTempHeight(element.height);
+    setTempWidth(element.width);
+    setResizeStartPos({ x: mouseX, y: mouseY });
+  };
+
+  const handleFixedElementResizeMouseMove = (e) => {
+    if (!resizingFixedElement) return;
+    
+    e.preventDefault();
+    setIsResizing(true);
+    
+    const svgRect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - svgRect.left;
+    const mouseY = e.clientY - svgRect.top;
+    
+    const deltaX = mouseX - resizeStartPos.x;
+    const deltaY = mouseY - resizeStartPos.y;
+    
+    const element = fixedElements[resizingFixedElement];
+    const newWidth = element.width + deltaX;
+    const newHeight = element.height + deltaY;
+    
+    // Snap to grid and enforce minimums
+    const snappedWidth = Math.max(100, snapToGrid(newWidth));
+    const snappedHeight = Math.max(40, snapToGrid(newHeight));
+    
+    setTempWidth(snappedWidth);
+    setTempHeight(snappedHeight);
+  };
+
+  const handleFixedElementResizeMouseUp = () => {
+    if (!resizingFixedElement || !tempHeight || !tempWidth) return;
+    
+    const wasResizing = isResizing;
+    
+    if (wasResizing) {
+      const newPositions = {
+        ...fixedElements,
+        [resizingFixedElement]: {
+          ...fixedElements[resizingFixedElement],
+          width: tempWidth,
+          height: tempHeight
+        }
+      };
+      setFixedElements(newPositions);
+      localStorage.setItem(`fixed_elements_${versionId}`, JSON.stringify(newPositions));
+    }
+    
+    setResizingFixedElement(null);
+    setTempHeight(null);
+    setTempWidth(null);
+    setIsResizing(false);
   };
 
   const handleResizeMouseDown = (e, node) => {
@@ -446,10 +578,24 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       const dgY = isDGDragged && tempPosition ? tempPosition.y : dgNode.y;
       const dgWidth = isDGResized && tempWidth ? tempWidth : dgNode.width;
       
-      // Calculate actual consiliu position (snapped to grid)
-      const consiliuX = Math.floor((maxX - 300) / 2 / 20) * 20;
-      const consiliuCenterX = consiliuX + 150; // Center of 300px wide consiliu
-      const consiliuBottomY = 80; // 40 + 40 (aligned to grid)
+      // Get consiliu position from fixedElements (dynamic, can be moved/resized)
+      const consiliu = draggedFixedElement === 'consiliu' && tempPosition 
+        ? { 
+            x: tempPosition.x, 
+            y: fixedElements.consiliu.y,
+            width: resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width,
+            height: resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height
+          }
+        : {
+            x: fixedElements.consiliu.x,
+            y: fixedElements.consiliu.y,
+            width: resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width,
+            height: resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height
+          };
+      
+      // Calculate consiliu center X and bottom Y
+      const consiliuCenterX = consiliu.x + consiliu.width / 2;
+      const consiliuBottomY = consiliu.y + consiliu.height;
       
       // DG center X
       const dgCenterX = dgX + dgWidth / 2;
@@ -556,16 +702,19 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               onMouseMove={(e) => {
                 handleMouseMove(e);
                 handleFixedElementMouseMove(e);
+                handleFixedElementResizeMouseMove(e);
                 handleResizeMouseMove(e);
               }}
               onMouseUp={() => {
                 handleMouseUp();
                 handleFixedElementMouseUp();
+                handleFixedElementResizeMouseUp();
                 handleResizeMouseUp();
               }}
               onMouseLeave={() => {
                 handleMouseUp();
                 handleFixedElementMouseUp();
+                handleFixedElementResizeMouseUp();
                 handleResizeMouseUp();
               }}
             >
@@ -587,7 +736,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               </defs>
               
               {/* Grid background - show when dragging or resizing */}
-              {(draggedNode || draggedFixedElement || resizingNode) && (
+              {(draggedNode || draggedFixedElement || resizingNode || resizingFixedElement) && (
                 <rect
                   x="0"
                   y="0"
@@ -597,203 +746,290 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 />
               )}
 
-              {/* Legend - draggable box */}
-              <g
-                onMouseDown={(e) => handleFixedElementMouseDown(e, 'legend')}
-                style={{ cursor: isReadOnly ? 'default' : 'move' }}
-              >
-                <rect
-                  x={draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x}
-                  y={draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y}
-                  width={fixedElements.legend.width}
-                  height={fixedElements.legend.height}
-                  fill="transparent"
-                  stroke={draggedFixedElement === 'legend' ? '#3b82f6' : 'transparent'}
-                  strokeWidth="2"
-                />
-                <foreignObject 
-                  x={draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x} 
-                  y={draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y} 
-                  width={fixedElements.legend.width} 
-                  height={fixedElements.legend.height}
-                  style={{ pointerEvents: 'none' }}
+              {/* Legend - draggable and resizable box */}
+              <g>
+                <g
+                  onMouseDown={(e) => handleFixedElementMouseDown(e, 'legend')}
+                  style={{ cursor: isReadOnly ? 'default' : 'move' }}
                 >
-                  <div className="text-[9px] border-2 border-gray-800 p-2 bg-gray-50 h-full">
-                    {(() => {
-                      // Calculate totals from all units
-                      let totalLeadership = 0;
-                      let totalExecution = 0;
-                      let dgCount = 0;
-                      let directorCount = 0;
-                      let inspectorCount = 0;
-                      let serviceCount = 0;
-
-                      layoutData.layout.forEach(node => {
-                        const agg = aggregates[node.unit_id] || { leadership_positions_count: 0, execution_positions_count: 0 };
-                        totalLeadership += agg.leadership_positions_count;
-                        totalExecution += agg.execution_positions_count;
-
-                        // Count by type
-                        if (node.unit.unit_type === 'director_general') dgCount += agg.leadership_positions_count;
-                        else if (node.unit.unit_type === 'directie') directorCount += agg.leadership_positions_count;
-                        else if (node.unit.unit_type === 'serviciu') serviceCount += agg.leadership_positions_count;
-                        else if (node.unit.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
-                      });
-
-                      const totalPosts = totalLeadership + totalExecution;
-
-                      return (
-                        <>
-                          <div className="font-bold mb-1">TOTAL POSTURI: {totalPosts}</div>
-                          <div className="mb-0.5 text-[8px]">Funcții de conducere: {totalLeadership}</div>
-                          <div className="ml-2 text-[7px]">- Director general: {dgCount}</div>
-                          <div className="ml-2 text-[7px]">- Director: {directorCount}</div>
-                          <div className="ml-2 text-[7px]">- Inspector șef: {inspectorCount}</div>
-                          <div className="ml-2 text-[7px]">- Șef serviciu: {serviceCount}</div>
-                          <div className="mt-0.5 text-[8px]">Posturi de execuție: {totalExecution}</div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </foreignObject>
-              </g>
-
-              {/* Director - draggable box */}
-              <g
-                onMouseDown={(e) => handleFixedElementMouseDown(e, 'director')}
-                style={{ cursor: isReadOnly ? 'default' : 'move' }}
-              >
-                <rect
-                  x={draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x}
-                  y={draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y}
-                  width={fixedElements.director.width}
-                  height={fixedElements.director.height}
-                  fill="white"
-                  stroke={draggedFixedElement === 'director' ? '#3b82f6' : '#d1d5db'}
-                  strokeWidth="1"
-                />
-                <text
-                  x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + fixedElements.director.width - 10}
-                  y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 20}
-                  fontSize="11"
-                  fontWeight="bold"
-                  textAnchor="end"
-                  fill="#000000"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  DIRECTOR GENERAL
-                </text>
-                <text
-                  x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + fixedElements.director.width - 10}
-                  y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 40}
-                  fontSize="11"
-                  textAnchor="end"
-                  fill="#000000"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  Petru BOGDAN
-                </text>
-              </g>
-
-              {/* Header 1 - draggable */}
-              <g
-                onMouseDown={(e) => handleFixedElementMouseDown(e, 'header1')}
-                style={{ cursor: isReadOnly ? 'default' : 'move' }}
-              >
-                <rect
-                  x={draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x}
-                  y={draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y}
-                  width={fixedElements.header1.width}
-                  height={fixedElements.header1.height}
-                  fill="transparent"
-                  stroke={draggedFixedElement === 'header1' ? '#3b82f6' : 'transparent'}
-                  strokeWidth="2"
-                />
-                <text
-                  x={(draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x) + fixedElements.header1.width / 2}
-                  y={(draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y) + 14}
-                  fontSize="10"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fill="#000000"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  AUTORITATEA DE SIGURANȚĂ FEROVIARĂ ROMÂNĂ - ASFR
-                </text>
-              </g>
-              
-              {/* Header 2 - draggable and editable title */}
-              <g
-                onMouseDown={(e) => handleFixedElementMouseDown(e, 'header2')}
-                style={{ cursor: isReadOnly ? 'default' : 'move' }}
-              >
-                <rect
-                  x={draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x}
-                  y={draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y}
-                  width={fixedElements.header2.width}
-                  height={fixedElements.header2.height}
-                  fill="transparent"
-                  stroke={draggedFixedElement === 'header2' ? '#3b82f6' : 'transparent'}
-                  strokeWidth="2"
-                />
-                {!isReadOnly && (
                   <rect
-                    x={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x)}
-                    y={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y)}
-                    width={fixedElements.header2.width}
-                    height={fixedElements.header2.height}
+                    x={draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x}
+                    y={draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y}
+                    width={resizingFixedElement === 'legend' && tempWidth ? tempWidth : fixedElements.legend.width}
+                    height={resizingFixedElement === 'legend' && tempHeight ? tempHeight : fixedElements.legend.height}
                     fill="transparent"
-                    className="hover:fill-gray-100"
-                    style={{ cursor: 'pointer', pointerEvents: 'all' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditingTitle(true);
-                    }}
+                    stroke={draggedFixedElement === 'legend' || resizingFixedElement === 'legend' ? '#3b82f6' : 'transparent'}
+                    strokeWidth="2"
+                  />
+                  <foreignObject 
+                    x={draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x} 
+                    y={draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y} 
+                    width={resizingFixedElement === 'legend' && tempWidth ? tempWidth : fixedElements.legend.width} 
+                    height={resizingFixedElement === 'legend' && tempHeight ? tempHeight : fixedElements.legend.height}
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    <div className="border-2 border-gray-800 p-2 bg-gray-50 h-full overflow-hidden flex items-center justify-center" style={{ fontSize: `${getDynamicFontSize('legend', 14)}px` }}>
+                      <div className="text-center">
+                        {(() => {
+                          // Calculate totals from all units (exclude consiliu)
+                          let totalLeadership = 0;
+                          let totalExecution = 0;
+                          let dgCount = 0;
+                          let directorCount = 0;
+                          let inspectorCount = 0;
+                          let serviceCount = 0;
+
+                          layoutData.layout.forEach(node => {
+                            // Skip consiliu unit
+                            if (node.unit.unit_type === 'consiliu' || node.unit.stas_code === '330') {
+                              return;
+                            }
+                            
+                            const agg = aggregates[node.unit_id] || { leadership_positions_count: 0, execution_positions_count: 0 };
+                            totalLeadership += agg.leadership_positions_count;
+                            totalExecution += agg.execution_positions_count;
+
+                            // Count by type
+                            if (node.unit.unit_type === 'director_general') dgCount += agg.leadership_positions_count;
+                            else if (node.unit.unit_type === 'directie') directorCount += agg.leadership_positions_count;
+                            else if (node.unit.unit_type === 'serviciu') serviceCount += agg.leadership_positions_count;
+                            else if (node.unit.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
+                          });
+
+                          const totalPosts = totalLeadership + totalExecution;
+
+                          return (
+                            <>
+                              <div className="font-bold mb-1">TOTAL POSTURI: {totalPosts}</div>
+                              <div className="mb-0.5">Funcții de conducere: {totalLeadership}</div>
+                              <div className="ml-2">- Director general: {dgCount}</div>
+                              <div className="ml-2">- Director: {directorCount}</div>
+                              <div className="ml-2">- Inspector șef: {inspectorCount}</div>
+                              <div className="ml-2">- Șef serviciu: {serviceCount}</div>
+                              <div className="mt-0.5">Posturi de execuție: {totalExecution}</div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </foreignObject>
+                </g>
+                
+                {/* Resize handles for legend */}
+                {!isReadOnly && (
+                  <>
+                    {/* Corner handle - resize both width and height */}
+                    <path
+                      d={`M ${(draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x) + (resizingFixedElement === 'legend' && tempWidth ? tempWidth : fixedElements.legend.width) - 10} ${(draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y) + (resizingFixedElement === 'legend' && tempHeight ? tempHeight : fixedElements.legend.height)} 
+                           L ${(draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x) + (resizingFixedElement === 'legend' && tempWidth ? tempWidth : fixedElements.legend.width)} ${(draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y) + (resizingFixedElement === 'legend' && tempHeight ? tempHeight : fixedElements.legend.height)} 
+                           L ${(draggedFixedElement === 'legend' && tempPosition ? tempPosition.x : fixedElements.legend.x) + (resizingFixedElement === 'legend' && tempWidth ? tempWidth : fixedElements.legend.width)} ${(draggedFixedElement === 'legend' && tempPosition ? tempPosition.y : fixedElements.legend.y) + (resizingFixedElement === 'legend' && tempHeight ? tempHeight : fixedElements.legend.height) - 10} Z`}
+                      fill="#9ca3af"
+                      stroke="none"
+                      style={{ cursor: 'nwse-resize' }}
+                      onMouseDown={(e) => handleFixedElementResizeMouseDown(e, 'legend')}
+                    />
+                  </>
+                )}
+              </g>
+
+              {/* Director - draggable and resizable box */}
+              <g>
+                <g
+                  onMouseDown={(e) => handleFixedElementMouseDown(e, 'director')}
+                  style={{ cursor: isReadOnly ? 'default' : 'move' }}
+                >
+                  <rect
+                    x={draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x}
+                    y={draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y}
+                    width={resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width}
+                    height={resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height}
+                    fill="white"
+                    stroke={draggedFixedElement === 'director' || resizingFixedElement === 'director' ? '#3b82f6' : '#d1d5db'}
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
+                    y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height) / 3}
+                    fontSize={getDynamicFontSize('director', 14)}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    fill="#000000"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    DIRECTOR GENERAL
+                  </text>
+                  <text
+                    x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
+                    y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 2 * (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height) / 3}
+                    fontSize={getDynamicFontSize('director', 14)}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    fill="#000000"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    Petru BOGDAN
+                  </text>
+                </g>
+                
+                {/* Resize handle for director */}
+                {!isReadOnly && (
+                  <path
+                    d={`M ${(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) - 10} ${(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height)} 
+                         L ${(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width)} ${(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height)} 
+                         L ${(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width)} ${(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height) - 10} Z`}
+                    fill="#9ca3af"
+                    stroke="none"
+                    style={{ cursor: 'nwse-resize' }}
+                    onMouseDown={(e) => handleFixedElementResizeMouseDown(e, 'director')}
                   />
                 )}
-                <text
-                  x={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x) + fixedElements.header2.width / 2}
-                  y={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y) + 14}
-                  fontSize="10"
-                  textAnchor="middle"
-                  fill="#000000"
-                  style={{ 
-                    opacity: isEditingTitle ? 0 : 1,
-                    pointerEvents: 'none'
-                  }}
+              </g>
+
+              {/* Header 1 - draggable and resizable */}
+              <g>
+                <g
+                  onMouseDown={(e) => handleFixedElementMouseDown(e, 'header1')}
+                  style={{ cursor: isReadOnly ? 'default' : 'move' }}
                 >
-                  {editableTitle}
-                </text>
-                {!isReadOnly && !isEditingTitle && (
-                  <title>Click pentru a edita</title>
+                  <rect
+                    x={draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x}
+                    y={draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y}
+                    width={resizingFixedElement === 'header1' && tempWidth ? tempWidth : fixedElements.header1.width}
+                    height={resizingFixedElement === 'header1' && tempHeight ? tempHeight : fixedElements.header1.height}
+                    fill="transparent"
+                    stroke={draggedFixedElement === 'header1' || resizingFixedElement === 'header1' ? '#3b82f6' : 'transparent'}
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={(draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x) + (resizingFixedElement === 'header1' && tempWidth ? tempWidth : fixedElements.header1.width) / 2}
+                    y={(draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y) + (resizingFixedElement === 'header1' && tempHeight ? tempHeight : fixedElements.header1.height) / 2 + 4}
+                    fontSize={getDynamicFontSize('header1', 14)}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    fill="#000000"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    AUTORITATEA DE SIGURANȚĂ FEROVIARĂ ROMÂNĂ - ASFR
+                  </text>
+                </g>
+                
+                {/* Resize handle for header1 */}
+                {!isReadOnly && (
+                  <path
+                    d={`M ${(draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x) + (resizingFixedElement === 'header1' && tempWidth ? tempWidth : fixedElements.header1.width) - 10} ${(draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y) + (resizingFixedElement === 'header1' && tempHeight ? tempHeight : fixedElements.header1.height)} 
+                         L ${(draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x) + (resizingFixedElement === 'header1' && tempWidth ? tempWidth : fixedElements.header1.width)} ${(draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y) + (resizingFixedElement === 'header1' && tempHeight ? tempHeight : fixedElements.header1.height)} 
+                         L ${(draggedFixedElement === 'header1' && tempPosition ? tempPosition.x : fixedElements.header1.x) + (resizingFixedElement === 'header1' && tempWidth ? tempWidth : fixedElements.header1.width)} ${(draggedFixedElement === 'header1' && tempPosition ? tempPosition.y : fixedElements.header1.y) + (resizingFixedElement === 'header1' && tempHeight ? tempHeight : fixedElements.header1.height) - 10} Z`}
+                    fill="#9ca3af"
+                    stroke="none"
+                    style={{ cursor: 'nwse-resize' }}
+                    onMouseDown={(e) => handleFixedElementResizeMouseDown(e, 'header1')}
+                  />
+                )}
+              </g>
+              
+              {/* Header 2 - draggable, resizable and editable title */}
+              <g>
+                <g
+                  onMouseDown={(e) => handleFixedElementMouseDown(e, 'header2')}
+                  style={{ cursor: isReadOnly ? 'default' : 'move' }}
+                >
+                  <rect
+                    x={draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x}
+                    y={draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y}
+                    width={resizingFixedElement === 'header2' && tempWidth ? tempWidth : fixedElements.header2.width}
+                    height={resizingFixedElement === 'header2' && tempHeight ? tempHeight : fixedElements.header2.height}
+                    fill="transparent"
+                    stroke={draggedFixedElement === 'header2' || resizingFixedElement === 'header2' ? '#3b82f6' : 'transparent'}
+                    strokeWidth="2"
+                  />
+                  {!isReadOnly && (
+                    <rect
+                      x={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x)}
+                      y={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y)}
+                      width={resizingFixedElement === 'header2' && tempWidth ? tempWidth : fixedElements.header2.width}
+                      height={resizingFixedElement === 'header2' && tempHeight ? tempHeight : fixedElements.header2.height}
+                      fill="transparent"
+                      className="hover:fill-gray-100"
+                      style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEditingTitle(true);
+                      }}
+                    />
+                  )}
+                  <text
+                    x={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x) + (resizingFixedElement === 'header2' && tempWidth ? tempWidth : fixedElements.header2.width) / 2}
+                    y={(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y) + (resizingFixedElement === 'header2' && tempHeight ? tempHeight : fixedElements.header2.height) / 2 + 4}
+                    fontSize={getDynamicFontSize('header2', 14)}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    fill="#000000"
+                    style={{ 
+                      opacity: isEditingTitle ? 0 : 1,
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    {editableTitle}
+                  </text>
+                  {!isReadOnly && !isEditingTitle && (
+                    <title>Click pentru a edita</title>
+                  )}
+                </g>
+                
+                {/* Resize handle for header2 */}
+                {!isReadOnly && (
+                  <path
+                    d={`M ${(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x) + (resizingFixedElement === 'header2' && tempWidth ? tempWidth : fixedElements.header2.width) - 10} ${(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y) + (resizingFixedElement === 'header2' && tempHeight ? tempHeight : fixedElements.header2.height)} 
+                         L ${(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x) + (resizingFixedElement === 'header2' && tempWidth ? tempWidth : fixedElements.header2.width)} ${(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y) + (resizingFixedElement === 'header2' && tempHeight ? tempHeight : fixedElements.header2.height)} 
+                         L ${(draggedFixedElement === 'header2' && tempPosition ? tempPosition.x : fixedElements.header2.x) + (resizingFixedElement === 'header2' && tempWidth ? tempWidth : fixedElements.header2.width)} ${(draggedFixedElement === 'header2' && tempPosition ? tempPosition.y : fixedElements.header2.y) + (resizingFixedElement === 'header2' && tempHeight ? tempHeight : fixedElements.header2.height) - 10} Z`}
+                    fill="#9ca3af"
+                    stroke="none"
+                    style={{ cursor: 'nwse-resize' }}
+                    onMouseDown={(e) => handleFixedElementResizeMouseDown(e, 'header2')}
+                  />
                 )}
               </g>
             
-            {/* Consiliu - draggable box */}
-            <g
-              onMouseDown={(e) => handleFixedElementMouseDown(e, 'consiliu')}
-              style={{ cursor: isReadOnly ? 'default' : 'move' }}
-            >
-              <rect
-                x={draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x}
-                y={draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y}
-                width={fixedElements.consiliu.width}
-                height={fixedElements.consiliu.height}
-                fill="white"
-                stroke="#1f2937"
-                strokeWidth="2"
-              />
-              <text
-                x={(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x) + fixedElements.consiliu.width / 2}
-                y={(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y) + 35}
-                fontSize="16"
-                fontWeight="bold"
-                textAnchor="middle"
-                fill="#000000"
-                style={{ pointerEvents: 'none' }}
+            {/* Consiliu - draggable and resizable box */}
+            <g>
+              <g
+                onMouseDown={(e) => handleFixedElementMouseDown(e, 'consiliu')}
+                style={{ cursor: isReadOnly ? 'default' : 'move' }}
               >
-                CONSILIUL DE CONDUCERE
-              </text>
+                <rect
+                  x={draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x}
+                  y={draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y}
+                  width={resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width}
+                  height={resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height}
+                  fill="white"
+                  stroke={draggedFixedElement === 'consiliu' || resizingFixedElement === 'consiliu' ? '#3b82f6' : '#1f2937'}
+                  strokeWidth="2"
+                />
+                <text
+                  x={(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x) + (resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width) / 2}
+                  y={(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y) + (resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height) / 2 + 8}
+                  fontSize={getDynamicFontSize('consiliu', 28)}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {consiliuUnit?.name || 'CONSILIUL DE CONDUCERE'}
+                </text>
+              </g>
+              
+              {/* Resize handle for consiliu */}
+              {!isReadOnly && (
+                <path
+                  d={`M ${(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x) + (resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width) - 10} ${(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y) + (resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height)} 
+                       L ${(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x) + (resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width)} ${(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y) + (resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height)} 
+                       L ${(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.x : fixedElements.consiliu.x) + (resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width)} ${(draggedFixedElement === 'consiliu' && tempPosition ? tempPosition.y : fixedElements.consiliu.y) + (resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height) - 10} Z`}
+                  fill="#9ca3af"
+                  stroke="none"
+                  style={{ cursor: 'nwse-resize' }}
+                  onMouseDown={(e) => handleFixedElementResizeMouseDown(e, 'consiliu')}
+                />
+              )}
             </g>
             
             {/* Draw edges (including consiliu to DG) */}
@@ -892,20 +1128,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               
               fontSize = `${selectedFont.size}px`;
               lineHeight = `${selectedFont.lineHeight}`;
-              
-              // Debug log for first node only
-              if (node.unit.unit_type === 'director_general' && draggedNode) {
-                console.log('Rendering DG:', { 
-                  isBeingDragged, 
-                  draggedNodeId: draggedNode?.unit_id, 
-                  nodeId: node.unit_id,
-                  tempPosition,
-                  x, 
-                  y,
-                  originalX: node.x,
-                  originalY: node.y
-                });
-              }
               
               // Highlight if this is the nearest parent
               const isNearestParent = nearestParent?.unit_id === node.unit_id;

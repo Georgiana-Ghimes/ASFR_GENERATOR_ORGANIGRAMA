@@ -13,6 +13,7 @@ class UnitType(str, enum.Enum):
     compartiment = "compartiment"
     inspectorat = "inspectorat"
     birou = "birou"
+    consiliu = "consiliu"  # Special unit type for Consiliul de Conducere
 
 class VersionStatus(str, enum.Enum):
     draft = "draft"
