@@ -30,10 +30,15 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
     leadership_count: 0,
     execution_count: 0,
     color: '',
+    director_title: '',
+    director_name: '',
   });
 
   // Check if this is the special consiliu unit
   const isConsiliu = unit?.unit_type === 'consiliu' || unit?.stas_code === '330';
+  
+  // Check if this is the special director_general unit
+  const isDirectorGeneral = unit?.unit_type === 'director_general';
 
   useEffect(() => {
     if (unit) {
@@ -46,6 +51,8 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
         leadership_count: unit.leadership_count || 0,
         execution_count: unit.execution_count || 0,
         color: unit.color || '',
+        director_title: unit.director_title || '',
+        director_name: unit.director_name || '',
       });
     }
   }, [unit]);
@@ -72,7 +79,52 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
         </Button>
       </CardHeader>
       <CardContent>
-        {isConsiliu ? (
+        {isDirectorGeneral ? (
+          // Special form for Director General
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+              <p className="text-sm text-blue-800">
+                Aceasta este unitatea Director General. Puteți modifica funcția și numele directorului.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="director_title">Funcție *</Label>
+              <Input
+                id="director_title"
+                value={formData.director_title}
+                onChange={(e) => setFormData({ ...formData, director_title: e.target.value })}
+                placeholder="ex: DIRECTOR GENERAL"
+                required
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="director_name">Nume *</Label>
+              <Input
+                id="director_name"
+                value={formData.director_name}
+                onChange={(e) => setFormData({ ...formData, director_name: e.target.value })}
+                placeholder="ex: Petru BOGDAN"
+                required
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Anulează
+              </Button>
+              {!isReadOnly && (
+                <Button type="submit">
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvează
+                </Button>
+              )}
+            </div>
+          </form>
+        ) : isConsiliu ? (
           // Special simplified form for Consiliu
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">

@@ -1,5 +1,32 @@
 # Database Migrations
 
+## Add Director General Fields
+
+Pentru a adăuga câmpurile `director_title` și `director_name` pentru unitatea Director General:
+
+```bash
+cd backend
+python apply_director_fields_migration.py
+```
+
+Sau manual în PostgreSQL:
+
+```sql
+ALTER TABLE organizational_units 
+ADD COLUMN IF NOT EXISTS director_title VARCHAR;
+
+ALTER TABLE organizational_units 
+ADD COLUMN IF NOT EXISTS director_name VARCHAR;
+
+UPDATE organizational_units 
+SET director_title = 'DIRECTOR GENERAL',
+    director_name = 'Petru BOGDAN'
+WHERE unit_type = 'director_general' 
+  AND (director_title IS NULL OR director_name IS NULL);
+```
+
+Această migrație adaugă câmpuri pentru a stoca funcția și numele directorului general, făcând casuta editabilă.
+
 ## Add Consiliu Unit Type
 
 Pentru a adăuga valoarea `consiliu` la enum-ul `UnitType` și a crea unitatea Consiliul de Conducere în toate versiunile:

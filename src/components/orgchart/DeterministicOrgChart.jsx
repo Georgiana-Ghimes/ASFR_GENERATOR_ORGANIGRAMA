@@ -9,6 +9,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [editableTitle, setEditableTitle] = useState('CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
   const [versionData, setVersionData] = useState(null);
   const [consiliuUnit, setConsiliuUnit] = useState(null);
+  const [directorGeneralUnit, setDirectorGeneralUnit] = useState(null);
   const [draggedNode, setDraggedNode] = useState(null);
   const [draggedFixedElement, setDraggedFixedElement] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -106,10 +107,13 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         setVersionData(versionInfo);
         setEditableTitle(versionInfo.chart_title || 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
         
-        // Fetch consiliu unit
+        // Fetch special units (consiliu and director_general)
         const units = await apiClient.listUnits(versionId);
         const consiliu = units.find(u => u.stas_code === '330' || u.unit_type === 'consiliu');
         setConsiliuUnit(consiliu);
+        
+        const directorGeneral = units.find(u => u.unit_type === 'director_general');
+        setDirectorGeneralUnit(directorGeneral);
       } catch (error) {
         console.error('Failed to fetch layout:', error);
       } finally {
@@ -314,10 +318,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       setFixedElements(newPositions);
       localStorage.setItem(`fixed_elements_${versionId}`, JSON.stringify(newPositions));
     } else if (!wasDragging) {
-      // Was just a click, open panel for consiliu
+      // Was just a click, open panel for consiliu or director
       if (draggedFixedElement === 'consiliu' && onSelectUnit) {
         try {
-          // Fetch consiliu unit directly from API using apiClient for auth
           const units = await apiClient.listUnits(versionId);
           const consiliu = units.find(u => u.stas_code === '330' || u.unit_type === 'consiliu');
           
@@ -327,6 +330,17 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         } catch (error) {
           console.error('Error fetching consiliu unit:', error);
         }
+      } else if (draggedFixedElement === 'director' && onSelectUnit) {
+        try {
+          const units = await apiClient.listUnits(versionId);
+          const directorGeneral = units.find(u => u.unit_type === 'director_general');
+          
+          if (directorGeneral) {
+            onSelectUnit(directorGeneral);
+          }
+        } catch (error) {
+          console.error('Error fetching director_general unit:', error);
+        }
       }
     }
     
@@ -335,14 +349,17 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     setIsDragging(false);
   };
   
-  // Refresh consiliu data when needed (called from parent after save)
-  const refreshConsiliuData = async () => {
+  // Refresh special units data when needed (called from parent after save)
+  const refreshSpecialUnitsData = async () => {
     try {
       const units = await apiClient.listUnits(versionId);
       const consiliu = units.find(u => u.stas_code === '330' || u.unit_type === 'consiliu');
       setConsiliuUnit(consiliu);
+      
+      const directorGeneral = units.find(u => u.unit_type === 'director_general');
+      setDirectorGeneralUnit(directorGeneral);
     } catch (error) {
-      console.error('Error refreshing consiliu:', error);
+      console.error('Error refreshing special units:', error);
     }
   };
 
@@ -856,7 +873,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     fill="#000000"
                     style={{ pointerEvents: 'none' }}
                   >
-                    DIRECTOR GENERAL
+                    {directorGeneralUnit?.director_title || 'DIRECTOR GENERAL'}
                   </text>
                   <text
                     x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
@@ -867,7 +884,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     fill="#000000"
                     style={{ pointerEvents: 'none' }}
                   >
-                    Petru BOGDAN
+                    {directorGeneralUnit?.director_name || 'Petru BOGDAN'}
                   </text>
                 </g>
                 

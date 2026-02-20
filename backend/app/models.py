@@ -59,6 +59,8 @@ class OrgUnit(Base):
     custom_y = Column(Integer)  # Custom Y position for manual layout
     custom_height = Column(Integer)  # Custom height for manual sizing (in pixels, must be multiple of 20)
     custom_width = Column(Integer)  # Custom width for manual sizing (in pixels, must be multiple of 20)
+    director_title = Column(String)  # Title for director_general unit (e.g., "DIRECTOR GENERAL")
+    director_name = Column(String)  # Name for director_general unit (e.g., "Petru BOGDAN")
     
     version = relationship("OrgVersion", back_populates="units")
     parent = relationship("OrgUnit", remote_side=[id], backref="children")

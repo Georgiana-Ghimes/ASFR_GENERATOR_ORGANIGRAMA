@@ -48,6 +48,8 @@ class OrgUnitBase(BaseModel):
     custom_y: Optional[int] = None
     custom_height: Optional[int] = None
     custom_width: Optional[int] = None
+    director_title: Optional[str] = None
+    director_name: Optional[str] = None
 
 class OrgUnitCreate(OrgUnitBase):
     version_id: UUID
@@ -65,6 +67,8 @@ class OrgUnitUpdate(BaseModel):
     custom_y: Optional[int] = None
     custom_height: Optional[int] = None
     custom_width: Optional[int] = None
+    director_title: Optional[str] = None
+    director_name: Optional[str] = None
 
 class OrgUnit(OrgUnitBase):
     id: UUID
