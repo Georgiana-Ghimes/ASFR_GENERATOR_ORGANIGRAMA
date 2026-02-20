@@ -937,20 +937,39 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             );
           });
         } else if (isRight) {
-          // Children to the right: horizontal short, vertical long, horizontals short
+          // Children to the right: horizontal short, horizontal long, vertical distribution, horizontals to children
           const childrenY = children.map(c => c.centerY);
+          const childrenLeftX = children.map(c => c.left);
+          const leftmostChildX = Math.min(...childrenLeftX);
           const topmostY = Math.min(...childrenY);
           const bottommostY = Math.max(...childrenY);
           
-          // Distribution line is ALWAYS 30px to the right of parent
-          const verticalX = parentRight + verticalGap;
+          // Short horizontal from parent
+          const shortHorizontalEndX = parentRight + verticalGap;
+          
+          // Vertical distribution line is 30px LEFT of leftmost child
+          const verticalX = leftmostChildX - verticalGap;
           const verticalStartY = Math.min(topmostY, parentCenterY);
           const verticalEndY = Math.max(bottommostY, parentCenterY);
           
+          // Short horizontal from parent
           edgeElements.push(
             <line
-              key={`${parentId}-main`}
+              key={`${parentId}-h1`}
               x1={parentRight}
+              y1={parentCenterY}
+              x2={shortHorizontalEndX}
+              y2={parentCenterY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+          
+          // Long horizontal to distribution line
+          edgeElements.push(
+            <line
+              key={`${parentId}-h2`}
+              x1={shortHorizontalEndX}
               y1={parentCenterY}
               x2={verticalX}
               y2={parentCenterY}
@@ -959,6 +978,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             />
           );
           
+          // Vertical distribution line
           edgeElements.push(
             <line
               key={`${parentId}-dist`}
@@ -971,6 +991,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             />
           );
           
+          // Horizontal branches to each child
           children.forEach(child => {
             edgeElements.push(
               <line
@@ -985,20 +1006,39 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             );
           });
         } else if (isLeft) {
-          // Children to the left: horizontal short, vertical long, horizontals short
+          // Children to the left: horizontal short, horizontal long, vertical distribution, horizontals to children
           const childrenY = children.map(c => c.centerY);
+          const childrenRightX = children.map(c => c.right);
+          const rightmostChildX = Math.max(...childrenRightX);
           const topmostY = Math.min(...childrenY);
           const bottommostY = Math.max(...childrenY);
           
-          // Distribution line is ALWAYS 30px to the left of parent
-          const verticalX = parentLeft - verticalGap;
+          // Short horizontal from parent
+          const shortHorizontalEndX = parentLeft - verticalGap;
+          
+          // Vertical distribution line is 30px RIGHT of rightmost child
+          const verticalX = rightmostChildX + verticalGap;
           const verticalStartY = Math.min(topmostY, parentCenterY);
           const verticalEndY = Math.max(bottommostY, parentCenterY);
           
+          // Short horizontal from parent
           edgeElements.push(
             <line
-              key={`${parentId}-main`}
+              key={`${parentId}-h1`}
               x1={parentLeft}
+              y1={parentCenterY}
+              x2={shortHorizontalEndX}
+              y2={parentCenterY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+          
+          // Long horizontal to distribution line
+          edgeElements.push(
+            <line
+              key={`${parentId}-h2`}
+              x1={shortHorizontalEndX}
               y1={parentCenterY}
               x2={verticalX}
               y2={parentCenterY}
@@ -1007,6 +1047,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             />
           );
           
+          // Vertical distribution line
           edgeElements.push(
             <line
               key={`${parentId}-dist`}
@@ -1019,6 +1060,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             />
           );
           
+          // Horizontal branches to each child
           children.forEach(child => {
             edgeElements.push(
               <line
