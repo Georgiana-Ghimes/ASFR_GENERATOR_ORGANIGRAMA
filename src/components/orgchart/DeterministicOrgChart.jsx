@@ -691,113 +691,152 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     ? Math.max(...layoutData.layout.map(n => n.y + n.height)) + 100 
     : 900;
 
-  const drawOrthogonalEdge = (edge) => {
-    // Special case for consiliu to DG - orthogonal line (vertical then horizontal)
-    if (edge.from === 'consiliu') {
-      // Find the actual DG node position (might be custom or temp)
+  // Draw edges with proper parent-children grouping
+  const drawEdges = () => {
+    if (!layoutData.edges) return null;
+    
+    const edgeElements = [];
+    
+    // Handle consiliu to DG edge separately
+    const consiliuEdge = layoutData.edges.find(e => e.from === 'consiliu');
+    if (consiliuEdge) {
       const dgNode = layoutData.layout.find(n => n.unit.unit_type === 'director_general');
-      if (!dgNode) return null;
-      
-      // Check if DG is being dragged or resized
-      const isDGDragged = draggedNode?.unit_id === dgNode.unit_id;
-      const isDGResized = resizingNode?.unit_id === dgNode.unit_id;
-      const dgX = isDGDragged && tempPosition ? tempPosition.x : dgNode.x;
-      const dgY = isDGDragged && tempPosition ? tempPosition.y : dgNode.y;
-      const dgWidth = isDGResized && tempWidth ? tempWidth : dgNode.width;
-      
-      // Get consiliu position from fixedElements (dynamic, can be moved/resized)
-      const consiliu = draggedFixedElement === 'consiliu' && tempPosition 
-        ? { 
-            x: tempPosition.x, 
-            y: fixedElements.consiliu.y,
-            width: resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width,
-            height: resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height
-          }
-        : {
-            x: fixedElements.consiliu.x,
-            y: fixedElements.consiliu.y,
-            width: resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width,
-            height: resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height
-          };
-      
-      // Calculate consiliu center X and bottom Y
-      const consiliuCenterX = consiliu.x + consiliu.width / 2;
-      const consiliuBottomY = consiliu.y + consiliu.height;
-      
-      // DG center X and top Y
-      const dgCenterX = dgX + dgWidth / 2;
-      const dgTopY = dgY;
-      
-      // Calculate midpoint Y for orthogonal connection
-      const midY = (consiliuBottomY + dgTopY) / 2;
-      
-      return (
-        <g key={`${edge.from}-${edge.to}`}>
-          {/* Vertical line down from consiliu */}
-          <line
-            x1={consiliuCenterX}
-            y1={consiliuBottomY}
-            x2={consiliuCenterX}
-            y2={midY}
-            stroke="#94a3b8"
-            strokeWidth="2"
-          />
-          {/* Horizontal line to DG center X */}
-          <line
-            x1={consiliuCenterX}
-            y1={midY}
-            x2={dgCenterX}
-            y2={midY}
-            stroke="#94a3b8"
-            strokeWidth="2"
-          />
-          {/* Vertical line up to DG */}
-          <line
-            x1={dgCenterX}
-            y1={midY}
-            x2={dgCenterX}
-            y2={dgTopY}
-            stroke="#94a3b8"
-            strokeWidth="2"
-          />
-        </g>
-      );
+      if (dgNode) {
+        const isDGDragged = draggedNode?.unit_id === dgNode.unit_id;
+        const isDGResized = resizingNode?.unit_id === dgNode.unit_id;
+        const dgX = isDGDragged && tempPosition ? tempPosition.x : dgNode.x;
+        const dgY = isDGDragged && tempPosition ? tempPosition.y : dgNode.y;
+        const dgWidth = isDGResized && tempWidth ? tempWidth : dgNode.width;
+        
+        const consiliu = draggedFixedElement === 'consiliu' && tempPosition 
+          ? { 
+              x: tempPosition.x, 
+              y: fixedElements.consiliu.y,
+              width: resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width,
+              height: resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height
+            }
+          : {
+              x: fixedElements.consiliu.x,
+              y: fixedElements.consiliu.y,
+              width: resizingFixedElement === 'consiliu' && tempWidth ? tempWidth : fixedElements.consiliu.width,
+              height: resizingFixedElement === 'consiliu' && tempHeight ? tempHeight : fixedElements.consiliu.height
+            };
+        
+        const consiliuCenterX = consiliu.x + consiliu.width / 2;
+        const consiliuBottomY = consiliu.y + consiliu.height;
+        const dgCenterX = dgX + dgWidth / 2;
+        const dgTopY = dgY;
+        const midY = (consiliuBottomY + dgTopY) / 2;
+        
+        edgeElements.push(
+          <g key="consiliu-dg">
+            <line x1={consiliuCenterX} y1={consiliuBottomY} x2={consiliuCenterX} y2={midY} stroke="#94a3b8" strokeWidth="2" />
+            <line x1={consiliuCenterX} y1={midY} x2={dgCenterX} y2={midY} stroke="#94a3b8" strokeWidth="2" />
+            <line x1={dgCenterX} y1={midY} x2={dgCenterX} y2={dgTopY} stroke="#94a3b8" strokeWidth="2" />
+          </g>
+        );
+      }
     }
     
-    // Regular edges with orthogonal lines
-    const midY = (edge.from_y + edge.to_y) / 2;
+    // Group edges by parent
+    const edgesByParent = {};
+    layoutData.edges.forEach(edge => {
+      if (edge.from === 'consiliu') return; // Skip consiliu edge
+      if (!edgesByParent[edge.from]) {
+        edgesByParent[edge.from] = [];
+      }
+      edgesByParent[edge.from].push(edge);
+    });
     
-    return (
-      <g key={`${edge.from}-${edge.to}`}>
-        {/* Vertical line from parent */}
+    // Draw edges for each parent group
+    Object.entries(edgesByParent).forEach(([parentId, edges]) => {
+      if (edges.length === 0) return;
+      
+      // Get parent node
+      const parentNode = layoutData.layout.find(n => n.unit_id === parentId);
+      if (!parentNode) return;
+      
+      const isParentDragged = draggedNode?.unit_id === parentId;
+      const isParentResized = resizingNode?.unit_id === parentId;
+      const parentX = isParentDragged && tempPosition ? tempPosition.x : parentNode.x;
+      const parentY = isParentDragged && tempPosition ? tempPosition.y : parentNode.y;
+      const parentWidth = isParentResized && tempWidth ? tempWidth : parentNode.width;
+      const parentHeight = isParentResized && tempHeight ? tempHeight : parentNode.height;
+      
+      const parentCenterX = parentX + parentWidth / 2;
+      const parentBottomY = parentY + parentHeight;
+      
+      // Get all children positions
+      const children = edges.map(edge => {
+        const childNode = layoutData.layout.find(n => n.unit_id === edge.to);
+        if (!childNode) return null;
+        
+        const isChildDragged = draggedNode?.unit_id === childNode.unit_id;
+        const isChildResized = resizingNode?.unit_id === childNode.unit_id;
+        const childX = isChildDragged && tempPosition ? tempPosition.x : childNode.x;
+        const childY = isChildDragged && tempPosition ? tempPosition.y : childNode.y;
+        const childWidth = isChildResized && tempWidth ? tempWidth : childNode.width;
+        
+        return {
+          id: edge.to,
+          centerX: childX + childWidth / 2,
+          topY: childY
+        };
+      }).filter(c => c !== null);
+      
+      if (children.length === 0) return;
+      
+      // Find leftmost and rightmost children
+      const leftmostX = Math.min(...children.map(c => c.centerX));
+      const rightmostX = Math.max(...children.map(c => c.centerX));
+      
+      // Calculate horizontal line Y position (midpoint between parent bottom and children top)
+      const childrenTopY = Math.min(...children.map(c => c.topY));
+      const horizontalY = (parentBottomY + childrenTopY) / 2;
+      
+      // Draw vertical line from parent down to horizontal line
+      edgeElements.push(
         <line
-          x1={edge.from_x}
-          y1={edge.from_y}
-          x2={edge.from_x}
-          y2={midY}
+          key={`${parentId}-vertical`}
+          x1={parentCenterX}
+          y1={parentBottomY}
+          x2={parentCenterX}
+          y2={horizontalY}
           stroke="#94a3b8"
           strokeWidth="2"
         />
-        {/* Horizontal line */}
+      );
+      
+      // Draw horizontal line connecting all children
+      edgeElements.push(
         <line
-          x1={edge.from_x}
-          y1={midY}
-          x2={edge.to_x}
-          y2={midY}
+          key={`${parentId}-horizontal`}
+          x1={leftmostX}
+          y1={horizontalY}
+          x2={rightmostX}
+          y2={horizontalY}
           stroke="#94a3b8"
           strokeWidth="2"
         />
-        {/* Vertical line to child */}
-        <line
-          x1={edge.to_x}
-          y1={midY}
-          x2={edge.to_x}
-          y2={edge.to_y}
-          stroke="#94a3b8"
-          strokeWidth="2"
-        />
-      </g>
-    );
+      );
+      
+      // Draw vertical lines from horizontal line to each child
+      children.forEach(child => {
+        edgeElements.push(
+          <line
+            key={`${parentId}-${child.id}`}
+            x1={child.centerX}
+            y1={horizontalY}
+            x2={child.centerX}
+            y2={child.topY}
+            stroke="#94a3b8"
+            strokeWidth="2"
+          />
+        );
+      });
+    });
+    
+    return edgeElements;
   };
 
   return (
@@ -1306,7 +1345,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
             </g>
             
             {/* Draw edges (including consiliu to DG) */}
-            {layoutData.edges && layoutData.edges.map(edge => drawOrthogonalEdge(edge))}
+            {drawEdges()}
             
             {/* Draw nodes */}
             {layoutData.layout.map(node => {
