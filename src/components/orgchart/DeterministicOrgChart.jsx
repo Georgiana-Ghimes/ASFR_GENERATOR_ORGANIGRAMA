@@ -893,6 +893,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
           const childrenX = children.map(c => c.centerX);
           const leftmostX = Math.min(...childrenX);
           const rightmostX = Math.max(...childrenX);
+          
+          // Distribution line is ALWAYS 30px below parent
           const horizontalY = parentBottomY + verticalGap;
           const horizontalStartX = Math.min(leftmostX, parentCenterX);
           const horizontalEndX = Math.max(rightmostX, parentCenterX);
@@ -939,6 +941,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
           const childrenY = children.map(c => c.centerY);
           const topmostY = Math.min(...childrenY);
           const bottommostY = Math.max(...childrenY);
+          
+          // Distribution line is ALWAYS 30px to the right of parent
           const verticalX = parentRight + verticalGap;
           const verticalStartY = Math.min(topmostY, parentCenterY);
           const verticalEndY = Math.max(bottommostY, parentCenterY);
@@ -985,6 +989,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
           const childrenY = children.map(c => c.centerY);
           const topmostY = Math.min(...childrenY);
           const bottommostY = Math.max(...childrenY);
+          
+          // Distribution line is ALWAYS 30px to the left of parent
           const verticalX = parentLeft - verticalGap;
           const verticalStartY = Math.min(topmostY, parentCenterY);
           const verticalEndY = Math.max(bottommostY, parentCenterY);
