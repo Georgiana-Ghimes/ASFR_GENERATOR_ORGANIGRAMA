@@ -807,7 +807,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         />
       );
       
-      // Draw horizontal line connecting all children
+      // Draw horizontal line from parent center to leftmost and rightmost children
+      // This creates a T-shape where the vertical line meets the horizontal
       edgeElements.push(
         <line
           key={`${parentId}-horizontal`}
