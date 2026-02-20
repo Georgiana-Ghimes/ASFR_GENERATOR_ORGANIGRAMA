@@ -726,13 +726,19 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         const consiliuBottomY = consiliu.y + consiliu.height;
         const dgCenterX = dgX + dgWidth / 2;
         const dgTopY = dgY;
-        const midY = (consiliuBottomY + dgTopY) / 2;
+        
+        // Short vertical line from consiliu, then horizontal, then short vertical to DG
+        const verticalGap = 30; // Short vertical segment
+        const horizontalY = consiliuBottomY + verticalGap;
         
         edgeElements.push(
           <g key="consiliu-dg">
-            <line x1={consiliuCenterX} y1={consiliuBottomY} x2={consiliuCenterX} y2={midY} stroke="#94a3b8" strokeWidth="2" />
-            <line x1={consiliuCenterX} y1={midY} x2={dgCenterX} y2={midY} stroke="#94a3b8" strokeWidth="2" />
-            <line x1={dgCenterX} y1={midY} x2={dgCenterX} y2={dgTopY} stroke="#94a3b8" strokeWidth="2" />
+            {/* Short vertical from consiliu */}
+            <line x1={consiliuCenterX} y1={consiliuBottomY} x2={consiliuCenterX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
+            {/* Horizontal line */}
+            <line x1={consiliuCenterX} y1={horizontalY} x2={dgCenterX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
+            {/* Short vertical to DG */}
+            <line x1={dgCenterX} y1={horizontalY} x2={dgCenterX} y2={dgTopY} stroke="#94a3b8" strokeWidth="2" />
           </g>
         );
       }
@@ -786,37 +792,54 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       
       if (children.length === 0) return;
       
-      // Calculate horizontal line Y position (midpoint between parent bottom and children top)
-      const childrenTopY = Math.min(...children.map(c => c.topY));
-      const horizontalY = (parentBottomY + childrenTopY) / 2;
+      // Short vertical segment from parent (30px)
+      const verticalGap = 30;
       
       if (children.length === 1) {
         // Single child: direct vertical line from parent to child
         const child = children[0];
-        edgeElements.push(
-          <line
-            key={`${parentId}-${child.id}`}
-            x1={parentCenterX}
-            y1={parentBottomY}
-            x2={child.centerX}
-            y2={child.topY}
-            stroke="#94a3b8"
-            strokeWidth="2"
-          />
-        );
+        
+        // Check if parent and child are aligned vertically
+        if (Math.abs(parentCenterX - child.centerX) < 5) {
+          // Straight vertical line
+          edgeElements.push(
+            <line
+              key={`${parentId}-${child.id}`}
+              x1={parentCenterX}
+              y1={parentBottomY}
+              x2={child.centerX}
+              y2={child.topY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+        } else {
+          // Short vertical, horizontal, short vertical
+          const horizontalY = parentBottomY + verticalGap;
+          edgeElements.push(
+            <g key={`${parentId}-${child.id}`}>
+              <line x1={parentCenterX} y1={parentBottomY} x2={parentCenterX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
+              <line x1={parentCenterX} y1={horizontalY} x2={child.centerX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
+              <line x1={child.centerX} y1={horizontalY} x2={child.centerX} y2={child.topY} stroke="#94a3b8" strokeWidth="2" />
+            </g>
+          );
+        }
       } else {
-        // Multiple children: T-shape connection
+        // Multiple children: short vertical, long horizontal, short verticals to children
         
         // Find leftmost and rightmost children
         const childrenX = children.map(c => c.centerX);
         const leftmostX = Math.min(...childrenX);
         const rightmostX = Math.max(...childrenX);
         
+        // Horizontal line position: short distance below parent
+        const horizontalY = parentBottomY + verticalGap;
+        
         // Horizontal line must extend from leftmost to rightmost, including parent center
         const horizontalStartX = Math.min(leftmostX, parentCenterX);
         const horizontalEndX = Math.max(rightmostX, parentCenterX);
         
-        // Draw vertical line from parent down to horizontal line
+        // Draw short vertical line from parent down to horizontal line
         edgeElements.push(
           <line
             key={`${parentId}-vertical`}
@@ -829,7 +852,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
           />
         );
         
-        // Draw horizontal line (T-bar)
+        // Draw long horizontal line (T-bar)
         edgeElements.push(
           <line
             key={`${parentId}-horizontal`}
@@ -842,7 +865,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
           />
         );
         
-        // Draw vertical lines from horizontal line to each child
+        // Draw short vertical lines from horizontal line to each child
         children.forEach(child => {
           edgeElements.push(
             <line
