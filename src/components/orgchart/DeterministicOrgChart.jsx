@@ -557,12 +557,25 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     const mouseY = e.clientY - svgRect.top;
     
     // Calculate delta from initial mouse position
-    const deltaX = mouseX - resizeStartPos.x;
-    const deltaY = mouseY - resizeStartPos.y;
+    let deltaX = mouseX - resizeStartPos.x;
+    let deltaY = mouseY - resizeStartPos.y;
     
-    // Apply delta to original dimensions and then snap
-    const newWidth = resizingNode.width + deltaX;
-    const newHeight = resizingNode.height + deltaY;
+    console.log('Original deltas:', deltaX, deltaY, 'Is rotated:', resizingNode.unit.is_rotated);
+    
+    // If unit is rotated -90 degrees:
+    // - Visual right = original down (height increases with deltaX)
+    // - Visual down = original left (width decreases with deltaY, so negate it)
+    let newWidth, newHeight;
+    if (resizingNode.unit.is_rotated) {
+      newWidth = resizingNode.width - deltaY;  // Visual down = original left (inverted)
+      newHeight = resizingNode.height + deltaX; // Visual right = original down
+      console.log('Adjusted for rotation - newWidth:', newWidth, 'newHeight:', newHeight);
+    } else {
+      newWidth = resizingNode.width + deltaX;
+      newHeight = resizingNode.height + deltaY;
+    }
+    
+    console.log('New dimensions:', newWidth, 'x', newHeight);
     
     // Snap to grid (20px increments) and enforce minimums
     const snappedWidth = Math.max(200, snapToGrid(newWidth));  // Minimum 200px width
