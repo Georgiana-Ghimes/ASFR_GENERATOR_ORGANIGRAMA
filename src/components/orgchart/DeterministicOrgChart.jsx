@@ -1309,13 +1309,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               const isRotated = node.unit.is_rotated;
               
               // Calculate font size dynamically based on available space
-              // Standardize font size for boxes with same height and similar line count
               const text_length = node.unit.name.length;
-              const availableWidth = width - 91; // Updated: 75px left strip + 16px padding
+              const availableWidth = width - 91; // 75px left strip + 16px padding
               const availableHeight = height - 12;
               
-              let fontSize = '10px';
-              let lineHeight = '1.2';
+              let fontSize = '6px';
+              let lineHeight = '1.1';
               
               // Estimate how many characters fit per line at different font sizes
               const estimateLines = (fontPx, charWidth) => {
@@ -1323,7 +1322,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 return Math.ceil(text_length / charsPerLine);
               };
               
-              // Define font sizes with their properties
+              // Define font sizes with their properties - extended range for smaller sizes
               const fontSizes = [
                 { size: 16, charWidth: 8, lineHeight: 1.3 },
                 { size: 14, charWidth: 7, lineHeight: 1.3 },
@@ -1333,7 +1332,10 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 { size: 10, charWidth: 5, lineHeight: 1.2 },
                 { size: 9, charWidth: 4.5, lineHeight: 1.15 },
                 { size: 8, charWidth: 4, lineHeight: 1.1 },
-                { size: 7, charWidth: 3.5, lineHeight: 1.1 }
+                { size: 7, charWidth: 3.5, lineHeight: 1.1 },
+                { size: 6, charWidth: 3, lineHeight: 1.1 },
+                { size: 5, charWidth: 2.5, lineHeight: 1.05 },
+                { size: 4, charWidth: 2, lineHeight: 1.05 }
               ];
               
               // Find the largest font where text fits in available space
@@ -1347,35 +1349,6 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 if (totalHeight <= availableHeight) {
                   selectedFont = font;
                   break; // Found the largest that fits
-                }
-              }
-              
-              // CONSISTENCY FIX: For standard 40px height boxes, normalize font by line count
-              // This ensures boxes with same height and line count have same font size
-              if (height === 40) {
-                const estimatedLines = estimateLines(selectedFont.size, selectedFont.charWidth);
-                
-                // Standard fonts for 40px height boxes based on line count
-                if (estimatedLines === 1) {
-                  // Single line: use 14px
-                  selectedFont = fontSizes.find(f => f.size === 14) || selectedFont;
-                } else if (estimatedLines === 2) {
-                  // Two lines: use 11px
-                  selectedFont = fontSizes.find(f => f.size === 11) || selectedFont;
-                } else {
-                  // Three+ lines: use 9px
-                  selectedFont = fontSizes.find(f => f.size === 9) || selectedFont;
-                }
-              } else if (height === 60) {
-                // For 60px height boxes, normalize by line count
-                const estimatedLines = estimateLines(selectedFont.size, selectedFont.charWidth);
-                
-                if (estimatedLines <= 2) {
-                  selectedFont = fontSizes.find(f => f.size === 13) || selectedFont;
-                } else if (estimatedLines === 3) {
-                  selectedFont = fontSizes.find(f => f.size === 11) || selectedFont;
-                } else {
-                  selectedFont = fontSizes.find(f => f.size === 9) || selectedFont;
                 }
               }
               
