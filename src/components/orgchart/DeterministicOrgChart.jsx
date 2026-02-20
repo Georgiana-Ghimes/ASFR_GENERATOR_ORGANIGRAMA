@@ -692,7 +692,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     : 900;
 
   const drawOrthogonalEdge = (edge) => {
-    // Special case for consiliu to DG - dynamic vertical line
+    // Special case for consiliu to DG - orthogonal line (vertical then horizontal)
     if (edge.from === 'consiliu') {
       // Find the actual DG node position (might be custom or temp)
       const dgNode = layoutData.layout.find(n => n.unit.unit_type === 'director_general');
@@ -724,16 +724,39 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       const consiliuCenterX = consiliu.x + consiliu.width / 2;
       const consiliuBottomY = consiliu.y + consiliu.height;
       
-      // DG center X
+      // DG center X and top Y
       const dgCenterX = dgX + dgWidth / 2;
+      const dgTopY = dgY;
+      
+      // Calculate midpoint Y for orthogonal connection
+      const midY = (consiliuBottomY + dgTopY) / 2;
       
       return (
         <g key={`${edge.from}-${edge.to}`}>
+          {/* Vertical line down from consiliu */}
           <line
             x1={consiliuCenterX}
             y1={consiliuBottomY}
+            x2={consiliuCenterX}
+            y2={midY}
+            stroke="#94a3b8"
+            strokeWidth="2"
+          />
+          {/* Horizontal line to DG center X */}
+          <line
+            x1={consiliuCenterX}
+            y1={midY}
             x2={dgCenterX}
-            y2={dgY}
+            y2={midY}
+            stroke="#94a3b8"
+            strokeWidth="2"
+          />
+          {/* Vertical line up to DG */}
+          <line
+            x1={dgCenterX}
+            y1={midY}
+            x2={dgCenterX}
+            y2={dgTopY}
             stroke="#94a3b8"
             strokeWidth="2"
           />
