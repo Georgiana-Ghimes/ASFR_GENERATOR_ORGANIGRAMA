@@ -771,6 +771,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       
       const parentCenterX = parentX + parentWidth / 2;
       const parentBottomY = parentY + parentHeight;
+      const parentCenterY = parentY + parentHeight / 2;
+      const parentRight = parentX + parentWidth;
+      const parentLeft = parentX;
       
       // Get all children positions
       const children = edges.map(edge => {
@@ -786,99 +789,243 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         return {
           id: edge.to,
           centerX: childX + childWidth / 2,
-          topY: childY
+          centerY: childY + childHeight / 2,
+          topY: childY,
+          left: childX,
+          right: childX + childWidth
         };
       }).filter(c => c !== null);
       
       if (children.length === 0) return;
       
-      // Short vertical segment from parent (30px)
+      // Determine direction: where are children relative to parent?
+      const childrenCenterX = children.reduce((sum, c) => sum + c.centerX, 0) / children.length;
+      const childrenCenterY = children.reduce((sum, c) => sum + c.centerY, 0) / children.length;
+      
+      const isBelow = childrenCenterY > (parentY + parentHeight);
+      const isRight = !isBelow && childrenCenterX > (parentX + parentWidth);
+      const isLeft = !isBelow && !isRight && childrenCenterX < parentX;
+      
       const verticalGap = 30;
       
       if (children.length === 1) {
-        // Single child: direct vertical line from parent to child
         const child = children[0];
         
-        // Check if parent and child are aligned vertically
-        if (Math.abs(parentCenterX - child.centerX) < 5) {
-          // Straight vertical line
-          edgeElements.push(
-            <line
-              key={`${parentId}-${child.id}`}
-              x1={parentCenterX}
-              y1={parentBottomY}
-              x2={child.centerX}
-              y2={child.topY}
-              stroke="#94a3b8"
-              strokeWidth="2"
-            />
-          );
-        } else {
-          // Short vertical, horizontal, short vertical
-          const horizontalY = parentBottomY + verticalGap;
-          edgeElements.push(
-            <g key={`${parentId}-${child.id}`}>
-              <line x1={parentCenterX} y1={parentBottomY} x2={parentCenterX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
-              <line x1={parentCenterX} y1={horizontalY} x2={child.centerX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
-              <line x1={child.centerX} y1={horizontalY} x2={child.centerX} y2={child.topY} stroke="#94a3b8" strokeWidth="2" />
-            </g>
-          );
+        if (isBelow) {
+          // Child below
+          if (Math.abs(parentCenterX - child.centerX) < 5) {
+            edgeElements.push(
+              <line
+                key={`${parentId}-${child.id}`}
+                x1={parentCenterX}
+                y1={parentBottomY}
+                x2={child.centerX}
+                y2={child.topY}
+                stroke="#94a3b8"
+                strokeWidth="2"
+              />
+            );
+          } else {
+            const horizontalY = parentBottomY + verticalGap;
+            edgeElements.push(
+              <g key={`${parentId}-${child.id}`}>
+                <line x1={parentCenterX} y1={parentBottomY} x2={parentCenterX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
+                <line x1={parentCenterX} y1={horizontalY} x2={child.centerX} y2={horizontalY} stroke="#94a3b8" strokeWidth="2" />
+                <line x1={child.centerX} y1={horizontalY} x2={child.centerX} y2={child.topY} stroke="#94a3b8" strokeWidth="2" />
+              </g>
+            );
+          }
+        } else if (isRight) {
+          // Child to the right
+          if (Math.abs(parentCenterY - child.centerY) < 5) {
+            edgeElements.push(
+              <line
+                key={`${parentId}-${child.id}`}
+                x1={parentRight}
+                y1={parentCenterY}
+                x2={child.left}
+                y2={child.centerY}
+                stroke="#94a3b8"
+                strokeWidth="2"
+              />
+            );
+          } else {
+            const verticalX = parentRight + verticalGap;
+            edgeElements.push(
+              <g key={`${parentId}-${child.id}`}>
+                <line x1={parentRight} y1={parentCenterY} x2={verticalX} y2={parentCenterY} stroke="#94a3b8" strokeWidth="2" />
+                <line x1={verticalX} y1={parentCenterY} x2={verticalX} y2={child.centerY} stroke="#94a3b8" strokeWidth="2" />
+                <line x1={verticalX} y1={child.centerY} x2={child.left} y2={child.centerY} stroke="#94a3b8" strokeWidth="2" />
+              </g>
+            );
+          }
+        } else if (isLeft) {
+          // Child to the left
+          if (Math.abs(parentCenterY - child.centerY) < 5) {
+            edgeElements.push(
+              <line
+                key={`${parentId}-${child.id}`}
+                x1={parentLeft}
+                y1={parentCenterY}
+                x2={child.right}
+                y2={child.centerY}
+                stroke="#94a3b8"
+                strokeWidth="2"
+              />
+            );
+          } else {
+            const verticalX = parentLeft - verticalGap;
+            edgeElements.push(
+              <g key={`${parentId}-${child.id}`}>
+                <line x1={parentLeft} y1={parentCenterY} x2={verticalX} y2={parentCenterY} stroke="#94a3b8" strokeWidth="2" />
+                <line x1={verticalX} y1={parentCenterY} x2={verticalX} y2={child.centerY} stroke="#94a3b8" strokeWidth="2" />
+                <line x1={verticalX} y1={child.centerY} x2={child.right} y2={child.centerY} stroke="#94a3b8" strokeWidth="2" />
+              </g>
+            );
+          }
         }
       } else {
-        // Multiple children: short vertical, long horizontal, short verticals to children
+        // Multiple children
         
-        // Find leftmost and rightmost children
-        const childrenX = children.map(c => c.centerX);
-        const leftmostX = Math.min(...childrenX);
-        const rightmostX = Math.max(...childrenX);
-        
-        // Horizontal line position: short distance below parent
-        const horizontalY = parentBottomY + verticalGap;
-        
-        // Horizontal line must extend from leftmost to rightmost, including parent center
-        const horizontalStartX = Math.min(leftmostX, parentCenterX);
-        const horizontalEndX = Math.max(rightmostX, parentCenterX);
-        
-        // Draw short vertical line from parent down to horizontal line
-        edgeElements.push(
-          <line
-            key={`${parentId}-vertical`}
-            x1={parentCenterX}
-            y1={parentBottomY}
-            x2={parentCenterX}
-            y2={horizontalY}
-            stroke="#94a3b8"
-            strokeWidth="2"
-          />
-        );
-        
-        // Draw long horizontal line (T-bar)
-        edgeElements.push(
-          <line
-            key={`${parentId}-horizontal`}
-            x1={horizontalStartX}
-            y1={horizontalY}
-            x2={horizontalEndX}
-            y2={horizontalY}
-            stroke="#94a3b8"
-            strokeWidth="2"
-          />
-        );
-        
-        // Draw short vertical lines from horizontal line to each child
-        children.forEach(child => {
+        if (isBelow) {
+          // Children below: vertical short, horizontal long, verticals short
+          const childrenX = children.map(c => c.centerX);
+          const leftmostX = Math.min(...childrenX);
+          const rightmostX = Math.max(...childrenX);
+          const horizontalY = parentBottomY + verticalGap;
+          const horizontalStartX = Math.min(leftmostX, parentCenterX);
+          const horizontalEndX = Math.max(rightmostX, parentCenterX);
+          
           edgeElements.push(
             <line
-              key={`${parentId}-${child.id}`}
-              x1={child.centerX}
-              y1={horizontalY}
-              x2={child.centerX}
-              y2={child.topY}
+              key={`${parentId}-main`}
+              x1={parentCenterX}
+              y1={parentBottomY}
+              x2={parentCenterX}
+              y2={horizontalY}
               stroke="#94a3b8"
               strokeWidth="2"
             />
           );
-        });
+          
+          edgeElements.push(
+            <line
+              key={`${parentId}-dist`}
+              x1={horizontalStartX}
+              y1={horizontalY}
+              x2={horizontalEndX}
+              y2={horizontalY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+          
+          children.forEach(child => {
+            edgeElements.push(
+              <line
+                key={`${parentId}-${child.id}`}
+                x1={child.centerX}
+                y1={horizontalY}
+                x2={child.centerX}
+                y2={child.topY}
+                stroke="#94a3b8"
+                strokeWidth="2"
+              />
+            );
+          });
+        } else if (isRight) {
+          // Children to the right: horizontal short, vertical long, horizontals short
+          const childrenY = children.map(c => c.centerY);
+          const topmostY = Math.min(...childrenY);
+          const bottommostY = Math.max(...childrenY);
+          const verticalX = parentRight + verticalGap;
+          const verticalStartY = Math.min(topmostY, parentCenterY);
+          const verticalEndY = Math.max(bottommostY, parentCenterY);
+          
+          edgeElements.push(
+            <line
+              key={`${parentId}-main`}
+              x1={parentRight}
+              y1={parentCenterY}
+              x2={verticalX}
+              y2={parentCenterY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+          
+          edgeElements.push(
+            <line
+              key={`${parentId}-dist`}
+              x1={verticalX}
+              y1={verticalStartY}
+              x2={verticalX}
+              y2={verticalEndY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+          
+          children.forEach(child => {
+            edgeElements.push(
+              <line
+                key={`${parentId}-${child.id}`}
+                x1={verticalX}
+                y1={child.centerY}
+                x2={child.left}
+                y2={child.centerY}
+                stroke="#94a3b8"
+                strokeWidth="2"
+              />
+            );
+          });
+        } else if (isLeft) {
+          // Children to the left: horizontal short, vertical long, horizontals short
+          const childrenY = children.map(c => c.centerY);
+          const topmostY = Math.min(...childrenY);
+          const bottommostY = Math.max(...childrenY);
+          const verticalX = parentLeft - verticalGap;
+          const verticalStartY = Math.min(topmostY, parentCenterY);
+          const verticalEndY = Math.max(bottommostY, parentCenterY);
+          
+          edgeElements.push(
+            <line
+              key={`${parentId}-main`}
+              x1={parentLeft}
+              y1={parentCenterY}
+              x2={verticalX}
+              y2={parentCenterY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+          
+          edgeElements.push(
+            <line
+              key={`${parentId}-dist`}
+              x1={verticalX}
+              y1={verticalStartY}
+              x2={verticalX}
+              y2={verticalEndY}
+              stroke="#94a3b8"
+              strokeWidth="2"
+            />
+          );
+          
+          children.forEach(child => {
+            edgeElements.push(
+              <line
+                key={`${parentId}-${child.id}`}
+                x1={verticalX}
+                y1={child.centerY}
+                x2={child.right}
+                y2={child.centerY}
+                stroke="#94a3b8"
+                strokeWidth="2"
+              />
+            );
+          });
+        }
       }
     });
     
