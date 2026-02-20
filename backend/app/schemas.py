@@ -50,6 +50,9 @@ class OrgUnitBase(BaseModel):
     custom_width: Optional[int] = None
     director_title: Optional[str] = None
     director_name: Optional[str] = None
+    legend_col1: Optional[str] = None
+    legend_col2: Optional[str] = None
+    legend_col3: Optional[str] = None
 
 class OrgUnitCreate(OrgUnitBase):
     version_id: UUID
@@ -69,6 +72,9 @@ class OrgUnitUpdate(BaseModel):
     custom_width: Optional[int] = None
     director_title: Optional[str] = None
     director_name: Optional[str] = None
+    legend_col1: Optional[str] = None
+    legend_col2: Optional[str] = None
+    legend_col3: Optional[str] = None
 
 class OrgUnit(OrgUnitBase):
     id: UUID

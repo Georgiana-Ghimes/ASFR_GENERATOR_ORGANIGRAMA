@@ -14,6 +14,7 @@ class UnitType(str, enum.Enum):
     inspectorat = "inspectorat"
     birou = "birou"
     consiliu = "consiliu"  # Special unit type for Consiliul de Conducere
+    legend = "legend"  # Special unit type for Legend box
 
 class VersionStatus(str, enum.Enum):
     draft = "draft"
@@ -61,6 +62,9 @@ class OrgUnit(Base):
     custom_width = Column(Integer)  # Custom width for manual sizing (in pixels, must be multiple of 20)
     director_title = Column(String)  # Title for director_general unit (e.g., "DIRECTOR GENERAL")
     director_name = Column(String)  # Name for director_general unit (e.g., "Petru BOGDAN")
+    legend_col1 = Column(String)  # Legend column 1 text
+    legend_col2 = Column(String)  # Legend column 2 text
+    legend_col3 = Column(String)  # Legend column 3 text
     
     version = relationship("OrgVersion", back_populates="units")
     parent = relationship("OrgUnit", remote_side=[id], backref="children")

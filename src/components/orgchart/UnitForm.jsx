@@ -32,6 +32,9 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
     color: '',
     director_title: '',
     director_name: '',
+    legend_col1: '',
+    legend_col2: '',
+    legend_col3: '',
   });
 
   // Check if this is the special consiliu unit
@@ -39,6 +42,9 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
   
   // Check if this is the special director_general unit
   const isDirectorGeneral = unit?.unit_type === 'director_general';
+  
+  // Check if this is the special legend unit
+  const isLegend = unit?.unit_type === 'legend';
 
   useEffect(() => {
     if (unit) {
@@ -53,6 +59,9 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
         color: unit.color || '',
         director_title: unit.director_title || '',
         director_name: unit.director_name || '',
+        legend_col1: unit.legend_col1 || '',
+        legend_col2: unit.legend_col2 || '',
+        legend_col3: unit.legend_col3 || '',
       });
     }
   }, [unit]);
@@ -79,7 +88,64 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
         </Button>
       </CardHeader>
       <CardContent>
-        {isDirectorGeneral ? (
+        {isLegend ? (
+          // Special form for Legend
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+              <p className="text-sm text-blue-800">
+                Aceasta este legenda editabilă. Puteți modifica textele din cele 3 coloane.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="legend_col1">Coloana 1 *</Label>
+              <Input
+                id="legend_col1"
+                value={formData.legend_col1}
+                onChange={(e) => setFormData({ ...formData, legend_col1: e.target.value })}
+                placeholder="ex: NUMĂR POSTURI CONDUCERE"
+                required
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="legend_col2">Coloana 2 *</Label>
+              <Input
+                id="legend_col2"
+                value={formData.legend_col2}
+                onChange={(e) => setFormData({ ...formData, legend_col2: e.target.value })}
+                placeholder="ex: TOTAL POSTURI INCLUS CONDUCERE"
+                required
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="legend_col3">Coloana 3 *</Label>
+              <Input
+                id="legend_col3"
+                value={formData.legend_col3}
+                onChange={(e) => setFormData({ ...formData, legend_col3: e.target.value })}
+                placeholder="ex: DENUMIRE STRUCTURĂ"
+                required
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Anulează
+              </Button>
+              {!isReadOnly && (
+                <Button type="submit">
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvează
+                </Button>
+              )}
+            </div>
+          </form>
+        ) : isDirectorGeneral ? (
           // Special form for Director General
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">

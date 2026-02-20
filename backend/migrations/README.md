@@ -1,5 +1,32 @@
 # Database Migrations
 
+## Add Custom Legend Unit
+
+Pentru a adăuga unitatea Legend editabilă cu 3 coloane:
+
+```bash
+cd backend
+python apply_legend_migration.py
+python add_legend_unit.py
+```
+
+Sau manual în PostgreSQL:
+
+```sql
+ALTER TYPE unittype ADD VALUE IF NOT EXISTS 'legend';
+
+ALTER TABLE organizational_units 
+ADD COLUMN IF NOT EXISTS legend_col1 VARCHAR;
+
+ALTER TABLE organizational_units 
+ADD COLUMN IF NOT EXISTS legend_col2 VARCHAR;
+
+ALTER TABLE organizational_units 
+ADD COLUMN IF NOT EXISTS legend_col3 VARCHAR;
+```
+
+Această migrație adaugă tipul special de unitate "legend" pentru legenda editabilă cu 3 coloane personalizabile.
+
 ## Add Director General Fields
 
 Pentru a adăuga câmpurile `director_title` și `director_name` pentru unitatea Director General:

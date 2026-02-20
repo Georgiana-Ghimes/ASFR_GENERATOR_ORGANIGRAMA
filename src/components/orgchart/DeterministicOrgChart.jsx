@@ -10,6 +10,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [versionData, setVersionData] = useState(null);
   const [consiliuUnit, setConsiliuUnit] = useState(null);
   const [directorGeneralUnit, setDirectorGeneralUnit] = useState(null);
+  const [legendUnit, setLegendUnit] = useState(null);
   const [draggedNode, setDraggedNode] = useState(null);
   const [draggedFixedElement, setDraggedFixedElement] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -24,13 +25,14 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
   const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
   const svgRef = React.useRef(null);
 
-  // Fixed elements positions (legend, director, consiliu, headers)
+  // Fixed elements positions (legend, director, consiliu, headers, customLegend)
   const [fixedElements, setFixedElements] = useState({
     legend: { x: 20, y: 20, width: 200, height: 100 },
     director: { x: 1180, y: 20, width: 200, height: 60 },
     header1: { x: 500, y: 120, width: 400, height: 20 },
     header2: { x: 500, y: 140, width: 400, height: 20 },
-    consiliu: { x: 600, y: 180, width: 300, height: 60 }
+    consiliu: { x: 600, y: 180, width: 300, height: 60 },
+    customLegend: { x: 450, y: 20, width: 200, height: 300 }
   });
 
   const SNAP_DISTANCE = 19; // 0.5cm ≈ 19px
@@ -52,7 +54,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       director: { width: 200, height: 60 },
       header1: { width: 400, height: 20 },
       header2: { width: 400, height: 20 },
-      consiliu: { width: 300, height: 60 }
+      consiliu: { width: 300, height: 60 },
+      customLegend: { width: 200, height: 300 }
     };
     
     const baseWidth = initialDimensions[elementKey].width;
@@ -77,7 +80,12 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
     // Load fixed elements positions from localStorage
     const savedPositions = localStorage.getItem(`fixed_elements_${versionId}`);
     if (savedPositions) {
-      setFixedElements(JSON.parse(savedPositions));
+      const parsed = JSON.parse(savedPositions);
+      // Ensure customLegend exists (for backward compatibility)
+      if (!parsed.customLegend) {
+        parsed.customLegend = { x: 450, y: 20, width: 200, height: 300 };
+      }
+      setFixedElements(parsed);
     }
     
     const fetchLayout = async () => {
@@ -107,13 +115,16 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         setVersionData(versionInfo);
         setEditableTitle(versionInfo.chart_title || 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026');
         
-        // Fetch special units (consiliu and director_general)
+        // Fetch special units (consiliu, director_general, legend)
         const units = await apiClient.listUnits(versionId);
         const consiliu = units.find(u => u.stas_code === '330' || u.unit_type === 'consiliu');
         setConsiliuUnit(consiliu);
         
         const directorGeneral = units.find(u => u.unit_type === 'director_general');
         setDirectorGeneralUnit(directorGeneral);
+        
+        const legend = units.find(u => u.unit_type === 'legend');
+        setLegendUnit(legend);
       } catch (error) {
         console.error('Failed to fetch layout:', error);
       } finally {
@@ -318,7 +329,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       setFixedElements(newPositions);
       localStorage.setItem(`fixed_elements_${versionId}`, JSON.stringify(newPositions));
     } else if (!wasDragging) {
-      // Was just a click, open panel for consiliu or director
+      // Was just a click, open panel for consiliu, director, or customLegend
       if (draggedFixedElement === 'consiliu' && onSelectUnit) {
         try {
           const units = await apiClient.listUnits(versionId);
@@ -341,6 +352,17 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         } catch (error) {
           console.error('Error fetching director_general unit:', error);
         }
+      } else if (draggedFixedElement === 'customLegend' && onSelectUnit) {
+        try {
+          const units = await apiClient.listUnits(versionId);
+          const legend = units.find(u => u.unit_type === 'legend');
+          
+          if (legend) {
+            onSelectUnit(legend);
+          }
+        } catch (error) {
+          console.error('Error fetching legend unit:', error);
+        }
       }
     }
     
@@ -358,6 +380,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
       
       const directorGeneral = units.find(u => u.unit_type === 'director_general');
       setDirectorGeneralUnit(directorGeneral);
+      
+      const legend = units.find(u => u.unit_type === 'legend');
+      setLegendUnit(legend);
     } catch (error) {
       console.error('Error refreshing special units:', error);
     }
@@ -1006,6 +1031,123 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   />
                 )}
               </g>
+            
+            {/* Custom Legend - draggable and resizable box with 3 columns */}
+            {fixedElements.customLegend && (
+            <g>
+              <g
+                onMouseDown={(e) => handleFixedElementMouseDown(e, 'customLegend')}
+                style={{ cursor: isReadOnly ? 'default' : 'move' }}
+              >
+                {/* Main box */}
+                <rect
+                  x={draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x}
+                  y={draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y}
+                  width={resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width}
+                  height={resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height}
+                  fill="white"
+                  stroke={draggedFixedElement === 'customLegend' || resizingFixedElement === 'customLegend' ? '#3b82f6' : '#1f2937'}
+                  strokeWidth="2"
+                />
+                
+                {/* Header row */}
+                <rect
+                  x={draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x}
+                  y={draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y}
+                  width={resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width}
+                  height={(resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15}
+                  fill="white"
+                  stroke="#1f2937"
+                  strokeWidth="2"
+                  style={{ pointerEvents: 'none' }}
+                />
+                <text
+                  x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 2}
+                  y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.075 + 5}
+                  fontSize={getDynamicFontSize('customLegend', 18)}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  Legendă
+                </text>
+                
+                {/* Column 1 */}
+                <line
+                  x1={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 3}
+                  y1={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15}
+                  x2={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 3}
+                  y2={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height)}
+                  stroke="#1f2937"
+                  strokeWidth="2"
+                  style={{ pointerEvents: 'none' }}
+                />
+                <text
+                  x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}
+                  y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2}
+                  fontSize={getDynamicFontSize('customLegend', 16)}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                  transform={`rotate(-90, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2})`}
+                >
+                  {legendUnit?.legend_col1 || 'NUMĂR POSTURI CONDUCERE'}
+                </text>
+                
+                {/* Column 2 */}
+                <line
+                  x1={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + 2 * (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 3}
+                  y1={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15}
+                  x2={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + 2 * (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 3}
+                  y2={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height)}
+                  stroke="#1f2937"
+                  strokeWidth="2"
+                  style={{ pointerEvents: 'none' }}
+                />
+                <text
+                  x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 2}
+                  y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2}
+                  fontSize={getDynamicFontSize('customLegend', 15)}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                  transform={`rotate(-90, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 2}, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2})`}
+                >
+                  {legendUnit?.legend_col2 || 'TOTAL POSTURI INCLUS CONDUCERE'}
+                </text>
+                
+                {/* Column 3 */}
+                <text
+                  x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + 5 * (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}
+                  y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2}
+                  fontSize={getDynamicFontSize('customLegend', 16)}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  fill="#000000"
+                  style={{ pointerEvents: 'none' }}
+                  transform={`rotate(-90, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + 5 * (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2})`}
+                >
+                  {legendUnit?.legend_col3 || 'DENUMIRE STRUCTURĂ'}
+                </text>
+              </g>
+              
+              {/* Resize handle for customLegend */}
+              {!isReadOnly && (
+                <path
+                  d={`M ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) - 10} ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height)} 
+                       L ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width)} ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height)} 
+                       L ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width)} ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) - 10} Z`}
+                  fill="#9ca3af"
+                  stroke="none"
+                  style={{ cursor: 'nwse-resize' }}
+                  onMouseDown={(e) => handleFixedElementResizeMouseDown(e, 'customLegend')}
+                />
+              )}
+            </g>
+            )}
             
             {/* Consiliu - draggable and resizable box */}
             <g>
