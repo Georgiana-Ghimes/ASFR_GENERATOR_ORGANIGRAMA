@@ -785,6 +785,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
         const childX = isChildDragged && tempPosition ? tempPosition.x : childNode.x;
         const childY = isChildDragged && tempPosition ? tempPosition.y : childNode.y;
         const childWidth = isChildResized && tempWidth ? tempWidth : childNode.width;
+        const childHeight = isChildResized && tempHeight ? tempHeight : childNode.height;
         
         return {
           id: edge.to,
