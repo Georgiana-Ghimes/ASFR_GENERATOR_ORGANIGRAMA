@@ -40,8 +40,8 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
   // Check if this is the special consiliu unit
   const isConsiliu = unit?.unit_type === 'consiliu' || unit?.stas_code === '330';
   
-  // Check if this is the special director_general unit
-  const isDirectorGeneral = unit?.unit_type === 'director_general';
+  // Check if this is the director mini-legend (not the actual director_general unit)
+  const isDirectorMiniLegend = unit?._isDirectorMiniLegend === true;
   
   // Check if this is the special legend unit
   const isLegend = unit?.unit_type === 'legend';
@@ -145,12 +145,12 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
               )}
             </div>
           </form>
-        ) : isDirectorGeneral ? (
-          // Special form for Director General
+        ) : isDirectorMiniLegend ? (
+          // Special form for Director Mini-Legend (the fixed element)
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
               <p className="text-sm text-blue-800">
-                Aceasta este unitatea Director General. Puteți modifica funcția și numele directorului.
+                Aceasta este mini-legenda Director General. Puteți modifica funcția și numele directorului.
               </p>
             </div>
 
@@ -290,24 +290,23 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
             </Select>
           </div>
 
-          {/* Position counts - only for non-director_general units */}
-          {formData.unit_type !== 'director_general' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="leadership_count">Posturi Conducere</Label>
-                <Input
-                  id="leadership_count"
-                  type="number"
-                  min="0"
-                  value={formData.leadership_count}
-                  onChange={(e) => setFormData({ ...formData, leadership_count: parseInt(e.target.value) || 0 })}
-                  disabled={isReadOnly}
-                />
-              </div>
-              <div>
-                <Label htmlFor="execution_count">Posturi Execuție</Label>
-                <Input
-                  id="execution_count"
+          {/* Position counts */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="leadership_count">Posturi Conducere</Label>
+              <Input
+                id="leadership_count"
+                type="number"
+                min="0"
+                value={formData.leadership_count}
+                onChange={(e) => setFormData({ ...formData, leadership_count: parseInt(e.target.value) || 0 })}
+                disabled={isReadOnly}
+              />
+            </div>
+            <div>
+              <Label htmlFor="execution_count">Posturi Execuție</Label>
+              <Input
+                id="execution_count"
                   type="number"
                   min="0"
                   value={formData.execution_count}
@@ -316,7 +315,6 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
                 />
               </div>
             </div>
-          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

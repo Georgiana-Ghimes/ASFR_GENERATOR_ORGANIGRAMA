@@ -13,23 +13,18 @@ import { Plus, Search, Edit, Trash2, User, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
-const statusLabels = {
-  active: { label: 'Activ', color: 'bg-green-100 text-green-800' },
-  on_leave: { label: 'Concediu', color: 'bg-yellow-100 text-yellow-800' },
-  terminated: { label: 'Inactiv', color: 'bg-red-100 text-red-800' },
-};
-
 export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(null);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
     hire_date: '',
-    status: 'active',
+    unit_id: null,
   });
 
   const queryClient = useQueryClient();
@@ -38,6 +33,26 @@ export default function EmployeesPage() {
     queryKey: ['employees'],
     queryFn: () => apiClient.listEmployees(),
   });
+
+  // Fetch versions to get units
+  const { data: versions = [] } = useQuery({
+    queryKey: ['versions'],
+    queryFn: () => apiClient.listVersions(),
+  });
+
+  // Fetch units for selected version
+  const { data: units = [] } = useQuery({
+    queryKey: ['units', selectedVersion],
+    queryFn: () => selectedVersion ? apiClient.listUnits(selectedVersion) : Promise.resolve([]),
+    enabled: !!selectedVersion,
+  });
+
+  // Set default version when versions load
+  React.useEffect(() => {
+    if (versions.length > 0 && !selectedVersion) {
+      setSelectedVersion(versions[0].id);
+    }
+  }, [versions, selectedVersion]);
 
   const createMutation = useMutation({
     mutationFn: (data) => apiClient.createEmployee(data),
@@ -74,7 +89,7 @@ export default function EmployeesPage() {
       email: '',
       phone: '',
       hire_date: '',
-      status: 'active',
+      unit_id: null,
     });
     setEditingEmployee(null);
   };
@@ -87,7 +102,7 @@ export default function EmployeesPage() {
       email: employee.email || '',
       phone: employee.phone || '',
       hire_date: employee.hire_date || '',
-      status: employee.status || 'active',
+      unit_id: employee.unit_id || null,
     });
     setShowDialog(true);
   };
@@ -155,7 +170,7 @@ export default function EmployeesPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Telefon</TableHead>
                   <TableHead>Data Angajării</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Unitate</TableHead>
                   <TableHead>Acțiuni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -171,9 +186,11 @@ export default function EmployeesPage() {
                       {emp.hire_date ? format(new Date(emp.hire_date), 'dd.MM.yyyy') : '—'}
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusLabels[emp.status]?.color}>
-                        {statusLabels[emp.status]?.label}
-                      </Badge>
+                      {emp.unit_id ? (
+                        <Badge variant="outline">
+                          {units.find(u => u.id === emp.unit_id)?.name || `Unitate #${emp.unit_id}`}
+                        </Badge>
+                      ) : '—'}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -253,18 +270,20 @@ export default function EmployeesPage() {
                 />
               </div>
               <div>
-                <Label>Status</Label>
+                <Label>Unitate</Label>
                 <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  value={formData.unit_id?.toString()}
+                  onValueChange={(value) => setFormData({ ...formData, unit_id: parseInt(value) })}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Selectează unitatea" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Activ</SelectItem>
-                    <SelectItem value="on_leave">Concediu</SelectItem>
-                    <SelectItem value="terminated">Inactiv</SelectItem>
+                    {units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id.toString()}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

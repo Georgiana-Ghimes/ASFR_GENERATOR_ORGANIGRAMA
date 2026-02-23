@@ -414,12 +414,14 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
           console.error('Error fetching consiliu unit:', error);
         }
       } else if (draggedFixedElement === 'director' && onSelectUnit) {
+        // Open edit panel for director mini-legend to edit director_title and director_name
         try {
           const units = await apiClient.listUnits(versionId);
           const directorGeneral = units.find(u => u.unit_type === 'director_general');
           
           if (directorGeneral) {
-            onSelectUnit(directorGeneral);
+            // Pass a special flag to indicate this is for the mini-legend
+            onSelectUnit({ ...directorGeneral, _isDirectorMiniLegend: true });
           }
         } catch (error) {
           console.error('Error fetching director_general unit:', error);
@@ -1132,7 +1134,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
               className="bg-white"
               onClick={(e) => {
                 // Deselect if clicking on canvas (not on a unit)
-                if (e.target === e.currentTarget || e.target.tagName === 'svg') {
+                if (e.target === e.currentTarget || (e.target instanceof SVGElement && e.target.tagName === 'svg')) {
                   setSelectedNode(null);
                 }
               }}
