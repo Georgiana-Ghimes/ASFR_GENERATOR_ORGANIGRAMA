@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { FileCheck, Clock, Edit3, Eye, Calendar, User, Loader2, Trash2 } from 'lucide-react';
+import { FileCheck, Clock, Edit3, Eye, Calendar, User, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusConfig = {
@@ -31,6 +31,8 @@ const statusConfig = {
 export default function VersionsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [versionToDelete, setVersionToDelete] = useState(null);
+  const [unapproveDialogOpen, setUnapproveDialogOpen] = useState(false);
+  const [versionToUnapprove, setVersionToUnapprove] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: versions = [], isLoading } = useQuery({
@@ -51,6 +53,19 @@ export default function VersionsPage() {
     },
   });
 
+  const unapproveMutation = useMutation({
+    mutationFn: (id) => apiClient.updateVersion(id, { status: 'draft' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['versions']);
+      toast.success('Aprobarea a fost resetată cu succes');
+      setUnapproveDialogOpen(false);
+      setVersionToUnapprove(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Eroare la resetarea aprobării');
+    },
+  });
+
   const handleDeleteClick = (version) => {
     setVersionToDelete(version);
     setDeleteDialogOpen(true);
@@ -59,6 +74,17 @@ export default function VersionsPage() {
   const handleConfirmDelete = () => {
     if (versionToDelete) {
       deleteMutation.mutate(versionToDelete.id);
+    }
+  };
+
+  const handleUnapproveClick = (version) => {
+    setVersionToUnapprove(version);
+    setUnapproveDialogOpen(true);
+  };
+
+  const handleConfirmUnapprove = () => {
+    if (versionToUnapprove) {
+      unapproveMutation.mutate(versionToUnapprove.id);
     }
   };
 
@@ -148,6 +174,17 @@ export default function VersionsPage() {
                               Vezi
                             </Button>
                           </Link>
+                          {version.status === 'approved' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleUnapproveClick(version)}
+                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            >
+                              <RotateCcw className="w-4 h-4 mr-1" />
+                              Resetare
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm"
@@ -207,6 +244,37 @@ export default function VersionsPage() {
                   </>
                 ) : (
                   'Șterge'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Unapprove Confirmation Dialog */}
+        <AlertDialog open={unapproveDialogOpen} onOpenChange={setUnapproveDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Resetare aprobare</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sunteți sigur că doriți să resetați aprobarea versiunii <span className="font-semibold">{versionToUnapprove?.version_number}</span> ({versionToUnapprove?.name})?
+                <br /><br />
+                Versiunea va reveni la starea de <span className="font-semibold">ciornă</span> și va putea fi editată din nou.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anulare</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmUnapprove}
+                className="bg-orange-600 hover:bg-orange-700"
+                disabled={unapproveMutation.isPending}
+              >
+                {unapproveMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Se resetează...
+                  </>
+                ) : (
+                  'Confirmă resetarea'
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

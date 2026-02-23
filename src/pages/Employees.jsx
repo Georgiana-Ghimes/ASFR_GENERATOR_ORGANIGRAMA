@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Edit, Trash2, User, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function EmployeesPage() {
@@ -22,9 +21,8 @@ export default function EmployeesPage() {
     first_name: '',
     last_name: '',
     email: '',
-    phone: '',
-    hire_date: '',
     unit_id: null,
+    position_type: null,
   });
 
   const queryClient = useQueryClient();
@@ -94,9 +92,8 @@ export default function EmployeesPage() {
       first_name: '',
       last_name: '',
       email: '',
-      phone: '',
-      hire_date: '',
       unit_id: null,
+      position_type: null,
     });
     setEditingEmployee(null);
   };
@@ -107,9 +104,8 @@ export default function EmployeesPage() {
       first_name: employee.first_name || '',
       last_name: employee.last_name || '',
       email: employee.email || '',
-      phone: employee.phone || '',
-      hire_date: employee.hire_date || '',
       unit_id: employee.unit_id || null,
+      position_type: employee.position_type || null,
     });
     setShowDialog(true);
   };
@@ -175,9 +171,8 @@ export default function EmployeesPage() {
                 <TableRow>
                   <TableHead>Nume</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Telefon</TableHead>
-                  <TableHead>Data Angajării</TableHead>
                   <TableHead>Unitate</TableHead>
+                  <TableHead>Funcție</TableHead>
                   <TableHead>Acțiuni</TableHead>
                 </TableRow>
               </TableHeader>
@@ -188,10 +183,6 @@ export default function EmployeesPage() {
                       {emp.first_name} {emp.last_name}
                     </TableCell>
                     <TableCell>{emp.email || '—'}</TableCell>
-                    <TableCell>{emp.phone || '—'}</TableCell>
-                    <TableCell>
-                      {emp.hire_date ? format(new Date(emp.hire_date), 'dd.MM.yyyy') : '—'}
-                    </TableCell>
                     <TableCell>
                       {emp.unit_id ? (
                         <Badge variant="outline">
@@ -200,6 +191,13 @@ export default function EmployeesPage() {
                             if (!unit) return `Unitate #${emp.unit_id}`;
                             return unit.stas_code ? `${unit.stas_code} - ${unit.name}` : unit.name;
                           })()}
+                        </Badge>
+                      ) : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {emp.position_type ? (
+                        <Badge variant={emp.position_type === 'leadership' ? 'default' : 'secondary'}>
+                          {emp.position_type === 'leadership' ? 'Conducere' : 'Execuție'}
                         </Badge>
                       ) : '—'}
                     </TableCell>
@@ -221,7 +219,7 @@ export default function EmployeesPage() {
                 ))}
                 {filteredEmployees.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                       Nu există angajați
                     </TableCell>
                   </TableRow>
@@ -265,39 +263,37 @@ export default function EmployeesPage() {
               />
             </div>
             <div>
-              <Label>Telefon</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
+              <Label>Funcție</Label>
+              <Select
+                value={formData.position_type || ''}
+                onValueChange={(value) => setFormData({ ...formData, position_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selectează tipul funcției" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="leadership">Conducere</SelectItem>
+                  <SelectItem value="execution">Execuție</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Data Angajării</Label>
-                <Input
-                  type="date"
-                  value={formData.hire_date}
-                  onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Unitate</Label>
-                <Select
-                  value={formData.unit_id?.toString()}
-                  onValueChange={(value) => setFormData({ ...formData, unit_id: parseInt(value) })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selectează unitatea" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regularUnits.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.id.toString()}>
-                        {unit.stas_code} - {unit.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label>Unitate</Label>
+              <Select
+                value={formData.unit_id?.toString()}
+                onValueChange={(value) => setFormData({ ...formData, unit_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selectează unitatea" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regularUnits.map((unit) => (
+                    <SelectItem key={unit.id} value={unit.id.toString()}>
+                      {unit.stas_code} - {unit.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

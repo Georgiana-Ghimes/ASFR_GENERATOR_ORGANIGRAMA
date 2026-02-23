@@ -68,6 +68,61 @@ export default function OrgChartPage() {
     },
   });
 
+  // Approve version mutation
+  const approveVersionMutation = useMutation({
+    mutationFn: (versionId) => apiClient.updateVersion(versionId, { status: 'approved' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['versions']);
+      toast.success('Versiunea a fost aprobată cu succes');
+    },
+    onError: (error) => {
+      toast.error('Eroare la aprobarea versiunii: ' + error.message);
+    },
+  });
+
+  // Unapprove version mutation
+  const unapproveVersionMutation = useMutation({
+    mutationFn: (versionId) => apiClient.updateVersion(versionId, { status: 'draft' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['versions']);
+      toast.success('Aprobarea a fost resetată cu succes');
+    },
+    onError: (error) => {
+      toast.error('Eroare la resetarea aprobării: ' + error.message);
+    },
+  });
+
+  // Clone version mutation
+  const cloneVersionMutation = useMutation({
+    mutationFn: (versionId) => apiClient.cloneVersion(versionId),
+    onSuccess: (newVersion) => {
+      queryClient.invalidateQueries(['versions']);
+      setSelectedVersion(newVersion);
+      toast.success('Versiune nouă creată cu succes');
+    },
+    onError: (error) => {
+      toast.error('Eroare la crearea versiunii: ' + error.message);
+    },
+  });
+
+  const handleApproveVersion = () => {
+    if (selectedVersion) {
+      approveVersionMutation.mutate(selectedVersion.id);
+    }
+  };
+
+  const handleUnapproveVersion = () => {
+    if (selectedVersion) {
+      unapproveVersionMutation.mutate(selectedVersion.id);
+    }
+  };
+
+  const handleCloneVersion = () => {
+    if (selectedVersion) {
+      cloneVersionMutation.mutate(selectedVersion.id);
+    }
+  };
+
   const handleVersionSelect = (versionId) => {
     const version = versions.find(v => v.id === versionId);
     setSelectedVersion(version);
@@ -110,12 +165,16 @@ export default function OrgChartPage() {
             <Building2 className="w-6 h-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900">Organigramă</h1>
           </div>
-          <VersionSelector
-            versions={versions}
-            selectedVersion={selectedVersion}
-            onSelect={handleVersionSelect}
-            isLoading={loadingVersions}
-          />
+          <div className="flex items-center gap-4">
+            <VersionSelector
+              versions={versions}
+              selectedVersion={selectedVersion}
+              onSelect={handleVersionSelect}
+              onApprove={handleApproveVersion}
+              onNewVersion={handleCloneVersion}
+              isLoading={loadingVersions}
+            />
+          </div>
         </div>
         
         {/* Stats Panel */}

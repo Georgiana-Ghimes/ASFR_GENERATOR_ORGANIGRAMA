@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, date
 from uuid import UUID
-from app.models import UnitType, VersionStatus, EmployeeStatus
+from app.models import UnitType, VersionStatus, EmployeeStatus, PositionType
 
 # Version Schemas
 class OrgVersionBase(BaseModel):
@@ -120,6 +120,8 @@ class EmployeeBase(BaseModel):
     phone: Optional[str] = None
     hire_date: Optional[date] = None
     status: EmployeeStatus = EmployeeStatus.active
+    unit_id: Optional[UUID] = None
+    position_type: Optional[PositionType] = None
 
 class EmployeeCreate(EmployeeBase):
     pass
@@ -132,6 +134,8 @@ class EmployeeUpdate(BaseModel):
     hire_date: Optional[date] = None
     status: Optional[EmployeeStatus] = None
     active: Optional[bool] = None
+    unit_id: Optional[UUID] = None
+    position_type: Optional[PositionType] = None
 
 class Employee(EmployeeBase):
     id: UUID

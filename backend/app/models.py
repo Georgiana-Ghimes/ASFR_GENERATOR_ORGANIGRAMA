@@ -27,6 +27,10 @@ class EmployeeStatus(str, enum.Enum):
     on_leave = "on_leave"
     terminated = "terminated"
 
+class PositionType(str, enum.Enum):
+    leadership = "leadership"  # Conducere
+    execution = "execution"    # Execuție
+
 class OrgVersion(Base):
     __tablename__ = "org_versions"
     
@@ -98,8 +102,11 @@ class Employee(Base):
     hire_date = Column(Date)
     status = Column(Enum(EmployeeStatus), default=EmployeeStatus.active)
     active = Column(Boolean, default=True)
+    unit_id = Column(UUID(as_uuid=True), ForeignKey("organizational_units.id"))
+    position_type = Column(Enum(PositionType))
     
     assignments = relationship("PositionAssignment", back_populates="employee")
+    unit = relationship("OrgUnit", foreign_keys=[unit_id])
 
 class PositionAssignment(Base):
     __tablename__ = "position_assignments"

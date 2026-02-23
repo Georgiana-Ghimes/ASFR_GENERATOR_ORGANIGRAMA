@@ -94,9 +94,9 @@ class ApiClient {
     });
   }
 
-  async deleteVersion(id) {
-    return this.request(`/versions/${id}`, {
-      method: 'DELETE',
+  async cloneVersion(id) {
+    return this.request(`/versions/${id}/clone`, {
+      method: 'POST',
     });
   }
 
