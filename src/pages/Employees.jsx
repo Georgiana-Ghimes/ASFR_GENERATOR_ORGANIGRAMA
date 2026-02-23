@@ -47,6 +47,13 @@ export default function EmployeesPage() {
     enabled: !!selectedVersion,
   });
 
+  // Filter units to show only those with STAS code (exclude legends and special units)
+  const regularUnits = units.filter(unit => 
+    unit.stas_code && 
+    unit.unit_type !== 'legend' && 
+    unit.unit_type !== 'consiliu'
+  );
+
   // Set default version when versions load
   React.useEffect(() => {
     if (versions.length > 0 && !selectedVersion) {
@@ -188,7 +195,11 @@ export default function EmployeesPage() {
                     <TableCell>
                       {emp.unit_id ? (
                         <Badge variant="outline">
-                          {units.find(u => u.id === emp.unit_id)?.name || `Unitate #${emp.unit_id}`}
+                          {(() => {
+                            const unit = units.find(u => u.id === emp.unit_id);
+                            if (!unit) return `Unitate #${emp.unit_id}`;
+                            return unit.stas_code ? `${unit.stas_code} - ${unit.name}` : unit.name;
+                          })()}
                         </Badge>
                       ) : '—'}
                     </TableCell>
@@ -279,9 +290,9 @@ export default function EmployeesPage() {
                     <SelectValue placeholder="Selectează unitatea" />
                   </SelectTrigger>
                   <SelectContent>
-                    {units.map((unit) => (
+                    {regularUnits.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id.toString()}>
-                        {unit.name}
+                        {unit.stas_code} - {unit.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
