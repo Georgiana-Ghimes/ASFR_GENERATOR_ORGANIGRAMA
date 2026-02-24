@@ -30,6 +30,7 @@ const navigation = [
   { name: 'Unități Organizaționale', href: 'Units', icon: Layers },
   { name: 'Angajați', href: 'Employees', icon: Users },
   { name: 'Versiuni', href: 'Versions', icon: History },
+  { name: 'Setări', href: 'Settings', icon: Settings },
 ];
 
 export default function Layout({ children, currentPageName }) {

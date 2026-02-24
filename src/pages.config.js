@@ -51,6 +51,7 @@ import OrgChart from './pages/OrgChart';
 import Units from './pages/Units';
 import Versions from './pages/Versions';
 import Employees from './pages/Employees';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
 import __Layout from './Layout.jsx';
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "Units": Units,
     "Versions": Versions,
     "Employees": Employees,
+    "Settings": Settings,
     "Login": Login,
 }
 
