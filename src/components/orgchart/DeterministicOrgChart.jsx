@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '@/api/apiClient';
 
-const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
+const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit, isReadOnly }) => {
   const [layoutData, setLayoutData] = useState(null);
   const [aggregates, setAggregates] = useState({});
   const [loading, setLoading] = useState(true);
@@ -901,31 +901,74 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     width={resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width}
                     height={resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height}
                     fill="white"
-                    stroke={draggedFixedElement === 'director' || resizingFixedElement === 'director' ? '#3b82f6' : '#d1d5db'}
+                    stroke={orgType === 'omti' ? 'transparent' : (draggedFixedElement === 'director' || resizingFixedElement === 'director' ? '#3b82f6' : '#d1d5db')}
                     strokeWidth="2"
                   />
-                  <text
-                    x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
-                    y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height) / 3}
-                    fontSize={getDynamicFontSize('director', 14)}
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    fill="#000000"
-                    style={{ pointerEvents: 'none' }}
-                  >
-                    {directorGeneralUnit?.director_title || 'DIRECTOR GENERAL'}
-                  </text>
-                  <text
-                    x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
-                    y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 2 * (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height) / 3}
-                    fontSize={getDynamicFontSize('director', 14)}
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    fill="#000000"
-                    style={{ pointerEvents: 'none' }}
-                  >
-                    {directorGeneralUnit?.director_name || 'Petru BOGDAN'}
-                  </text>
+                  {orgType === 'omti' ? (
+                    <>
+                      {/* ANEXA */}
+                      <text
+                        x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
+                        y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 15}
+                        fontSize={getDynamicFontSize('director', 16)}
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        fill="#000000"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        ANEXA
+                      </text>
+                      {/* LA ORDINUL MINISTRULUI TRANSPORTURILOR ȘI INFRASTRUCTURII */}
+                      <text
+                        x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
+                        y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 32}
+                        fontSize={getDynamicFontSize('director', 16)}
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        fill="#000000"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        LA ORDINUL MINISTRULUI TRANSPORTURILOR ȘI INFRASTRUCTURII
+                      </text>
+                      {/* NR. .......... din .......... */}
+                      <text
+                        x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
+                        y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 55}
+                        fontSize={getDynamicFontSize('director', 16)}
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        fill="#000000"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        NR. ........................ din ........................
+                      </text>
+                    </>
+                  ) : (
+                    <>
+                      <text
+                        x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
+                        y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height) / 3}
+                        fontSize={getDynamicFontSize('director', 14)}
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        fill="#000000"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        {directorGeneralUnit?.director_title || 'DIRECTOR GENERAL'}
+                      </text>
+                      <text
+                        x={(draggedFixedElement === 'director' && tempPosition ? tempPosition.x : fixedElements.director.x) + (resizingFixedElement === 'director' && tempWidth ? tempWidth : fixedElements.director.width) / 2}
+                        y={(draggedFixedElement === 'director' && tempPosition ? tempPosition.y : fixedElements.director.y) + 2 * (resizingFixedElement === 'director' && tempHeight ? tempHeight : fixedElements.director.height) / 3}
+                        fontSize={getDynamicFontSize('director', 14)}
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        fill="#000000"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        {directorGeneralUnit?.director_name || 'Petru BOGDAN'}
+                      </text>
+                    </>
+                  )}
                 </g>
                 
                 {/* Resize handle for director */}
@@ -984,7 +1027,8 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                 )}
               </g>
               
-              {/* Header 2 - draggable, resizable and editable title */}
+              {/* Header 2 - draggable, resizable and editable title - only show for codificare */}
+              {orgType === 'codificare' && (
               <g>
                 <g
                   onMouseDown={(e) => handleFixedElementMouseDown(e, 'header2')}
@@ -1046,6 +1090,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   />
                 )}
               </g>
+              )}
             
             {/* Custom Legend - draggable and resizable box with 3 columns */}
             {fixedElements.customLegend && (
@@ -1329,7 +1374,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     <rect
                       x={x + 1.5}
                       y={y + 1.5}
-                      width="73.5"
+                      width={orgType === 'omti' ? "48.5" : "73.5"}
                       height={height - 3}
                       fill={colors.bg}
                       stroke="none"
@@ -1338,21 +1383,23 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                     />
                   )}
                   
-                  {/* Vertical line between code and leadership count - full height */}
-                  <line
-                    x1={x + 25}
-                    y1={y}
-                    x2={x + 25}
-                    y2={y + height}
-                    stroke="#000000"
-                    strokeWidth="1"
-                  />
+                  {/* Vertical line between code and leadership count - full height - only for codificare */}
+                  {orgType === 'codificare' && (
+                    <line
+                      x1={x + 25}
+                      y1={y}
+                      x2={x + 25}
+                      y2={y + height}
+                      stroke="#000000"
+                      strokeWidth="1"
+                    />
+                  )}
                   
                   {/* Vertical line between leadership and execution count - full height */}
                   <line
-                    x1={x + 50}
+                    x1={orgType === 'omti' ? x + 25 : x + 50}
                     y1={y}
-                    x2={x + 50}
+                    x2={orgType === 'omti' ? x + 25 : x + 50}
                     y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
@@ -1360,31 +1407,33 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Vertical line between numbers and name - full height */}
                   <line
-                    x1={x + 75}
+                    x1={orgType === 'omti' ? x + 50 : x + 75}
                     y1={y}
-                    x2={x + 75}
+                    x2={orgType === 'omti' ? x + 50 : x + 75}
                     y2={y + height}
                     stroke="#000000"
                     strokeWidth="1"
                   />
                   
-                  {/* Code - first column in left strip (narrower, vertical text centered) */}
-                  <text
-                    x={x + 12.5}
-                    y={y + height / 2}
-                    fontSize="11"
-                    fontWeight="bold"
-                    fill="#000000"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    transform={`rotate(-90, ${x + 12.5}, ${y + height / 2})`}
-                  >
-                    {node.unit.stas_code}
-                  </text>
+                  {/* Code - first column in left strip (narrower, vertical text centered) - only show for codificare */}
+                  {orgType === 'codificare' && (
+                    <text
+                      x={x + 12.5}
+                      y={y + height / 2}
+                      fontSize="11"
+                      fontWeight="bold"
+                      fill="#000000"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      transform={`rotate(-90, ${x + 12.5}, ${y + height / 2})`}
+                    >
+                      {node.unit.stas_code}
+                    </text>
+                  )}
                   
                   {/* Leadership count - second column in left strip */}
                   <text
-                    x={x + 37.5}
+                    x={orgType === 'omti' ? x + 12.5 : x + 37.5}
                     y={y + height / 2 + 4}
                     fontSize="12"
                     fontWeight="bold"
@@ -1396,7 +1445,7 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Execution count - third column in left strip */}
                   <text
-                    x={x + 62.5}
+                    x={orgType === 'omti' ? x + 37.5 : x + 62.5}
                     y={y + height / 2 + 4}
                     fontSize="12"
                     fontWeight="bold"
@@ -1410,9 +1459,9 @@ const DeterministicOrgChart = ({ versionId, onSelectUnit, isReadOnly }) => {
                   
                   {/* Unit name - dynamic font size based on available space */}
                   <foreignObject
-                    x={x + 79}
+                    x={orgType === 'omti' ? x + 54 : x + 79}
                     y={y + 3}
-                    width={width - 83}
+                    width={orgType === 'omti' ? width - 58 : width - 83}
                     height={height - 6}
                   >
                     <div

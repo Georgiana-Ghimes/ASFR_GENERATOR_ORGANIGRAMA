@@ -48,6 +48,7 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import OrgChart from './pages/OrgChart';
+import OrgChartOMTI from './pages/OrgChartOMTI';
 import Units from './pages/Units';
 import Versions from './pages/Versions';
 import Employees from './pages/Employees';
@@ -58,6 +59,7 @@ import __Layout from './Layout.jsx';
 
 export const PAGES = {
     "OrgChart": OrgChart,
+    "OrgChartOMTI": OrgChartOMTI,
     "Units": Units,
     "Versions": Versions,
     "Employees": Employees,

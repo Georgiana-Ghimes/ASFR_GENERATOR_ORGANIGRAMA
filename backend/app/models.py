@@ -6,6 +6,10 @@ import uuid
 import enum
 from app.database import Base
 
+class OrgType(str, enum.Enum):
+    codificare = "codificare"
+    omti = "omti"
+
 class UnitType(str, enum.Enum):
     director_general = "director_general"
     directie = "directie"
@@ -40,6 +44,7 @@ class OrgVersion(Base):
     status = Column(Enum(VersionStatus), default=VersionStatus.draft, nullable=False)
     notes = Column(Text)
     chart_title = Column(String, default="CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026")
+    org_type = Column(Enum(OrgType), default=OrgType.codificare, nullable=False)
     created_date = Column(DateTime, default=datetime.utcnow, nullable=False)
     approved_by = Column(String)
     approved_date = Column(DateTime)

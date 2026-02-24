@@ -38,6 +38,16 @@ class ApiClient {
     
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+      
+      // If account is disabled (403), logout user if already authenticated
+      if (response.status === 403 && this.token) {
+        if (error.detail === 'Account is disabled' || error.detail === 'Cont dezactivat') {
+          this.setToken(null);
+          window.location.href = '/login';
+          throw new Error('Contul tău a fost dezactivat');
+        }
+      }
+      
       throw new Error(error.detail || `HTTP ${response.status}`);
     }
 
@@ -45,10 +55,10 @@ class ApiClient {
   }
 
   // Auth
-  async login(email, password) {
+  async login(email, password, turnstileToken) {
     const data = await this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, turnstile_token: turnstileToken }),
     });
     this.setToken(data.access_token);
     return data;

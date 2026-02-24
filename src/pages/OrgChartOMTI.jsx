@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +11,7 @@ import VersionSelector from '@/components/orgchart/VersionSelector';
 import StatsPanel from '@/components/orgchart/StatsPanel';
 import UnitForm from '@/components/orgchart/UnitForm';
 
-export default function OrgChartPage() {
+export default function OrgChartOMTIPage() {
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [layoutData, setLayoutData] = useState(null);
@@ -54,10 +55,11 @@ export default function OrgChartPage() {
     }
   }, [versions, selectedVersion]);
 
-  // Update unit mutation
+  // Update unit mutation - not used in OMTI (read-only)
   const updateUnitMutation = useMutation({
     mutationFn: ({ unitId, data }) => apiClient.updateUnit(unitId, data),
     onSuccess: () => {
+      // This should never be called in OMTI
       queryClient.invalidateQueries(['units', selectedVersion?.id]);
       setRefreshKey(prev => prev + 1);
       toast.success('Unitatea a fost actualizată cu succes');
@@ -68,7 +70,7 @@ export default function OrgChartPage() {
     },
   });
 
-  // Approve version mutation
+  // Approve/Unapprove/Clone version mutations - not used in OMTI (read-only)
   const approveVersionMutation = useMutation({
     mutationFn: (versionId) => apiClient.updateVersion(versionId, { status: 'approved' }),
     onSuccess: () => {
@@ -80,7 +82,6 @@ export default function OrgChartPage() {
     },
   });
 
-  // Unapprove version mutation
   const unapproveVersionMutation = useMutation({
     mutationFn: (versionId) => apiClient.updateVersion(versionId, { status: 'draft' }),
     onSuccess: () => {
@@ -92,7 +93,6 @@ export default function OrgChartPage() {
     },
   });
 
-  // Clone version mutation
   const cloneVersionMutation = useMutation({
     mutationFn: (versionId) => apiClient.cloneVersion(versionId),
     onSuccess: (newVersion) => {
@@ -106,21 +106,15 @@ export default function OrgChartPage() {
   });
 
   const handleApproveVersion = () => {
-    if (selectedVersion) {
-      approveVersionMutation.mutate(selectedVersion.id);
-    }
+    // Not used in OMTI
   };
 
   const handleUnapproveVersion = () => {
-    if (selectedVersion) {
-      unapproveVersionMutation.mutate(selectedVersion.id);
-    }
+    // Not used in OMTI
   };
 
   const handleCloneVersion = () => {
-    if (selectedVersion) {
-      cloneVersionMutation.mutate(selectedVersion.id);
-    }
+    // Not used in OMTI
   };
 
   const handleVersionSelect = (versionId) => {
@@ -138,9 +132,7 @@ export default function OrgChartPage() {
   };
 
   const handleSaveUnit = (data) => {
-    if (selectedUnit?.id) {
-      updateUnitMutation.mutate({ unitId: selectedUnit.id, data });
-    }
+    // Not used in OMTI - read-only
   };
 
   // Handle Escape key
@@ -154,8 +146,6 @@ export default function OrgChartPage() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [selectedUnit]);
 
-  const isReadOnly = selectedVersion?.status !== 'draft';
-
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -163,15 +153,18 @@ export default function OrgChartPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Building2 className="w-6 h-6 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Organigramă</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Organigramă la anexa OMTI</h1>
+              <p className="text-sm text-gray-500 mt-1">Vizualizare - Editarea se face în Organigrama codificare</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <VersionSelector
               versions={versions}
               selectedVersion={selectedVersion}
               onSelect={handleVersionSelect}
-              onApprove={handleApproveVersion}
-              onNewVersion={handleCloneVersion}
+              onApprove={null}
+              onNewVersion={null}
               isLoading={loadingVersions}
             />
           </div>
@@ -203,9 +196,9 @@ export default function OrgChartPage() {
               <DeterministicOrgChart
                 key={refreshKey}
                 versionId={selectedVersion.id}
-                orgType="codificare"
+                orgType="omti"
                 onSelectUnit={handleSelectUnit}
-                isReadOnly={isReadOnly}
+                isReadOnly={true}
               />
             </div>
 
@@ -222,7 +215,7 @@ export default function OrgChartPage() {
                     <div className="flex items-center gap-2">
                       <Info className="w-5 h-5 text-blue-600" />
                       <h2 className="font-semibold text-gray-900">
-                        {isReadOnly ? 'Detalii Unitate' : 'Editare Unitate'}
+                        Detalii Unitate
                       </h2>
                     </div>
                     <Button
@@ -242,7 +235,7 @@ export default function OrgChartPage() {
                       versionId={selectedVersion.id}
                       onSave={handleSaveUnit}
                       onCancel={handleClosePanel}
-                      isReadOnly={isReadOnly}
+                      isReadOnly={true}
                     />
                   </div>
 

@@ -114,7 +114,8 @@ def clone_version(
         name=f"{source_version.name} (Copie)",
         status="draft",
         notes=source_version.notes,
-        chart_title=source_version.chart_title
+        chart_title=source_version.chart_title,
+        org_type=source_version.org_type
     )
     db.add(new_version)
     db.flush()  # Get the new version ID

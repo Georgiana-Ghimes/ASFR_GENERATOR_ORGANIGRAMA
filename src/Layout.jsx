@@ -26,7 +26,8 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Organigramă', href: 'OrgChart', icon: Building2 },
+  { name: 'Organigramă codificare', href: 'OrgChart', icon: Building2 },
+  { name: 'Organigramă la anexa OMTI', href: 'OrgChartOMTI', icon: Building2 },
   { name: 'Unități Organizaționale', href: 'Units', icon: Layers },
   { name: 'Angajați', href: 'Employees', icon: Users },
   { name: 'Versiuni', href: 'Versions', icon: History },
@@ -110,16 +111,16 @@ export default function Layout({ children, currentPageName }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Avatar className="w-8 h-8">
+                  <Avatar className="w-8 h-8 flex-shrink-0">
                     <AvatarFallback className="bg-blue-100 text-blue-600 text-sm">
                       {user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 text-left min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {user?.full_name || user?.email}
                     </p>
-                    <p className="text-xs text-gray-500 capitalize">
+                    <p className="text-xs text-gray-500 capitalize truncate">
                       {user?.role || 'utilizator'}
                     </p>
                   </div>
