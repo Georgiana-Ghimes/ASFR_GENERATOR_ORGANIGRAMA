@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 
@@ -14,6 +14,7 @@ router = APIRouter()
 class UserResponse(BaseModel):
     id: UUID
     email: str
+    full_name: Optional[str] = None
     role: str
     is_active: bool
     
@@ -23,6 +24,7 @@ class UserResponse(BaseModel):
 
 class UserCreate(BaseModel):
     email: EmailStr
+    full_name: Optional[str] = None
     password: str
     role: str = "user"
 
@@ -33,6 +35,13 @@ class UserRoleUpdate(BaseModel):
 
 class UserActiveUpdate(BaseModel):
     is_active: bool
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
 
 
 @router.get("/users", response_model=List[UserResponse])
@@ -49,6 +58,7 @@ def list_users(
         UserResponse(
             id=user.id,
             email=user.email,
+            full_name=user.full_name,
             role=user.role,
             is_active=user.active
         )
@@ -74,6 +84,7 @@ def create_user(
     # Create new user
     new_user = User(
         email=user_data.email,
+        full_name=user_data.full_name,
         hashed_password=get_password_hash(user_data.password),
         role=user_data.role,
         active=True
@@ -86,8 +97,52 @@ def create_user(
     return UserResponse(
         id=new_user.id,
         email=new_user.email,
+        full_name=new_user.full_name,
         role=new_user.role,
         is_active=new_user.active
+    )
+
+
+@router.patch("/users/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: UUID,
+    user_data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update user (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_data.email:
+        # Check if email is already taken by another user
+        existing = db.query(User).filter(User.email == user_data.email, User.id != user_id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user.email = user_data.email
+    
+    if user_data.full_name is not None:
+        user.full_name = user_data.full_name
+    
+    if user_data.password:
+        user.hashed_password = get_password_hash(user_data.password)
+    
+    if user_data.role:
+        user.role = user_data.role
+    
+    db.commit()
+    db.refresh(user)
+    
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        is_active=user.active
     )
 
 
@@ -113,6 +168,7 @@ def update_user_role(
     return UserResponse(
         id=user.id,
         email=user.email,
+        full_name=user.full_name,
         role=user.role,
         is_active=user.active
     )
@@ -140,6 +196,7 @@ def update_user_active(
     return UserResponse(
         id=user.id,
         email=user.email,
+        full_name=user.full_name,
         role=user.role,
         is_active=user.active
     )

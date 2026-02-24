@@ -11,7 +11,7 @@ const statusConfig = {
   approved: { label: 'Aprobat', color: 'bg-green-100 text-green-800', icon: FileCheck },
 };
 
-export default function VersionSelector({ versions, selectedVersion, onSelect, onNewVersion, onApprove }) {
+export default function VersionSelector({ versions, selectedVersion, onSelect, onNewVersion, onApprove, hideStatus = false }) {
   const isDraft = selectedVersion?.status === 'draft';
   const isApproved = selectedVersion?.status === 'approved';
   
@@ -40,7 +40,7 @@ export default function VersionSelector({ versions, selectedVersion, onSelect, o
         </Select>
       </div>
       
-      {selectedVersion && (
+      {!hideStatus && selectedVersion && (
         <Badge className={statusConfig[selectedVersion.status]?.color}>
           {statusConfig[selectedVersion.status]?.label}
         </Badge>

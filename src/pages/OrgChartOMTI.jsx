@@ -165,6 +165,7 @@ export default function OrgChartOMTIPage() {
               onSelect={handleVersionSelect}
               onApprove={null}
               onNewVersion={null}
+              hideStatus={true}
               isLoading={loadingVersions}
             />
           </div>

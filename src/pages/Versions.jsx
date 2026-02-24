@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { FileCheck, Clock, Edit3, Eye, Calendar, User, Loader2, Trash2, RotateCcw } from 'lucide-react';
+import { FileCheck, Clock, Edit3, Eye, Calendar as CalendarIcon, User, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusConfig = {
@@ -54,7 +56,7 @@ export default function VersionsPage() {
   });
 
   const unapproveMutation = useMutation({
-    mutationFn: (id) => apiClient.updateVersion(id, { status: 'draft' }),
+    mutationFn: (id) => apiClient.updateVersion(id, { status: 'draft', approved_by: null, approved_at: null }),
     onSuccess: () => {
       queryClient.invalidateQueries(['versions']);
       toast.success('Aprobarea a fost resetată cu succes');
@@ -63,6 +65,17 @@ export default function VersionsPage() {
     },
     onError: (error) => {
       toast.error(error.message || 'Eroare la resetarea aprobării');
+    },
+  });
+
+  const updateValidityMutation = useMutation({
+    mutationFn: ({ id, validFrom, validUntil }) => apiClient.updateVersionValidity(id, validFrom, validUntil),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['versions']);
+      toast.success('Perioada de validitate actualizată');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Eroare la actualizarea perioadei');
     },
   });
 
@@ -116,14 +129,15 @@ export default function VersionsPage() {
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Versiune</TableHead>
-                  <TableHead>Denumire</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data Creare</TableHead>
-                  <TableHead>Aprobat de</TableHead>
-                  <TableHead>Data Aprobare</TableHead>
-                  <TableHead>Acțiuni</TableHead>
+                <TableRow className="border-b">
+                  <TableHead className="text-center border-r">Versiune</TableHead>
+                  <TableHead className="text-center border-r">Denumire</TableHead>
+                  <TableHead className="text-center border-r">Status</TableHead>
+                  <TableHead className="text-center border-r">De la</TableHead>
+                  <TableHead className="text-center border-r">Până la</TableHead>
+                  <TableHead className="text-center min-w-[180px] border-r">Aprobat de</TableHead>
+                  <TableHead className="text-center border-r">Data Aprobare</TableHead>
+                  <TableHead className="text-center">Acțiuni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -132,42 +146,88 @@ export default function VersionsPage() {
                   const StatusIcon = status.icon;
                   
                   return (
-                    <TableRow key={version.id}>
-                      <TableCell className="font-mono font-medium">
+                    <TableRow key={version.id} className="border-b">
+                      <TableCell className="font-mono font-medium text-center border-r">
                         {version.version_number}
                       </TableCell>
-                      <TableCell>{version.name}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-center border-r">{version.name}</TableCell>
+                      <TableCell className="text-center border-r">
                         <Badge className={`${status.color} border`}>
                           <StatusIcon className="w-3 h-3 mr-1" />
                           {status.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {format(new Date(version.created_date), 'dd MMM yyyy', { locale: ro })}
-                        </div>
+                      <TableCell className="text-center border-r">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 px-2">
+                              <CalendarIcon className="w-3 h-3 mr-1" />
+                              {version.valid_from ? format(new Date(version.valid_from), 'dd MMM yyyy', { locale: ro }) : 'Selectează'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={version.valid_from ? new Date(version.valid_from) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  updateValidityMutation.mutate({
+                                    id: version.id,
+                                    validFrom: format(date, 'yyyy-MM-dd'),
+                                    validUntil: version.valid_until ? format(new Date(version.valid_until), 'yyyy-MM-dd') : null
+                                  });
+                                }
+                              }}
+                              locale={ro}
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </TableCell>
-                      <TableCell>
-                        {version.approved_by ? (
-                          <div className="flex items-center gap-1 text-gray-600">
-                            <User className="w-3 h-3" />
-                            {version.approved_by}
+                      <TableCell className="text-center border-r">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 px-2">
+                              <CalendarIcon className="w-3 h-3 mr-1" />
+                              {version.valid_until ? format(new Date(version.valid_until), 'dd MMM yyyy', { locale: ro }) : 'Selectează'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={version.valid_until ? new Date(version.valid_until) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  updateValidityMutation.mutate({
+                                    id: version.id,
+                                    validFrom: version.valid_from ? format(new Date(version.valid_from), 'yyyy-MM-dd') : null,
+                                    validUntil: format(date, 'yyyy-MM-dd')
+                                  });
+                                }
+                              }}
+                              locale={ro}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                      <TableCell className="min-w-[180px] text-center border-r">
+                        {version.approved_by_name ? (
+                          <div className="flex items-center justify-center gap-1 text-gray-600">
+                            <User className="w-3 h-3 flex-shrink-0" />
+                            <span className="whitespace-nowrap">{version.approved_by_name}</span>
                           </div>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {version.approved_date ? (
-                          format(new Date(version.approved_date), 'dd MMM yyyy HH:mm', { locale: ro })
+                      <TableCell className="text-center border-r">
+                        {version.approved_at ? (
+                          format(new Date(version.approved_at), 'dd MMM yyyy', { locale: ro })
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <Link to={`${createPageUrl('OrgChart')}?version=${version.id}`}>
                             <Button variant="ghost" size="sm">
                               <Eye className="w-4 h-4 mr-1" />
@@ -200,7 +260,7 @@ export default function VersionsPage() {
                 })}
                 {versions.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       Nu există versiuni
                     </TableCell>
                   </TableRow>

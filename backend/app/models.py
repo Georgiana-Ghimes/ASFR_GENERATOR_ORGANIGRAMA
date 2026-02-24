@@ -46,6 +46,10 @@ class OrgVersion(Base):
     chart_title = Column(String, default="CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026")
     org_type = Column(Enum(OrgType), default=OrgType.codificare, nullable=False)
     created_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    valid_from = Column(Date)
+    valid_until = Column(Date)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    approved_at = Column(DateTime)
     approved_by = Column(String)
     approved_date = Column(DateTime)
     
@@ -130,6 +134,7 @@ class User(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False)
+    full_name = Column(String)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="viewer")  # viewer, editor, approver, admin
     active = Column(Boolean, default=True)

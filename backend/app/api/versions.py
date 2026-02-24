@@ -14,7 +14,35 @@ def list_versions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(OrgVersion).order_by(OrgVersion.created_date.desc()).all()
+    versions = db.query(OrgVersion).order_by(OrgVersion.created_date.desc()).all()
+    
+    # Add approved_by_name for each version
+    result = []
+    for version in versions:
+        version_dict = {
+            "id": version.id,
+            "version_number": version.version_number,
+            "name": version.name,
+            "status": version.status,
+            "notes": version.notes,
+            "chart_title": version.chart_title,
+            "org_type": version.org_type,
+            "created_date": version.created_date,
+            "valid_from": version.valid_from,
+            "valid_until": version.valid_until,
+            "approved_by": version.approved_by,
+            "approved_at": version.approved_at,
+            "approved_by_name": None
+        }
+        
+        if version.approved_by:
+            approver = db.query(User).filter(User.id == version.approved_by).first()
+            if approver:
+                version_dict["approved_by_name"] = approver.full_name or approver.email
+        
+        result.append(OrgVersionSchema(**version_dict))
+    
+    return result
 
 @router.get("/{version_id}", response_model=OrgVersionSchema)
 def get_version(
@@ -46,6 +74,8 @@ def update_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("editor"))
 ):
+    from datetime import datetime
+    
     version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
@@ -54,8 +84,25 @@ def update_version(
     if version_data.status == "approved" and current_user.role not in ["approver", "admin"]:
         raise HTTPException(status_code=403, detail="Only approvers can approve versions")
     
+    # Track if status is changing to approved
+    is_being_approved = version_data.status == "approved" and version.status != "approved"
+    
+    # Track if status is changing from approved to something else (unapprove)
+    is_being_unapproved = version.status == "approved" and version_data.status != "approved"
+    
     for key, value in version_data.model_dump(exclude_unset=True).items():
-        setattr(version, key, value)
+        if key not in ['approved_by', 'approved_at']:  # Don't set these directly from request
+            setattr(version, key, value)
+    
+    # Set approval tracking when version is approved
+    if is_being_approved:
+        version.approved_by = current_user.id
+        version.approved_at = datetime.utcnow()
+    
+    # Clear approval tracking when version is unapproved
+    if is_being_unapproved:
+        version.approved_by = None
+        version.approved_at = None
     
     db.commit()
     db.refresh(version)
@@ -92,6 +139,29 @@ def update_chart_title(
     db.commit()
     db.refresh(version)
     return {"chart_title": version.chart_title}
+
+@router.patch("/{version_id}/validity")
+def update_validity_dates(
+    version_id: UUID,
+    valid_from: str = None,
+    valid_until: str = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("editor"))
+):
+    from datetime import datetime as dt
+    
+    version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    
+    if valid_from:
+        version.valid_from = dt.strptime(valid_from, '%Y-%m-%d').date()
+    if valid_until:
+        version.valid_until = dt.strptime(valid_until, '%Y-%m-%d').date()
+    
+    db.commit()
+    db.refresh(version)
+    return {"valid_from": version.valid_from, "valid_until": version.valid_until}
 
 @router.post("/{version_id}/clone", response_model=OrgVersionSchema)
 def clone_version(

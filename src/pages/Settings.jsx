@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/api/apiClient';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -29,71 +30,55 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Users, Trash2, Shield, User as UserIcon, Plus } from 'lucide-react';
+import { Users, Trash2, Shield, User as UserIcon, Plus, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('users');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ email: '', password: '', role: 'user' });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [newUser, setNewUser] = useState({ email: '', password: '', role: 'user', full_name: '' });
+  const [editUserData, setEditUserData] = useState({ email: '', password: '', role: 'user', full_name: '' });
   const queryClient = useQueryClient();
 
   // Fetch users
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['users'],
-    queryFn: async () => {
-      const response = await fetch('http://localhost:8000/api/users', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch users');
-      return response.json();
-    }
+    queryFn: () => apiClient.listUsers()
   });
 
   // Create user
   const createUserMutation = useMutation({
-    mutationFn: async (userData) => {
-      const response = await fetch('http://localhost:8000/api/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to create user');
-      }
-      return response.json();
-    },
+    mutationFn: (userData) => apiClient.createUser(userData),
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast.success('Utilizatorul a fost creat');
       setIsAddDialogOpen(false);
-      setNewUser({ email: '', password: '', role: 'user' });
+      setNewUser({ email: '', password: '', role: 'user', full_name: '' });
     },
     onError: (error) => {
       toast.error(error.message || 'Eroare la crearea utilizatorului');
     }
   });
 
+  // Update user
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, userData }) => apiClient.updateUser(userId, userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['users']);
+      toast.success('Utilizatorul a fost actualizat');
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Eroare la actualizarea utilizatorului');
+    }
+  });
+
   // Update user role
   const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }) => {
-      const response = await fetch(`http://localhost:8000/api/users/${userId}/role`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ role })
-      });
-      if (!response.ok) throw new Error('Failed to update role');
-      return response.json();
-    },
+    mutationFn: ({ userId, role }) => apiClient.updateUserRole(userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast.success('Rolul utilizatorului a fost actualizat');
@@ -105,18 +90,7 @@ export default function Settings() {
 
   // Toggle user active status
   const toggleActiveMutation = useMutation({
-    mutationFn: async ({ userId, isActive }) => {
-      const response = await fetch(`http://localhost:8000/api/users/${userId}/active`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ is_active: isActive })
-      });
-      if (!response.ok) throw new Error('Failed to update status');
-      return response.json();
-    },
+    mutationFn: ({ userId, isActive }) => apiClient.updateUserActive(userId, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast.success('Statusul utilizatorului a fost actualizat');
@@ -128,16 +102,7 @@ export default function Settings() {
 
   // Delete user
   const deleteUserMutation = useMutation({
-    mutationFn: async (userId) => {
-      const response = await fetch(`http://localhost:8000/api/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-      if (!response.ok) throw new Error('Failed to delete user');
-      return response.json();
-    },
+    mutationFn: (userId) => apiClient.deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast.success('Utilizatorul a fost șters');
@@ -165,6 +130,24 @@ export default function Settings() {
       return;
     }
     createUserMutation.mutate(newUser);
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setEditUserData({ email: user.email, password: '', role: user.role, full_name: user.full_name || '' });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = () => {
+    if (!editUserData.email) {
+      toast.error('Email-ul este obligatoriu');
+      return;
+    }
+    const updateData = { email: editUserData.email, role: editUserData.role, full_name: editUserData.full_name };
+    if (editUserData.password) {
+      updateData.password = editUserData.password;
+    }
+    updateUserMutation.mutate({ userId: editingUser.id, userData: updateData });
   };
 
   return (
@@ -207,6 +190,16 @@ export default function Settings() {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="full_name">Nume complet</Label>
+                        <Input
+                          id="full_name"
+                          type="text"
+                          placeholder="Ion Popescu"
+                          value={newUser.full_name}
+                          onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <Input
@@ -266,9 +259,91 @@ export default function Settings() {
               </div>
             </CardHeader>
             <CardContent>
+              {/* Edit User Dialog */}
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Editează utilizator</DialogTitle>
+                    <DialogDescription>
+                      Modifică datele utilizatorului {editingUser?.email}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-full_name">Nume complet</Label>
+                      <Input
+                        id="edit-full_name"
+                        type="text"
+                        placeholder="Ion Popescu"
+                        value={editUserData.full_name}
+                        onChange={(e) => setEditUserData({ ...editUserData, full_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-email">Email</Label>
+                      <Input
+                        id="edit-email"
+                        type="email"
+                        placeholder="utilizator@exemplu.ro"
+                        value={editUserData.email}
+                        onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-password">Parolă nouă (opțional)</Label>
+                      <Input
+                        id="edit-password"
+                        type="password"
+                        placeholder="Lasă gol pentru a păstra parola actuală"
+                        value={editUserData.password}
+                        onChange={(e) => setEditUserData({ ...editUserData, password: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-role">Rol</Label>
+                      <Select
+                        value={editUserData.role}
+                        onValueChange={(value) => setEditUserData({ ...editUserData, role: value })}
+                      >
+                        <SelectTrigger id="edit-role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">
+                            <div className="flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-orange-500" />
+                              Administrator
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="user">
+                            <div className="flex items-center gap-2">
+                              <UserIcon className="w-4 h-4 text-blue-500" />
+                              Utilizator
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                      Anulează
+                    </Button>
+                    <Button onClick={handleUpdateUser} disabled={updateUserMutation.isPending}>
+                      {updateUserMutation.isPending ? 'Se actualizează...' : 'Salvează modificările'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               {isLoading ? (
                 <div className="text-center py-12 text-gray-500">
                   Se încarcă utilizatorii...
+                </div>
+              ) : error ? (
+                <div className="text-center py-12">
+                  <div className="text-red-600 font-semibold mb-2">Eroare la încărcarea utilizatorilor</div>
+                  <div className="text-gray-600 text-sm">{error.message}</div>
                 </div>
               ) : users.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
@@ -294,11 +369,11 @@ export default function Settings() {
                             <div className="flex items-center gap-2 min-w-0">
                               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                 <span className="text-sm font-semibold text-blue-600">
-                                  {user.email?.charAt(0).toUpperCase() || 'U'}
+                                  {(user.full_name || user.email)?.charAt(0).toUpperCase() || 'U'}
                                 </span>
                               </div>
-                              <span className="truncate" title={user.email}>
-                                {user.email}
+                              <span className="truncate" title={user.full_name || user.email}>
+                                {user.full_name || user.email}
                               </span>
                             </div>
                           </TableCell>
@@ -343,30 +418,40 @@ export default function Settings() {
                             </div>
                           </TableCell>
                           <TableCell className="w-[100px] text-right">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Această acțiune nu poate fi anulată. Utilizatorul <strong>{user.email}</strong> va fi șters permanent din sistem.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Anulează</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteUser(user.id)}
-                                    className="bg-red-600 hover:bg-red-700"
-                                  >
-                                    Șterge utilizatorul
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleEditUser(user)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Această acțiune nu poate fi anulată. Utilizatorul <strong>{user.email}</strong> va fi șters permanent din sistem.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Anulează</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(user.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Șterge utilizatorul
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

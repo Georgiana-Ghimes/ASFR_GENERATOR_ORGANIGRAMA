@@ -98,6 +98,15 @@ class ApiClient {
     });
   }
 
+  async updateVersionValidity(id, validFrom, validUntil) {
+    const params = new URLSearchParams();
+    if (validFrom) params.append('valid_from', validFrom);
+    if (validUntil) params.append('valid_until', validUntil);
+    return this.request(`/versions/${id}/validity?${params.toString()}`, {
+      method: 'PATCH',
+    });
+  }
+
   async deleteVersion(id) {
     return this.request(`/versions/${id}`, {
       method: 'DELETE',
@@ -215,6 +224,45 @@ class ApiClient {
 
   async deleteAssignment(id) {
     return this.request(`/assignments/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Users
+  async listUsers() {
+    return this.request('/users');
+  }
+
+  async createUser(data) {
+    return this.request('/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUser(id, data) {
+    return this.request(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUserRole(id, role) {
+    return this.request(`/users/${id}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async updateUserActive(id, isActive) {
+    return this.request(`/users/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_active: isActive }),
+    });
+  }
+
+  async deleteUser(id) {
+    return this.request(`/users/${id}`, {
       method: 'DELETE',
     });
   }

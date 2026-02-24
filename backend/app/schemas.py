@@ -11,6 +11,8 @@ class OrgVersionBase(BaseModel):
     notes: Optional[str] = None
     chart_title: Optional[str] = "CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 48/23.01.2026"
     org_type: Optional[str] = "codificare"
+    valid_from: Optional[date] = None
+    valid_until: Optional[date] = None
 
 class OrgVersionCreate(OrgVersionBase):
     status: VersionStatus = VersionStatus.draft
@@ -22,6 +24,8 @@ class OrgVersionUpdate(BaseModel):
     notes: Optional[str] = None
     chart_title: Optional[str] = None
     org_type: Optional[str] = None
+    valid_from: Optional[date] = None
+    valid_until: Optional[date] = None
     approved_by: Optional[str] = None
     approved_date: Optional[datetime] = None
 
@@ -31,8 +35,11 @@ class OrgVersion(OrgVersionBase):
     created_date: datetime
     chart_title: Optional[str] = None
     org_type: Optional[str] = "codificare"
-    approved_by: Optional[str] = None
-    approved_date: Optional[datetime] = None
+    valid_from: Optional[date] = None
+    valid_until: Optional[date] = None
+    approved_by: Optional[UUID] = None
+    approved_at: Optional[datetime] = None
+    approved_by_name: Optional[str] = None
     
     class Config:
         from_attributes = True
