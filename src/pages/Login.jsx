@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Turnstile from 'react-turnstile';
+import logo from '@/assets/ASFR-emboss.png';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -60,9 +61,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center">
-              <Building2 className="w-10 h-10 text-white" />
-            </div>
+            <img src={logo} alt="ASFR Logo" className="w-32 h-32 object-contain" />
           </div>
           <CardTitle className="text-2xl font-bold">Organigrama Administrativă</CardTitle>
           <CardDescription>
