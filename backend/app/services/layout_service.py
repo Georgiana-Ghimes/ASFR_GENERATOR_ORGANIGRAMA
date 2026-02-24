@@ -139,10 +139,10 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
 def generate_deterministic_layout(db: Session, version_id: UUID) -> Dict:
     """Generate fully deterministic layout with DG under Consiliu"""
     
-    # Find root unit (Director General - no parent)
+    # Find root unit (Director General - no parent and type director_general)
     root = db.query(OrgUnit).filter(
         OrgUnit.version_id == version_id,
-        OrgUnit.parent_unit_id == None
+        OrgUnit.unit_type == 'director_general'
     ).first()
     
     if not root:
