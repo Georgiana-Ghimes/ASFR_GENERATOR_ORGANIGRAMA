@@ -30,7 +30,7 @@ const navigation = [
   { name: 'Organigramă codificare', href: 'OrgChart', icon: Building2 },
   { name: 'Organigramă la anexa OMTI', href: 'OrgChartOMTI', icon: Building2 },
   { name: 'Unități Organizaționale', href: 'Units', icon: Layers },
-  { name: 'Angajați', href: 'Employees', icon: Users },
+  // { name: 'Angajați', href: 'Employees', icon: Users },
   { name: 'Versiuni', href: 'Versions', icon: History },
   { name: 'Setări', href: 'Settings', icon: Settings },
 ];

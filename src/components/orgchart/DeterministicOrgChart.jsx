@@ -1629,12 +1629,12 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                           return (
                             <>
                               <div className="font-bold mb-1">TOTAL POSTURI: {totalPosts}</div>
-                              <div className="mb-0.5">Funcții de conducere: {totalLeadership}</div>
-                              <div className="ml-2">- Director general: {dgCount}</div>
-                              <div className="ml-2">- Director: {directorCount}</div>
-                              <div className="ml-2">- Inspector șef: {inspectorCount}</div>
-                              <div className="ml-2">- Șef serviciu: {serviceCount}</div>
-                              <div className="mt-0.5">Posturi de execuție: {totalExecution}</div>
+                              <div className="font-bold mb-0.5">Funcții de conducere: {totalLeadership}</div>
+                              <div className="font-bold ml-2">- Director general: {dgCount}</div>
+                              <div className="font-bold ml-2">- Director: {directorCount}</div>
+                              <div className="font-bold ml-2">- Inspector șef: {inspectorCount}</div>
+                              <div className="font-bold ml-2">- Șef serviciu: {serviceCount}</div>
+                              <div className="font-bold mt-0.5">Posturi de execuție: {totalExecution}</div>
                             </>
                           );
                         })()}
@@ -1895,7 +1895,7 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                 <text
                   x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 2}
                   y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.075 + 5}
-                  fontSize={getDynamicFontSize('customLegend', 18)}
+                  fontSize={getDynamicFontSize('customLegend', 22)}
                   fontWeight="bold"
                   textAnchor="middle"
                   fill="#000000"
@@ -1917,9 +1917,10 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                 <text
                   x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}
                   y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2}
-                  fontSize={getDynamicFontSize('customLegend', 16)}
+                  fontSize={getDynamicFontSize('customLegend', 20)}
                   fontWeight="bold"
                   textAnchor="middle"
+                  dominantBaseline="central"
                   fill="#000000"
                   style={{ pointerEvents: 'none' }}
                   transform={`rotate(-90, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2})`}
@@ -1940,9 +1941,10 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                 <text
                   x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 2}
                   y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2}
-                  fontSize={getDynamicFontSize('customLegend', 15)}
+                  fontSize={getDynamicFontSize('customLegend', 19)}
                   fontWeight="bold"
                   textAnchor="middle"
+                  dominantBaseline="central"
                   fill="#000000"
                   style={{ pointerEvents: 'none' }}
                   transform={`rotate(-90, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 2}, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2})`}
@@ -1954,9 +1956,10 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                 <text
                   x={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + 5 * (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}
                   y={(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2}
-                  fontSize={getDynamicFontSize('customLegend', 16)}
+                  fontSize={getDynamicFontSize('customLegend', 20)}
                   fontWeight="bold"
                   textAnchor="middle"
+                  dominantBaseline="central"
                   fill="#000000"
                   style={{ pointerEvents: 'none' }}
                   transform={`rotate(-90, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.x : fixedElements.customLegend.x) + 5 * (resizingFixedElement === 'customLegend' && tempWidth ? tempWidth : fixedElements.customLegend.width) / 6}, ${(draggedFixedElement === 'customLegend' && tempPosition ? tempPosition.y : fixedElements.customLegend.y) + (resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.15 + ((resizingFixedElement === 'customLegend' && tempHeight ? tempHeight : fixedElements.customLegend.height) * 0.85) / 2})`}
@@ -2196,10 +2199,11 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                       x={x + 12.5}
                       y={y + height / 2}
                       fontSize="14"
-                      fontWeight="bold"
+                      fontWeight="700"
                       fill="#000000"
                       textAnchor="middle"
                       dominantBaseline="central"
+                      letterSpacing="1"
                       transform={`rotate(-90, ${x + 12.5}, ${y + height / 2})`}
                     >
                       {node.unit.stas_code}
