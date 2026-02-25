@@ -690,7 +690,7 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
     ? Math.max(minWidth, ...layoutData.layout.map(n => n.x + n.width + 100))
     : minWidth;
   const maxY = layoutData && layoutData.layout.length > 0 
-    ? Math.max(...layoutData.layout.map(n => n.y + n.height)) + 100 
+    ? Math.max(...layoutData.layout.map(n => n.y + n.height)) + 120 
     : 900;
 
   // Draw edges - starting fresh
