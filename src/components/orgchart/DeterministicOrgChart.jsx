@@ -695,10 +695,236 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
 
   // Draw edges - starting fresh
   const drawEdges = () => {
-    if (!layoutData.edges) return null;
+    if (!layoutData.edges || !layoutData.layout) return null;
     
-    // Empty for now - will rebuild step by step
-    return [];
+    const edges = [];
+    const centerX = maxX / 2;
+    const centerY = maxY / 2;
+    
+    // Find Director General
+    const directorNode = layoutData.layout.find(n => n.unit?.unit_type === 'director_general');
+    if (!directorNode) return null;
+    
+    const directorCenterY = directorNode.y + directorNode.height / 2;
+    const directorLeft = directorNode.x;
+    const directorRight = directorNode.x + directorNode.width;
+    
+    // Find all children of Director General
+    const directorChildren = layoutData.layout.filter(n => 
+      n.unit?.parent_unit_id === directorNode.unit_id
+    );
+    
+    // Group children by quadrant (only top quadrants)
+    const topLeftChildren = directorChildren.filter(n => {
+      const childCenterX = n.x + n.width / 2;
+      const childCenterY = n.y + n.height / 2;
+      return childCenterX < centerX && childCenterY < centerY;
+    });
+    
+    const topRightChildren = directorChildren.filter(n => {
+      const childCenterX = n.x + n.width / 2;
+      const childCenterY = n.y + n.height / 2;
+      return childCenterX >= centerX && childCenterY < centerY;
+    });
+    
+    // Recursive function to draw edges for children of any node
+    // Children connections always come from LEFT side of parent node
+    const drawChildrenEdges = (parentNode, children) => {
+      if (children.length === 0) return;
+      
+      const parentLeft = parentNode.x;
+      const parentCenterY = parentNode.y + parentNode.height / 2;
+      const distributionX = parentLeft - 20;
+      
+      // Horizontal segment from parent left side (20px)
+      edges.push(
+        <line
+          key={`h-${parentNode.unit_id}`}
+          x1={parentLeft}
+          y1={parentCenterY}
+          x2={distributionX}
+          y2={parentCenterY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Find Y positions of all children (at their connection points)
+      const childrenConnectionYs = children.map(c => c.y + c.height / 2);
+      const minY = Math.min(parentCenterY, ...childrenConnectionYs);
+      const maxY = Math.max(parentCenterY, ...childrenConnectionYs);
+      
+      // Vertical distribution line
+      edges.push(
+        <line
+          key={`v-${parentNode.unit_id}`}
+          x1={distributionX}
+          y1={minY}
+          x2={distributionX}
+          y2={maxY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Draw branches to each child
+      children.forEach(child => {
+        const childCenterY = child.y + child.height / 2;
+        const childLeft = child.x;
+        
+        // Horizontal branch from distribution line to child's LEFT side
+        edges.push(
+          <line
+            key={`branch-${child.unit_id}`}
+            x1={distributionX}
+            y1={childCenterY}
+            x2={childLeft}
+            y2={childCenterY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Recursively handle this child's children
+        const grandchildren = layoutData.layout.filter(n => 
+          n.unit?.parent_unit_id === child.unit_id
+        );
+        
+        if (grandchildren.length > 0) {
+          drawChildrenEdges(child, grandchildren);
+        }
+      });
+    };
+    
+    // 1. Handle TOP-LEFT quadrant children
+    if (topLeftChildren.length > 0) {
+      const startX = directorLeft;
+      const startY = directorCenterY;
+      const distributionX = startX - 20;
+      
+      // Horizontal segment from director left side (20px)
+      edges.push(
+        <line
+          key="director-left-h"
+          x1={startX}
+          y1={startY}
+          x2={distributionX}
+          y2={startY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Find Y positions of children (at their RIGHT side connection point)
+      const childrenConnectionYs = topLeftChildren.map(c => c.y + c.height / 2);
+      const minY = Math.min(startY, ...childrenConnectionYs);
+      const maxY = Math.max(startY, ...childrenConnectionYs);
+      
+      // Vertical distribution line
+      edges.push(
+        <line
+          key="director-left-v"
+          x1={distributionX}
+          y1={minY}
+          x2={distributionX}
+          y2={maxY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Draw branches to each child (connect to RIGHT side of child)
+      topLeftChildren.forEach(child => {
+        const childCenterY = child.y + child.height / 2;
+        const childRight = child.x + child.width;
+        
+        edges.push(
+          <line
+            key={`tl-branch-${child.unit_id}`}
+            x1={distributionX}
+            y1={childCenterY}
+            x2={childRight}
+            y2={childCenterY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Handle this child's children (from LEFT side)
+        const grandchildren = layoutData.layout.filter(n => 
+          n.unit?.parent_unit_id === child.unit_id
+        );
+        if (grandchildren.length > 0) {
+          drawChildrenEdges(child, grandchildren);
+        }
+      });
+    }
+    
+    // 2. Handle TOP-RIGHT quadrant children
+    if (topRightChildren.length > 0) {
+      const startX = directorRight;
+      const startY = directorCenterY;
+      const distributionX = startX + 20;
+      
+      // Horizontal segment from director right side (20px)
+      edges.push(
+        <line
+          key="director-right-h"
+          x1={startX}
+          y1={startY}
+          x2={distributionX}
+          y2={startY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Find Y positions of children (at their LEFT side connection point)
+      const childrenConnectionYs = topRightChildren.map(c => c.y + c.height / 2);
+      const minY = Math.min(startY, ...childrenConnectionYs);
+      const maxY = Math.max(startY, ...childrenConnectionYs);
+      
+      // Vertical distribution line
+      edges.push(
+        <line
+          key="director-right-v"
+          x1={distributionX}
+          y1={minY}
+          x2={distributionX}
+          y2={maxY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Draw branches to each child (connect to LEFT side of child)
+      topRightChildren.forEach(child => {
+        const childCenterY = child.y + child.height / 2;
+        const childLeft = child.x;
+        
+        edges.push(
+          <line
+            key={`tr-branch-${child.unit_id}`}
+            x1={distributionX}
+            y1={childCenterY}
+            x2={childLeft}
+            y2={childCenterY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Handle this child's children (from LEFT side)
+        const grandchildren = layoutData.layout.filter(n => 
+          n.unit?.parent_unit_id === child.unit_id
+        );
+        if (grandchildren.length > 0) {
+          drawChildrenEdges(child, grandchildren);
+        }
+      });
+    }
+    
+    return edges;
   };
 
   return (
