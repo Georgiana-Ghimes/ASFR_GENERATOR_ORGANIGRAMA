@@ -794,13 +794,32 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
               
               {/* Grid background - show when dragging or resizing */}
               {(draggedNode || draggedFixedElement || resizingNode || resizingFixedElement) && (
-                <rect
-                  x="0"
-                  y="0"
-                  width={maxX}
-                  height={maxY}
-                  fill="url(#grid)"
-                />
+                <>
+                  <rect
+                    x="0"
+                    y="0"
+                    width={maxX}
+                    height={maxY}
+                    fill="url(#grid)"
+                  />
+                  {/* Center lines - vertical and horizontal */}
+                  <line
+                    x1={maxX / 2}
+                    y1="0"
+                    x2={maxX / 2}
+                    y2={maxY}
+                    stroke="#9ca3af"
+                    strokeWidth="2"
+                  />
+                  <line
+                    x1="0"
+                    y1={maxY / 2}
+                    x2={maxX}
+                    y2={maxY / 2}
+                    stroke="#9ca3af"
+                    strokeWidth="2"
+                  />
+                </>
               )}
 
               {/* Legend - draggable and resizable box */}
