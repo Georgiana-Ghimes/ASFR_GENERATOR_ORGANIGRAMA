@@ -777,7 +777,7 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
         // Horizontal branch from distribution line to child's LEFT side
         edges.push(
           <line
-            key={`branch-${child.unit_id}`}
+            key={`branch-${parentNode.unit_id}-${child.unit_id}`}
             x1={distributionX}
             y1={childCenterY}
             x2={childLeft}
@@ -794,6 +794,74 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
         
         if (grandchildren.length > 0) {
           drawChildrenEdges(child, grandchildren);
+        }
+      });
+    };
+    
+    // Function to draw edges for children in top-right quadrant
+    const drawTopRightChildrenEdges = (parentNode, children) => {
+      if (children.length === 0) return;
+      
+      const parentRight = parentNode.x + parentNode.width;
+      const parentCenterY = parentNode.y + parentNode.height / 2;
+      const distributionX = parentRight + 20;
+      
+      // Horizontal segment from parent right side (20px)
+      edges.push(
+        <line
+          key={`h-tr-${parentNode.unit_id}`}
+          x1={parentRight}
+          y1={parentCenterY}
+          x2={distributionX}
+          y2={parentCenterY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Find Y positions of all children (at their connection points)
+      const childrenConnectionYs = children.map(c => c.y + c.height / 2);
+      const minY = Math.min(parentCenterY, ...childrenConnectionYs);
+      const maxY = Math.max(parentCenterY, ...childrenConnectionYs);
+      
+      // Vertical distribution line
+      edges.push(
+        <line
+          key={`v-tr-${parentNode.unit_id}`}
+          x1={distributionX}
+          y1={minY}
+          x2={distributionX}
+          y2={maxY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Draw branches to each child
+      children.forEach(child => {
+        const childCenterY = child.y + child.height / 2;
+        const childLeft = child.x;
+        
+        // Horizontal branch from distribution line to child's LEFT side
+        edges.push(
+          <line
+            key={`branch-tr-${parentNode.unit_id}-${child.unit_id}`}
+            x1={distributionX}
+            y1={childCenterY}
+            x2={childLeft}
+            y2={childCenterY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Recursively handle this child's children
+        const grandchildren = layoutData.layout.filter(n => 
+          n.unit?.parent_unit_id === child.unit_id
+        );
+        
+        if (grandchildren.length > 0) {
+          drawTopRightChildrenEdges(child, grandchildren);
         }
       });
     };
@@ -852,12 +920,22 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
           />
         );
         
-        // Handle this child's children (from LEFT side)
+        // Handle this child's children - check if they're to the left or right
         const grandchildren = layoutData.layout.filter(n => 
           n.unit?.parent_unit_id === child.unit_id
         );
         if (grandchildren.length > 0) {
-          drawChildrenEdges(child, grandchildren);
+          // Determine if grandchildren are mostly to the right or left of this child
+          const childCenterX = child.x + child.width / 2;
+          const grandchildrenCenterX = grandchildren.reduce((sum, gc) => sum + gc.x + gc.width / 2, 0) / grandchildren.length;
+          
+          if (grandchildrenCenterX > childCenterX) {
+            // Grandchildren are to the right, use right-side connection
+            drawTopRightChildrenEdges(child, grandchildren);
+          } else {
+            // Grandchildren are to the left, use left-side connection
+            drawChildrenEdges(child, grandchildren);
+          }
         }
       });
     }
@@ -900,29 +978,112 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
       );
       
       // Draw branches to each child (connect to LEFT side of child)
+      // Group children that are close together (within 150px vertically)
+      const groupedChildren = [];
+      const processedChildren = new Set();
+      
       topRightChildren.forEach(child => {
+        if (processedChildren.has(child.unit_id)) return;
+        
         const childCenterY = child.y + child.height / 2;
-        const childLeft = child.x;
+        const group = [child];
+        processedChildren.add(child.unit_id);
         
-        edges.push(
-          <line
-            key={`tr-branch-${child.unit_id}`}
-            x1={distributionX}
-            y1={childCenterY}
-            x2={childLeft}
-            y2={childCenterY}
-            stroke="#374151"
-            strokeWidth="2"
-          />
-        );
+        // Find other children close to this one
+        topRightChildren.forEach(otherChild => {
+          if (processedChildren.has(otherChild.unit_id)) return;
+          const otherCenterY = otherChild.y + otherChild.height / 2;
+          if (Math.abs(childCenterY - otherCenterY) < 150) {
+            group.push(otherChild);
+            processedChildren.add(otherChild.unit_id);
+          }
+        });
         
-        // Handle this child's children (from LEFT side)
-        const grandchildren = layoutData.layout.filter(n => 
-          n.unit?.parent_unit_id === child.unit_id
-        );
-        if (grandchildren.length > 0) {
-          drawChildrenEdges(child, grandchildren);
+        groupedChildren.push(group);
+      });
+      
+      // Draw connections for each group
+      groupedChildren.forEach(group => {
+        if (group.length === 1) {
+          // Single child - direct connection
+          const child = group[0];
+          const childCenterY = child.y + child.height / 2;
+          const childLeft = child.x;
+          
+          edges.push(
+            <line
+              key={`tr-branch-${child.unit_id}`}
+              x1={distributionX}
+              y1={childCenterY}
+              x2={childLeft}
+              y2={childCenterY}
+              stroke="#374151"
+              strokeWidth="2"
+            />
+          );
+        } else {
+          // Multiple children in group - create local distribution line
+          const groupCenterY = group.reduce((sum, c) => sum + c.y + c.height / 2, 0) / group.length;
+          const localDistributionX = Math.min(...group.map(c => c.x)) - 20;
+          
+          // Horizontal branch from main distribution to local distribution
+          edges.push(
+            <line
+              key={`tr-group-h-${group[0].unit_id}`}
+              x1={distributionX}
+              y1={groupCenterY}
+              x2={localDistributionX}
+              y2={groupCenterY}
+              stroke="#374151"
+              strokeWidth="2"
+            />
+          );
+          
+          // Local vertical distribution line
+          const groupMinY = Math.min(...group.map(c => c.y + c.height / 2));
+          const groupMaxY = Math.max(...group.map(c => c.y + c.height / 2));
+          
+          edges.push(
+            <line
+              key={`tr-group-v-${group[0].unit_id}`}
+              x1={localDistributionX}
+              y1={groupMinY}
+              x2={localDistributionX}
+              y2={groupMaxY}
+              stroke="#374151"
+              strokeWidth="2"
+            />
+          );
+          
+          // Branches from local distribution to each child
+          group.forEach(child => {
+            const childCenterY = child.y + child.height / 2;
+            const childLeft = child.x;
+            
+            edges.push(
+              <line
+                key={`tr-branch-${child.unit_id}`}
+                x1={localDistributionX}
+                y1={childCenterY}
+                x2={childLeft}
+                y2={childCenterY}
+                stroke="#374151"
+                strokeWidth="2"
+              />
+            );
+          });
         }
+        
+        // Handle children's children
+        group.forEach(child => {
+          const grandchildren = layoutData.layout.filter(n => 
+            n.unit?.parent_unit_id === child.unit_id
+          );
+          if (grandchildren.length > 0) {
+            console.log(`Drawing edges for ${child.unit_id} with ${grandchildren.length} children:`, grandchildren.map(gc => gc.unit_id));
+            drawTopRightChildrenEdges(child, grandchildren);
+          }
+        });
       });
     }
     
@@ -953,7 +1114,7 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
         const childCenterX = child.x + child.width / 2;
         const childTop = child.y;
         
-        // Vertical line from parent bottom to child top
+        // Vertical line from parent bottom center to child top center
         edges.push(
           <line
             key={`single-${child.unit_id}`}
@@ -992,7 +1153,7 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
           />
         );
         
-        // Find X positions of all children (at their top connection points)
+        // Find X positions of all children (at their TOP CENTER)
         const childrenConnectionXs = children.map(c => c.x + c.width / 2);
         const minX = Math.min(parentCenterX, ...childrenConnectionXs);
         const maxX = Math.max(parentCenterX, ...childrenConnectionXs);
@@ -1010,12 +1171,12 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
           />
         );
         
-        // Draw branches to each child
+        // Draw branches to each child - connect to TOP CENTER of child
         children.forEach(child => {
           const childCenterX = child.x + child.width / 2;
           const childTop = child.y;
           
-          // Vertical branch from distribution line to child's TOP
+          // Vertical branch from distribution line to child's TOP CENTER
           edges.push(
             <line
               key={`branch-bottom-${child.unit_id}`}
