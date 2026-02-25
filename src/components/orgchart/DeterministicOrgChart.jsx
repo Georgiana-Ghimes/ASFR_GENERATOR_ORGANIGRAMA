@@ -1147,6 +1147,18 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
       // Convert to image
       const imageDataUrl = canvas.toDataURL('image/png');
       
+      // A4 dimensions in pixels at 96 DPI (landscape)
+      const a4WidthPx = 1123; // 297mm
+      const a4HeightPx = 794;  // 210mm
+      
+      // Calculate scale to fit A4 landscape
+      const scaleX = a4WidthPx / canvas.width;
+      const scaleY = a4HeightPx / canvas.height;
+      const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+      
+      const scaledWidth = canvas.width * scale;
+      const scaledHeight = canvas.height * scale;
+      
       // Create print window
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
@@ -1156,26 +1168,80 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
             <title>Organigramă - ${versionData?.name || 'Print'}</title>
             <style>
               @page {
-                size: ${canvas.width}px ${canvas.height}px;
-                margin: 0;
+                size: A4 landscape;
+                margin: 10mm;
               }
               * {
                 margin: 0;
                 padding: 0;
+                box-sizing: border-box;
               }
               html, body {
                 margin: 0;
                 padding: 0;
-              }
-              img {
                 width: 100%;
                 height: 100%;
+              }
+              body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: white;
+              }
+              .print-container {
+                max-width: 100%;
+                max-height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              }
+              img {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
                 display: block;
+                object-fit: contain;
+              }
+              @media print {
+                @page {
+                  size: A4 landscape;
+                  margin: 10mm;
+                }
+                html, body {
+                  width: 297mm;
+                  height: 210mm;
+                }
+                .print-container {
+                  width: 277mm;
+                  height: 190mm;
+                  page-break-inside: avoid;
+                }
+                img {
+                  max-width: 277mm;
+                  max-height: 190mm;
+                  width: auto;
+                  height: auto;
+                  object-fit: contain;
+                }
+              }
+              @media screen {
+                body {
+                  background: #f0f0f0;
+                  padding: 20px;
+                }
+                .print-container {
+                  background: white;
+                  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                  padding: 10mm;
+                }
               }
             </style>
           </head>
           <body>
-            <img src="${imageDataUrl}" />
+            <div class="print-container">
+              <img src="${imageDataUrl}" alt="Organigramă" />
+            </div>
           </body>
         </html>
       `);
@@ -1804,45 +1870,49 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
               
               // Calculate font size dynamically based on available space
               const text_length = node.unit.name.length;
-              const availableWidth = width - 91; // 75px left strip + 16px padding
-              const availableHeight = height - 12;
+              const availableWidth = width - (orgType === 'omti' ? 58 : 83) - 14; // Strip width + safe padding
+              const availableHeight = height - 10; // Safe padding top/bottom
               
               let fontSize = '6px';
               let lineHeight = '1.1';
               
-              // Estimate how many characters fit per line at different font sizes
-              const estimateLines = (fontPx, charWidth) => {
-                const charsPerLine = Math.floor(availableWidth / charWidth);
+              // Balanced character width estimation
+              const estimateLines = (fontPx, charWidthRatio = 0.54) => {
+                const charWidth = fontPx * charWidthRatio; // Slightly conservative for safety
+                const charsPerLine = Math.max(1, Math.floor(availableWidth / charWidth));
                 return Math.ceil(text_length / charsPerLine);
               };
               
-              // Define font sizes with their properties - extended range for smaller sizes
+              // Define font sizes with their properties
               const fontSizes = [
-                { size: 16, charWidth: 8, lineHeight: 1.3 },
-                { size: 14, charWidth: 7, lineHeight: 1.3 },
-                { size: 13, charWidth: 6.5, lineHeight: 1.2 },
-                { size: 12, charWidth: 6, lineHeight: 1.2 },
-                { size: 11, charWidth: 5.5, lineHeight: 1.2 },
-                { size: 10, charWidth: 5, lineHeight: 1.2 },
-                { size: 9, charWidth: 4.5, lineHeight: 1.15 },
-                { size: 8, charWidth: 4, lineHeight: 1.1 },
-                { size: 7, charWidth: 3.5, lineHeight: 1.1 },
-                { size: 6, charWidth: 3, lineHeight: 1.1 },
-                { size: 5, charWidth: 2.5, lineHeight: 1.05 },
-                { size: 4, charWidth: 2, lineHeight: 1.05 }
+                { size: 20, charWidthRatio: 0.54, lineHeight: 1.25 },
+                { size: 18, charWidthRatio: 0.54, lineHeight: 1.25 },
+                { size: 16, charWidthRatio: 0.54, lineHeight: 1.25 },
+                { size: 15, charWidthRatio: 0.54, lineHeight: 1.2 },
+                { size: 14, charWidthRatio: 0.54, lineHeight: 1.2 },
+                { size: 13, charWidthRatio: 0.54, lineHeight: 1.2 },
+                { size: 12, charWidthRatio: 0.54, lineHeight: 1.2 },
+                { size: 11, charWidthRatio: 0.54, lineHeight: 1.15 },
+                { size: 10, charWidthRatio: 0.54, lineHeight: 1.15 },
+                { size: 9, charWidthRatio: 0.54, lineHeight: 1.15 },
+                { size: 8, charWidthRatio: 0.54, lineHeight: 1.1 },
+                { size: 7, charWidthRatio: 0.54, lineHeight: 1.1 },
+                { size: 6, charWidthRatio: 0.54, lineHeight: 1.1 },
+                { size: 5, charWidthRatio: 0.54, lineHeight: 1.05 },
+                { size: 4, charWidthRatio: 0.54, lineHeight: 1.05 }
               ];
               
-              // Find the largest font where text fits in available space
+              // Find the largest font where text fits safely
               let selectedFont = fontSizes[fontSizes.length - 1]; // Default to smallest
               
               for (const font of fontSizes) {
-                const lines = estimateLines(font.size, font.charWidth);
+                const lines = estimateLines(font.size, font.charWidthRatio);
                 const totalHeight = lines * font.size * font.lineHeight;
                 
-                // Check if this font size fits
-                if (totalHeight <= availableHeight) {
+                // Use 91% threshold - maximize text size while keeping safety margin
+                if (totalHeight <= availableHeight * 0.91) {
                   selectedFont = font;
-                  break; // Found the largest that fits
+                  break;
                 }
               }
               
@@ -1985,9 +2055,9 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                   {/* Unit name - dynamic font size based on available space */}
                   <foreignObject
                     x={orgType === 'omti' ? x + 54 : x + 79}
-                    y={y + 3}
+                    y={y + 2.5}
                     width={orgType === 'omti' ? width - 58 : width - 83}
-                    height={height - 6}
+                    height={height - 5}
                   >
                     <div
                       style={{
@@ -2001,8 +2071,9 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                         fontWeight: '600',
                         color: '#000000',
                         lineHeight: lineHeight,
-                        padding: '6px 8px',
+                        padding: '3px 5px',
                         wordWrap: 'break-word',
+                        overflowWrap: 'break-word',
                         overflow: 'hidden',
                         hyphens: 'auto',
                         opacity: isBeingDragged ? 0.7 : 1
