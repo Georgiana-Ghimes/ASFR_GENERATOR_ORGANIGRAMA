@@ -924,6 +924,183 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
       });
     }
     
+    // Group children by bottom quadrants
+    const bottomLeftChildren = directorChildren.filter(n => {
+      const childCenterX = n.x + n.width / 2;
+      const childCenterY = n.y + n.height / 2;
+      return childCenterX < centerX && childCenterY >= centerY;
+    });
+    
+    const bottomRightChildren = directorChildren.filter(n => {
+      const childCenterX = n.x + n.width / 2;
+      const childCenterY = n.y + n.height / 2;
+      return childCenterX >= centerX && childCenterY >= centerY;
+    });
+    
+    const bottomChildren = [...bottomLeftChildren, ...bottomRightChildren];
+    
+    // Recursive function for bottom quadrant children
+    const drawBottomChildrenEdges = (parentNode, children) => {
+      if (children.length === 0) return;
+      
+      if (children.length === 1) {
+        // Single child - direct connection from bottom of parent to top of child
+        const child = children[0];
+        const parentCenterX = parentNode.x + parentNode.width / 2;
+        const parentBottom = parentNode.y + parentNode.height;
+        const childCenterX = child.x + child.width / 2;
+        const childTop = child.y;
+        
+        // Vertical line from parent bottom to child top
+        edges.push(
+          <line
+            key={`single-${child.unit_id}`}
+            x1={parentCenterX}
+            y1={parentBottom}
+            x2={childCenterX}
+            y2={childTop}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Recursively handle this child's children
+        const grandchildren = layoutData.layout.filter(n => 
+          n.unit?.parent_unit_id === child.unit_id
+        );
+        if (grandchildren.length > 0) {
+          drawBottomChildrenEdges(child, grandchildren);
+        }
+      } else {
+        // Multiple children - use horizontal distribution
+        const parentCenterX = parentNode.x + parentNode.width / 2;
+        const parentBottom = parentNode.y + parentNode.height;
+        const distributionY = parentBottom + 20;
+        
+        // Vertical segment from parent bottom (20px down)
+        edges.push(
+          <line
+            key={`v-bottom-${parentNode.unit_id}`}
+            x1={parentCenterX}
+            y1={parentBottom}
+            x2={parentCenterX}
+            y2={distributionY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Find X positions of all children (at their top connection points)
+        const childrenConnectionXs = children.map(c => c.x + c.width / 2);
+        const minX = Math.min(parentCenterX, ...childrenConnectionXs);
+        const maxX = Math.max(parentCenterX, ...childrenConnectionXs);
+        
+        // Horizontal distribution line
+        edges.push(
+          <line
+            key={`h-bottom-${parentNode.unit_id}`}
+            x1={minX}
+            y1={distributionY}
+            x2={maxX}
+            y2={distributionY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Draw branches to each child
+        children.forEach(child => {
+          const childCenterX = child.x + child.width / 2;
+          const childTop = child.y;
+          
+          // Vertical branch from distribution line to child's TOP
+          edges.push(
+            <line
+              key={`branch-bottom-${child.unit_id}`}
+              x1={childCenterX}
+              y1={distributionY}
+              x2={childCenterX}
+              y2={childTop}
+              stroke="#374151"
+              strokeWidth="2"
+            />
+          );
+          
+          // Recursively handle this child's children
+          const grandchildren = layoutData.layout.filter(n => 
+            n.unit?.parent_unit_id === child.unit_id
+          );
+          if (grandchildren.length > 0) {
+            drawBottomChildrenEdges(child, grandchildren);
+          }
+        });
+      }
+    };
+    
+    // 3. Handle BOTTOM quadrant children (both left and right)
+    if (bottomChildren.length > 0) {
+      const directorCenterX = directorNode.x + directorNode.width / 2;
+      const directorBottom = directorNode.y + directorNode.height;
+      
+      // Vertical line from director bottom to center line (horizontal median)
+      edges.push(
+        <line
+          key="director-bottom-v"
+          x1={directorCenterX}
+          y1={directorBottom}
+          x2={directorCenterX}
+          y2={centerY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Find X positions of all bottom children
+      const childrenConnectionXs = bottomChildren.map(c => c.x + c.width / 2);
+      const minX = Math.min(directorCenterX, ...childrenConnectionXs);
+      const maxX = Math.max(directorCenterX, ...childrenConnectionXs);
+      
+      // Horizontal distribution line on center line
+      edges.push(
+        <line
+          key="director-bottom-h"
+          x1={minX}
+          y1={centerY}
+          x2={maxX}
+          y2={centerY}
+          stroke="#374151"
+          strokeWidth="2"
+        />
+      );
+      
+      // Draw branches to each child (connect to TOP of child)
+      bottomChildren.forEach(child => {
+        const childCenterX = child.x + child.width / 2;
+        const childTop = child.y;
+        
+        // Vertical branch from distribution line to child's TOP
+        edges.push(
+          <line
+            key={`bottom-branch-${child.unit_id}`}
+            x1={childCenterX}
+            y1={centerY}
+            x2={childCenterX}
+            y2={childTop}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+        
+        // Handle this child's children
+        const grandchildren = layoutData.layout.filter(n => 
+          n.unit?.parent_unit_id === child.unit_id
+        );
+        if (grandchildren.length > 0) {
+          drawBottomChildrenEdges(child, grandchildren);
+        }
+      });
+    }
+    
     return edges;
   };
 
