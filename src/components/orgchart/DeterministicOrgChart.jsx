@@ -703,13 +703,32 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
     const centerX = maxX / 2;
     const centerY = maxY / 2;
     
+    // Draw connection from Consiliu to Director General
+    const consiliuCenterX = fixedElements.consiliu.x + fixedElements.consiliu.width / 2;
+    const consiliuBottom = fixedElements.consiliu.y + fixedElements.consiliu.height;
+    
     // Find Director General
     const directorNode = layoutData.layout.find(n => n.unit?.unit_type === 'director_general');
     if (!directorNode) return null;
     
+    const directorCenterX = directorNode.x + directorNode.width / 2;
+    const directorTop = directorNode.y;
     const directorCenterY = directorNode.y + directorNode.height / 2;
     const directorLeft = directorNode.x;
     const directorRight = directorNode.x + directorNode.width;
+    
+    // Vertical line from consiliu bottom to director top
+    edges.push(
+      <line
+        key="consiliu-director"
+        x1={consiliuCenterX}
+        y1={consiliuBottom}
+        x2={directorCenterX}
+        y2={directorTop}
+        stroke="#374151"
+        strokeWidth="2"
+      />
+    );
     
     // Find all children of Director General
     const directorChildren = layoutData.layout.filter(n => 
@@ -2176,11 +2195,11 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                     <text
                       x={x + 12.5}
                       y={y + height / 2}
-                      fontSize="11"
+                      fontSize="14"
                       fontWeight="bold"
                       fill="#000000"
                       textAnchor="middle"
-                      dominantBaseline="middle"
+                      dominantBaseline="central"
                       transform={`rotate(-90, ${x + 12.5}, ${y + height / 2})`}
                     >
                       {node.unit.stas_code}
@@ -2190,11 +2209,13 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                   {/* Leadership count - second column in left strip */}
                   <text
                     x={orgType === 'omti' ? x + 12.5 : x + 37.5}
-                    y={y + height / 2 + 4}
-                    fontSize="12"
+                    y={node.unit.unit_type === 'director_general' ? y + height / 2 : y + height / 2 + 4}
+                    fontSize="15"
                     fontWeight="bold"
                     fill="#000000"
                     textAnchor="middle"
+                    dominantBaseline={node.unit.unit_type === 'director_general' ? 'central' : 'auto'}
+                    transform={node.unit.unit_type === 'director_general' ? `rotate(-90, ${orgType === 'omti' ? x + 12.5 : x + 37.5}, ${y + height / 2})` : ''}
                   >
                     {agg.leadership_positions_count}
                   </text>
@@ -2202,11 +2223,13 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
                   {/* Execution count - third column in left strip */}
                   <text
                     x={orgType === 'omti' ? x + 37.5 : x + 62.5}
-                    y={y + height / 2 + 4}
-                    fontSize="12"
+                    y={node.unit.unit_type === 'director_general' ? y + height / 2 : y + height / 2 + 4}
+                    fontSize="15"
                     fontWeight="bold"
                     fill="#000000"
                     textAnchor="middle"
+                    dominantBaseline={node.unit.unit_type === 'director_general' ? 'central' : 'auto'}
+                    transform={node.unit.unit_type === 'director_general' ? `rotate(-90, ${orgType === 'omti' ? x + 37.5 : x + 62.5}, ${y + height / 2})` : ''}
                   >
                     {agg.recursive_total_subordinates > agg.total_positions
                       ? agg.recursive_total_subordinates - agg.leadership_positions_count
