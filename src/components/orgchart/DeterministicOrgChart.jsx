@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '@/api/apiClient';
+import html2canvas from 'html2canvas';
 
 const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit, isReadOnly }) => {
   const [layoutData, setLayoutData] = useState(null);
@@ -25,6 +26,7 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
   const svgRef = React.useRef(null);
+  const containerRef = React.useRef(null);
 
   // Fixed elements positions (legend, director, consiliu, headers, customLegend)
   const [fixedElements, setFixedElements] = useState({
@@ -1104,6 +1106,93 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
     return edges;
   };
 
+  // Print function - prints only the SVG canvas using html2canvas
+  const handlePrint = async () => {
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+
+    try {
+      // Get viewBox dimensions
+      const viewBox = svgElement.getAttribute('viewBox');
+      const [, , width, height] = viewBox.split(' ').map(Number);
+      
+      // Create a temporary container with the SVG
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = `${width}px`;
+      tempContainer.style.height = `${height}px`;
+      tempContainer.style.background = 'white';
+      
+      // Clone and append SVG
+      const svgClone = svgElement.cloneNode(true);
+      svgClone.setAttribute('width', width);
+      svgClone.setAttribute('height', height);
+      tempContainer.appendChild(svgClone);
+      document.body.appendChild(tempContainer);
+      
+      // Capture with html2canvas
+      const canvas = await html2canvas(tempContainer, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        width: width,
+        height: height
+      });
+      
+      // Remove temp container
+      document.body.removeChild(tempContainer);
+      
+      // Convert to image
+      const imageDataUrl = canvas.toDataURL('image/png');
+      
+      // Create print window
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Organigramă - ${versionData?.name || 'Print'}</title>
+            <style>
+              @page {
+                size: ${canvas.width}px ${canvas.height}px;
+                margin: 0;
+              }
+              * {
+                margin: 0;
+                padding: 0;
+              }
+              html, body {
+                margin: 0;
+                padding: 0;
+              }
+              img {
+                width: 100%;
+                height: 100%;
+                display: block;
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${imageDataUrl}" />
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      };
+    } catch (error) {
+      console.error('Failed to generate print preview:', error);
+      alert('Eroare la generarea preview-ului de tipărire: ' + error.message);
+    }
+  };
+
   return (
     <div className="w-full h-full overflow-hidden bg-white">
       <div className="w-full h-full overflow-auto p-4">
@@ -1113,6 +1202,20 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
           </div>
         ) : (
           <div style={{ position: 'relative' }}>
+            {/* Print button - only show for approved versions */}
+            {versionData?.status === 'approved' && (
+              <button
+                onClick={handlePrint}
+                className="absolute top-4 right-4 z-20 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow-lg flex items-center gap-2"
+                title="Tipărește organigrama"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
+                </svg>
+                Tipărește
+              </button>
+            )}
+            
             {/* Editing overlay */}
             {isEditingTitle && (
               <div style={{ 
