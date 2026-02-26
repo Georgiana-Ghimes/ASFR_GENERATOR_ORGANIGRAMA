@@ -355,18 +355,18 @@ export default function Settings() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[250px]">Utilizator</TableHead>
-                        <TableHead className="w-[250px]">Email</TableHead>
-                        <TableHead className="w-[180px]">Rol</TableHead>
-                        <TableHead className="w-[150px]">Status</TableHead>
-                        <TableHead className="w-[100px] text-right">Acțiuni</TableHead>
+                        <TableHead className="w-[250px] text-center">Utilizator</TableHead>
+                        <TableHead className="w-[250px] text-center">Email</TableHead>
+                        <TableHead className="w-[180px] text-center">Rol</TableHead>
+                        <TableHead className="w-[150px] text-center">Status</TableHead>
+                        <TableHead className="w-[100px] text-center">Acțiuni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {users.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell className="font-medium w-[250px]">
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center justify-center gap-2 min-w-0">
                               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                 <span className="text-sm font-semibold text-blue-600">
                                   {(user.full_name || user.email)?.charAt(0).toUpperCase() || 'U'}
@@ -377,37 +377,39 @@ export default function Settings() {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="w-[250px]">
+                          <TableCell className="w-[250px] text-center">
                             <div className="truncate" title={user.email}>
                               {user.email}
                             </div>
                           </TableCell>
                           <TableCell className="w-[180px]">
-                            <Select
-                              value={user.role}
-                              onValueChange={(value) => handleRoleChange(user.id, value)}
-                            >
-                              <SelectTrigger className="w-[140px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">
-                                  <div className="flex items-center gap-2">
-                                    <Shield className="w-4 h-4 text-orange-500" />
-                                    Administrator
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="user">
-                                  <div className="flex items-center gap-2">
-                                    <UserIcon className="w-4 h-4 text-blue-500" />
-                                    Utilizator
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex justify-center">
+                              <Select
+                                value={user.role}
+                                onValueChange={(value) => handleRoleChange(user.id, value)}
+                              >
+                                <SelectTrigger className="w-[140px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">
+                                    <div className="flex items-center gap-2">
+                                      <Shield className="w-4 h-4 text-orange-500" />
+                                      Administrator
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="user">
+                                    <div className="flex items-center gap-2">
+                                      <UserIcon className="w-4 h-4 text-blue-500" />
+                                      Utilizator
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </TableCell>
                           <TableCell className="w-[150px]">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               <Switch
                                 checked={user.is_active}
                                 onCheckedChange={() => handleToggleActive(user.id, user.is_active)}
@@ -417,8 +419,8 @@ export default function Settings() {
                               </Badge>
                             </div>
                           </TableCell>
-                          <TableCell className="w-[100px] text-right">
-                            <div className="flex items-center justify-end gap-1">
+                          <TableCell className="w-[100px]">
+                            <div className="flex items-center justify-center gap-1">
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
