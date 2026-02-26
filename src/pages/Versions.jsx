@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
 import {
   AlertDialog,
@@ -227,33 +228,54 @@ export default function VersionsPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <Link to={`${createPageUrl('OrgChart')}?version=${version.id}`}>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="w-4 h-4 mr-1" />
-                              Vezi
-                            </Button>
-                          </Link>
-                          {version.status === 'approved' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleUnapproveClick(version)}
-                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                            >
-                              <RotateCcw className="w-4 h-4 mr-1" />
-                              Resetare
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteClick(version)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <TooltipProvider>
+                          <div className="flex items-center justify-center gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link to={`${createPageUrl('OrgChart')}?version=${version.id}`}>
+                                  <Button variant="ghost" size="sm">
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Vezi organigrama</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {version.status === 'approved' && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleUnapproveClick(version)}
+                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Resetare aprobare</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(version)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Șterge versiunea</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TooltipProvider>
                       </TableCell>
                     </TableRow>
                   );

@@ -57,12 +57,6 @@ export default function UnitCard({ unit, onClick, isSelected, childCount = 0, to
           <span className="text-gray-600">
             {unitTypeLabels[unit.unit_type]}
           </span>
-          <div className="flex items-center gap-1 text-gray-600">
-            <Users className="w-3 h-3" />
-            <span>{unit.leadership_count || 0}</span>
-            <span>/</span>
-            <span>{(unit.leadership_count || 0) + (unit.execution_count || 0)}</span>
-          </div>
         </div>
       </div>
     </Card>

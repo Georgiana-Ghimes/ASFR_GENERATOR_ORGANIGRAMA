@@ -24,7 +24,15 @@ export default function UnitsPage() {
 
   const { data: units = [], isLoading: unitsLoading } = useQuery({
     queryKey: ['units', selectedVersion?.id],
-    queryFn: () => apiClient.listUnits(selectedVersion?.id),
+    queryFn: async () => {
+      const allUnits = await apiClient.listUnits(selectedVersion?.id);
+      // Filter out consiliu and legend units
+      return allUnits.filter(unit => 
+        unit.unit_type !== 'consiliu' && 
+        unit.unit_type !== 'legend' &&
+        unit.stas_code !== '330'
+      );
+    },
     enabled: !!selectedVersion?.id,
   });
 
