@@ -22,19 +22,21 @@ export default function UnitsPage() {
     queryFn: () => apiClient.listVersions(),
   });
 
-  const { data: units = [], isLoading: unitsLoading } = useQuery({
+  // Fetch ALL units (unfiltered) for color inheritance
+  const { data: allUnits = [], isLoading: unitsLoading } = useQuery({
     queryKey: ['units', selectedVersion?.id],
     queryFn: async () => {
-      const allUnits = await apiClient.listUnits(selectedVersion?.id);
-      // Filter out consiliu and legend units
-      return allUnits.filter(unit => 
-        unit.unit_type !== 'consiliu' && 
-        unit.unit_type !== 'legend' &&
-        unit.stas_code !== '330'
-      );
+      return await apiClient.listUnits(selectedVersion?.id);
     },
     enabled: !!selectedVersion?.id,
   });
+
+  // Filter units for display only (exclude consiliu and legend)
+  const units = allUnits.filter(unit => 
+    unit.unit_type !== 'consiliu' && 
+    unit.unit_type !== 'legend' &&
+    unit.stas_code !== '330'
+  );
 
   // Auto-select first version
   React.useEffect(() => {
@@ -160,28 +162,74 @@ export default function UnitsPage() {
                   ) : (
                     <div className="space-y-6">
                       {(() => {
-                        // Group units by color
+                        // Helper function to get final color (with inheritance)
+                        const getFinalColor = (unit) => {
+                          const parentToChild = {
+                            '1000': '1001',
+                            '2000': '2001', 
+                            '1100': '1103',
+                            '3000': '3003',
+                            '1200': '1210',
+                          };
+                          
+                          const childCode = parentToChild[unit.stas_code];
+                          if (childCode && allUnits.length > 0) {
+                            const childUnit = allUnits.find(u => u.stas_code === childCode);
+                            if (childUnit?.color) {
+                              return childUnit.color;
+                            }
+                          }
+                          
+                          return unit.color || 'no-color';
+                        };
+
+                        // Group units by final color (including inherited)
                         const groupedUnits = units.reduce((acc, unit) => {
-                          const color = unit.color || 'no-color';
+                          const color = getFinalColor(unit);
                           if (!acc[color]) acc[color] = [];
                           acc[color].push(unit);
                           return acc;
                         }, {});
 
-                        // Sort groups: no-color first, then by color
+                        // Define color order: verde, roz, galben, albastru, portocaliu
+                        const colorOrder = {
+                          '#86C67C': 1, // verde (1000, 1001)
+                          '#86C67C-full': 1,
+                          '#E8B4D4': 2, // roz (1100, 1103)
+                          '#E8B4D4-full': 2,
+                          '#F4E03C': 3, // galben (1200, 1210)
+                          '#F4E03C-full': 3,
+                          '#8CB4D4': 4, // albastru (2000, 2001)
+                          '#8CB4D4-full': 4,
+                          '#F4A43C': 5, // portocaliu (3000, 3003)
+                          '#F4A43C-full': 5,
+                        };
+
+                        // Sort groups: no-color first, then by defined color order
                         const sortedGroups = Object.entries(groupedUnits).sort(([a], [b]) => {
                           if (a === 'no-color') return -1;
                           if (b === 'no-color') return 1;
-                          return a.localeCompare(b);
+                          
+                          const orderA = colorOrder[a] || 999;
+                          const orderB = colorOrder[b] || 999;
+                          
+                          return orderA - orderB;
                         });
 
                         return sortedGroups.map(([color, groupUnits]) => (
                           <div key={color} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {groupUnits.map((unit) => (
+                              {groupUnits
+                                .sort((a, b) => {
+                                  const codeA = parseInt(a.stas_code) || 0;
+                                  const codeB = parseInt(b.stas_code) || 0;
+                                  return codeA - codeB;
+                                })
+                                .map((unit) => (
                                 <UnitCard
                                   key={unit.id}
                                   unit={unit}
+                                  allUnits={allUnits}
                                   onClick={(unit) => {
                                     setSelectedUnit(unit);
                                     setShowUnitForm(true);
