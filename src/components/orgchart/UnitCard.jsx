@@ -16,12 +16,13 @@ const unitTypeColors = {
 
 const unitTypeLabels = {
   director_general: 'Director General',
-  directie: 'Direcție',
   serviciu: 'Serviciu',
   compartiment: 'Compartiment',
+  consilieri: 'Consilieri',
+  dispecerat: 'Dispecerat',
+  departament: 'Departament',
+  directie: 'Direcție',
   inspectorat: 'Inspectorat',
-  birou: 'Birou',
-  consiliu: 'Consiliu de Conducere',
 };
 
 export default function UnitCard({ unit, onClick, isSelected, childCount = 0, totalEmployees = 0, allUnits = [] }) {
