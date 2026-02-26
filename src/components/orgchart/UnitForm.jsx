@@ -75,7 +75,14 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
     });
   };
 
-  const availableParents = units.filter(u => u.id !== unit?.id);
+  const availableParents = units
+    .filter(u => u.id !== unit?.id)
+    .filter(u => u.unit_type !== 'consiliu' && u.unit_type !== 'legend' && u.stas_code !== '330')
+    .sort((a, b) => {
+      const codeA = parseInt(a.stas_code) || 0;
+      const codeB = parseInt(b.stas_code) || 0;
+      return codeA - codeB;
+    });
 
   return (
     <Card>
