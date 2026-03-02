@@ -86,36 +86,57 @@ export default function OrgChartPage() {
       
       // Then capture and save snapshot
       try {
-        const { toPng } = await import('html-to-image');
         const svgElement = document.querySelector('.org-chart-container svg');
         
         if (svgElement) {
-          // Create a temporary container with the SVG
-          const tempContainer = document.createElement('div');
-          tempContainer.style.position = 'absolute';
-          tempContainer.style.left = '-9999px';
-          tempContainer.style.background = '#f9fafb';
-          tempContainer.style.padding = '40px';
+          // Get SVG dimensions
+          const bbox = svgElement.getBBox();
+          const padding = 40;
           
-          // Clone the SVG
+          // Clone and prepare SVG
           const svgClone = svgElement.cloneNode(true);
-          tempContainer.appendChild(svgClone);
-          document.body.appendChild(tempContainer);
+          svgClone.setAttribute('width', bbox.width + bbox.x + padding * 2);
+          svgClone.setAttribute('height', bbox.height + bbox.y + padding * 2);
+          svgClone.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`);
           
-          // Capture the image
-          const imageData = await toPng(tempContainer, {
-            quality: 1,
-            pixelRatio: 2,
-            backgroundColor: '#f9fafb',
+          // Serialize SVG to string
+          const serializer = new XMLSerializer();
+          const svgString = serializer.serializeToString(svgClone);
+          
+          // Create canvas and draw SVG
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const scale = 2; // For better quality
+          
+          canvas.width = (bbox.width + padding * 2) * scale;
+          canvas.height = (bbox.height + padding * 2) * scale;
+          
+          // Fill background
+          ctx.fillStyle = '#f9fafb';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Create image from SVG
+          const img = new Image();
+          const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+          
+          await new Promise((resolve, reject) => {
+            img.onload = () => {
+              ctx.scale(scale, scale);
+              ctx.drawImage(img, 0, 0);
+              URL.revokeObjectURL(url);
+              resolve();
+            };
+            img.onerror = reject;
+            img.src = url;
           });
           
-          // Clean up
-          document.body.removeChild(tempContainer);
-          
+          const imageData = canvas.toDataURL('image/png');
           await apiClient.saveVersionSnapshot(versionId, imageData);
         }
       } catch (error) {
         console.error('Failed to capture snapshot:', error);
+        toast.error('Eroare la capturarea snapshot-ului: ' + error.message);
         // Don't fail the approval if snapshot fails
       }
       
