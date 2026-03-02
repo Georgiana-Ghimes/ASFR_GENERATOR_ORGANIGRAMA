@@ -54,6 +54,16 @@ export default function OrgChartPage() {
     }
   }, [versions, selectedVersion]);
 
+  // Update selected version when versions change (after approval)
+  useEffect(() => {
+    if (selectedVersion && versions.length > 0) {
+      const updatedVersion = versions.find(v => v.id === selectedVersion.id);
+      if (updatedVersion && updatedVersion.status !== selectedVersion.status) {
+        setSelectedVersion(updatedVersion);
+      }
+    }
+  }, [versions]);
+
   // Update unit mutation
   const updateUnitMutation = useMutation({
     mutationFn: ({ unitId, data }) => apiClient.updateUnit(unitId, data),
@@ -76,17 +86,32 @@ export default function OrgChartPage() {
       
       // Then capture and save snapshot
       try {
-        const html2canvas = (await import('html2canvas')).default;
-        const chartElement = document.querySelector('.org-chart-container');
+        const { toPng } = await import('html-to-image');
+        const svgElement = document.querySelector('.org-chart-container svg');
         
-        if (chartElement) {
-          const canvas = await html2canvas(chartElement, {
+        if (svgElement) {
+          // Create a temporary container with the SVG
+          const tempContainer = document.createElement('div');
+          tempContainer.style.position = 'absolute';
+          tempContainer.style.left = '-9999px';
+          tempContainer.style.background = '#f9fafb';
+          tempContainer.style.padding = '40px';
+          
+          // Clone the SVG
+          const svgClone = svgElement.cloneNode(true);
+          tempContainer.appendChild(svgClone);
+          document.body.appendChild(tempContainer);
+          
+          // Capture the image
+          const imageData = await toPng(tempContainer, {
+            quality: 1,
+            pixelRatio: 2,
             backgroundColor: '#f9fafb',
-            scale: 1,
-            logging: false,
           });
           
-          const imageData = canvas.toDataURL('image/png');
+          // Clean up
+          document.body.removeChild(tempContainer);
+          
           await apiClient.saveVersionSnapshot(versionId, imageData);
         }
       } catch (error) {
@@ -96,8 +121,14 @@ export default function OrgChartPage() {
       
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['versions']);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(['versions']);
+      // Refresh the selected version to get updated status
+      const updatedVersions = await apiClient.listVersions();
+      const updatedVersion = updatedVersions.find(v => v.id === selectedVersion.id);
+      if (updatedVersion) {
+        setSelectedVersion(updatedVersion);
+      }
       toast.success('Versiunea a fost aprobată cu succes');
     },
     onError: (error) => {
