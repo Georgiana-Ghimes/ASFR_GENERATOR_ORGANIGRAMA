@@ -125,6 +125,17 @@ class ApiClient {
     });
   }
 
+  async saveVersionSnapshot(id, imageData) {
+    return this.request(`/versions/${id}/snapshot`, {
+      method: 'POST',
+      body: JSON.stringify({ image: imageData }),
+    });
+  }
+
+  async getVersionSnapshot(id) {
+    return this.request(`/versions/${id}/snapshot`);
+  }
+
   // Units
   async listUnits(versionId) {
     const query = versionId ? `?version_id=${versionId}` : '';

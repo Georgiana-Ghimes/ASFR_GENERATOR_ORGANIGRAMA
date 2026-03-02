@@ -20,9 +20,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { FileCheck, Clock, Edit3, Eye, Calendar as CalendarIcon, User, Loader2, Trash2, RotateCcw } from 'lucide-react';
+import { FileCheck, Clock, Edit3, Eye, Calendar as CalendarIcon, User, Loader2, Trash2, RotateCcw, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusConfig = {
@@ -36,6 +42,9 @@ export default function VersionsPage() {
   const [versionToDelete, setVersionToDelete] = useState(null);
   const [unapproveDialogOpen, setUnapproveDialogOpen] = useState(false);
   const [versionToUnapprove, setVersionToUnapprove] = useState(null);
+  const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
+  const [snapshotImage, setSnapshotImage] = useState(null);
+  const [loadingSnapshot, setLoadingSnapshot] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: versions = [], isLoading } = useQuery({
@@ -99,6 +108,20 @@ export default function VersionsPage() {
   const handleConfirmUnapprove = () => {
     if (versionToUnapprove) {
       unapproveMutation.mutate(versionToUnapprove.id);
+    }
+  };
+
+  const handleViewSnapshot = async (versionId) => {
+    setLoadingSnapshot(true);
+    setSnapshotDialogOpen(true);
+    try {
+      const data = await apiClient.getVersionSnapshot(versionId);
+      setSnapshotImage(data.image);
+    } catch (error) {
+      toast.error('Eroare la încărcarea imaginii');
+      setSnapshotDialogOpen(false);
+    } finally {
+      setLoadingSnapshot(false);
     }
   };
 
@@ -232,14 +255,16 @@ export default function VersionsPage() {
                           <div className="flex items-center justify-center gap-2">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Link to={`${createPageUrl('OrgChart')}?version=${version.id}`}>
-                                  <Button variant="ghost" size="sm">
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                </Link>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleViewSnapshot(version.id)}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Vezi organigrama</p>
+                                <p>Vezi snapshot organigrama</p>
                               </TooltipContent>
                             </Tooltip>
                             {version.status === 'approved' && (
@@ -362,6 +387,31 @@ export default function VersionsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Snapshot Dialog */}
+        <Dialog open={snapshotDialogOpen} onOpenChange={setSnapshotDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>Snapshot Organigramă</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center p-4">
+              {loadingSnapshot ? (
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              ) : snapshotImage ? (
+                <img 
+                  src={snapshotImage} 
+                  alt="Snapshot organigramă" 
+                  className="max-w-full h-auto border rounded"
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-500">Nu există snapshot disponibil pentru această versiune</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

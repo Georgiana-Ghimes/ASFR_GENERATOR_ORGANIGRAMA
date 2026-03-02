@@ -276,3 +276,34 @@ def restore_version(
     db.commit()
     db.refresh(version)
     return version
+
+@router.post("/{version_id}/snapshot")
+def save_snapshot(
+    version_id: UUID,
+    snapshot_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Save a snapshot image for a version"""
+    version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    
+    # Store base64 encoded image
+    version.snapshot_image = snapshot_data.get('image')
+    
+    db.commit()
+    return {"message": "Snapshot saved successfully"}
+
+@router.get("/{version_id}/snapshot")
+def get_snapshot(
+    version_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get snapshot image for a version"""
+    version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    
+    return {"image": version.snapshot_image}

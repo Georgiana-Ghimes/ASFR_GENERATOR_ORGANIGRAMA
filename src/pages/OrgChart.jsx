@@ -70,7 +70,32 @@ export default function OrgChartPage() {
 
   // Approve version mutation
   const approveVersionMutation = useMutation({
-    mutationFn: (versionId) => apiClient.updateVersion(versionId, { status: 'approved' }),
+    mutationFn: async (versionId) => {
+      // First approve the version
+      const result = await apiClient.updateVersion(versionId, { status: 'approved' });
+      
+      // Then capture and save snapshot
+      try {
+        const html2canvas = (await import('html2canvas')).default;
+        const chartElement = document.querySelector('.org-chart-container');
+        
+        if (chartElement) {
+          const canvas = await html2canvas(chartElement, {
+            backgroundColor: '#f9fafb',
+            scale: 1,
+            logging: false,
+          });
+          
+          const imageData = canvas.toDataURL('image/png');
+          await apiClient.saveVersionSnapshot(versionId, imageData);
+        }
+      } catch (error) {
+        console.error('Failed to capture snapshot:', error);
+        // Don't fail the approval if snapshot fails
+      }
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['versions']);
       toast.success('Versiunea a fost aprobată cu succes');
@@ -196,7 +221,7 @@ export default function OrgChartPage() {
           <>
             {/* Organigramă - se restrânge când e selectată o unitate */}
             <div 
-              className={`h-full transition-all duration-300 ease-in-out ${
+              className={`h-full transition-all duration-300 ease-in-out org-chart-container ${
                 selectedUnit ? 'mr-[500px]' : 'mr-0'
               }`}
             >
