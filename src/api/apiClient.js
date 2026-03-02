@@ -119,6 +119,12 @@ class ApiClient {
     });
   }
 
+  async restoreVersion(id) {
+    return this.request(`/versions/${id}/restore`, {
+      method: 'POST',
+    });
+  }
+
   // Units
   async listUnits(versionId) {
     const query = versionId ? `?version_id=${versionId}` : '';

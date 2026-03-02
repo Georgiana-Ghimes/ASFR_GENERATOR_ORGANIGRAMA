@@ -170,20 +170,35 @@ def clone_version(
     current_user: User = Depends(require_role("editor"))
 ):
     """Clone a version with all its units and relationships"""
-    from app.models import OrganizationalUnit
+    from app.models import OrgUnit
     from datetime import datetime
+    import uuid
     
     # Get source version
     source_version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
     if not source_version:
         raise HTTPException(status_code=404, detail="Version not found")
     
+    # Generate new version number based on latest version
+    latest_versions = db.query(OrgVersion).order_by(OrgVersion.created_date.desc()).limit(5).all()
+    version_numbers = [v.version_number for v in latest_versions if v.version_number]
+    
+    # Try to increment version number
+    try:
+        if version_numbers:
+            latest_num = max([float(v) for v in version_numbers if v.replace('.', '').isdigit()])
+            new_version_num = str(latest_num + 0.1)
+        else:
+            new_version_num = "1.0"
+    except:
+        new_version_num = f"{source_version.version_number}.1"
+    
     # Create new version
     new_version = OrgVersion(
-        version_number=f"{source_version.version_number}.1",
-        name=f"{source_version.name} (Copie)",
+        version_number=new_version_num,
+        name=f"Versiune {new_version_num}",
         status="draft",
-        notes=source_version.notes,
+        notes=f"Clonată din versiunea {source_version.name}",
         chart_title=source_version.chart_title,
         org_type=source_version.org_type
     )
@@ -191,8 +206,8 @@ def clone_version(
     db.flush()  # Get the new version ID
     
     # Get all units from source version
-    source_units = db.query(OrganizationalUnit).filter(
-        OrganizationalUnit.version_id == version_id
+    source_units = db.query(OrgUnit).filter(
+        OrgUnit.version_id == version_id
     ).all()
     
     # Map old unit IDs to new unit IDs
@@ -200,7 +215,7 @@ def clone_version(
     
     # First pass: create all units without parent relationships
     for source_unit in source_units:
-        new_unit = OrganizationalUnit(
+        new_unit = OrgUnit(
             version_id=new_version.id,
             stas_code=source_unit.stas_code,
             name=source_unit.name,
@@ -231,11 +246,33 @@ def clone_version(
             new_unit_id = unit_id_map[source_unit.id]
             new_parent_id = unit_id_map.get(source_unit.parent_unit_id)
             if new_parent_id:
-                new_unit = db.query(OrganizationalUnit).filter(
-                    OrganizationalUnit.id == new_unit_id
+                new_unit = db.query(OrgUnit).filter(
+                    OrgUnit.id == new_unit_id
                 ).first()
                 new_unit.parent_unit_id = new_parent_id
     
     db.commit()
     db.refresh(new_version)
     return new_version
+
+@router.post("/{version_id}/restore", response_model=OrgVersionSchema)
+def restore_version(
+    version_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin"))
+):
+    """Restore an approved version back to draft status"""
+    version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    
+    if version.status != "approved":
+        raise HTTPException(status_code=400, detail="Only approved versions can be restored")
+    
+    # Change status back to draft
+    version.status = "draft"
+    # Keep approval history for audit purposes
+    
+    db.commit()
+    db.refresh(version)
+    return version
