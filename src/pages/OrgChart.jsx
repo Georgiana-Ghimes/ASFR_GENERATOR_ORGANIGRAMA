@@ -86,53 +86,26 @@ export default function OrgChartPage() {
       
       // Then capture and save snapshot
       try {
-        const svgElement = document.querySelector('.org-chart-container svg');
+        const domtoimage = await import('dom-to-image-more');
+        const chartContainer = document.querySelector('.org-chart-container');
         
-        if (svgElement) {
-          // Get SVG dimensions
-          const bbox = svgElement.getBBox();
-          const padding = 40;
+        if (chartContainer) {
+          // Wait a bit for any animations to complete
+          await new Promise(resolve => setTimeout(resolve, 500));
           
-          // Clone and prepare SVG
-          const svgClone = svgElement.cloneNode(true);
-          svgClone.setAttribute('width', bbox.width + bbox.x + padding * 2);
-          svgClone.setAttribute('height', bbox.height + bbox.y + padding * 2);
-          svgClone.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`);
-          
-          // Serialize SVG to string
-          const serializer = new XMLSerializer();
-          const svgString = serializer.serializeToString(svgClone);
-          
-          // Create canvas and draw SVG
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          const scale = 2; // For better quality
-          
-          canvas.width = (bbox.width + padding * 2) * scale;
-          canvas.height = (bbox.height + padding * 2) * scale;
-          
-          // Fill background
-          ctx.fillStyle = '#f9fafb';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          
-          // Create image from SVG
-          const img = new Image();
-          const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-          const url = URL.createObjectURL(svgBlob);
-          
-          await new Promise((resolve, reject) => {
-            img.onload = () => {
-              ctx.scale(scale, scale);
-              ctx.drawImage(img, 0, 0);
-              URL.revokeObjectURL(url);
-              resolve();
-            };
-            img.onerror = reject;
-            img.src = url;
+          const imageData = await domtoimage.toPng(chartContainer, {
+            quality: 1,
+            bgcolor: '#f9fafb',
+            style: {
+              transform: 'scale(1)',
+              transformOrigin: 'top left',
+            },
+            width: chartContainer.scrollWidth,
+            height: chartContainer.scrollHeight,
           });
           
-          const imageData = canvas.toDataURL('image/png');
           await apiClient.saveVersionSnapshot(versionId, imageData);
+          console.log('Snapshot saved successfully');
         }
       } catch (error) {
         console.error('Failed to capture snapshot:', error);
