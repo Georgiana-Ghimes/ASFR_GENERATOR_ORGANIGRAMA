@@ -266,6 +266,31 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Unit Types
+  async listUnitTypes() {
+    return this.request('/unit-types');
+  }
+
+  async createUnitType(data) {
+    return this.request('/unit-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUnitType(id, data) {
+    return this.request(`/unit-types/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUnitType(id) {
+    return this.request(`/unit-types/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

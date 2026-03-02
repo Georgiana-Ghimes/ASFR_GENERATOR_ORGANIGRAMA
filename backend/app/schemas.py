@@ -196,3 +196,24 @@ class UserResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+# Unit Type Schemas
+class UnitTypeBase(BaseModel):
+    code: str
+    label: str
+    order_index: int = 0
+
+class UnitTypeCreate(UnitTypeBase):
+    pass
+
+class UnitTypeUpdate(BaseModel):
+    label: Optional[str] = None
+    order_index: Optional[int] = None
+
+class UnitTypeResponse(UnitTypeBase):
+    id: UUID
+    is_system: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

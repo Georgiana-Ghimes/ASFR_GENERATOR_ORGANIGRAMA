@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Users, Trash2, Shield, User as UserIcon, Plus, Pencil } from 'lucide-react';
+import { Users, Trash2, Shield, User as UserIcon, Plus, Pencil, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Settings() {
@@ -40,6 +40,14 @@ export default function Settings() {
   const [editingUser, setEditingUser] = useState(null);
   const [newUser, setNewUser] = useState({ email: '', password: '', role: 'user', full_name: '' });
   const [editUserData, setEditUserData] = useState({ email: '', password: '', role: 'user', full_name: '' });
+  
+  // Unit Types state
+  const [isAddUnitTypeDialogOpen, setIsAddUnitTypeDialogOpen] = useState(false);
+  const [isEditUnitTypeDialogOpen, setIsEditUnitTypeDialogOpen] = useState(false);
+  const [editingUnitType, setEditingUnitType] = useState(null);
+  const [newUnitType, setNewUnitType] = useState({ code: '', label: '', order_index: 0 });
+  const [editUnitTypeData, setEditUnitTypeData] = useState({ label: '', order_index: 0 });
+  
   const queryClient = useQueryClient();
 
   // Fetch users
@@ -150,6 +158,75 @@ export default function Settings() {
     updateUserMutation.mutate({ userId: editingUser.id, userData: updateData });
   };
 
+  // Unit Types queries and mutations
+  const { data: unitTypes = [], isLoading: unitTypesLoading } = useQuery({
+    queryKey: ['unit-types'],
+    queryFn: () => apiClient.listUnitTypes()
+  });
+
+  const createUnitTypeMutation = useMutation({
+    mutationFn: (data) => apiClient.createUnitType(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['unit-types']);
+      toast.success('Tipul de unitate a fost creat');
+      setIsAddUnitTypeDialogOpen(false);
+      setNewUnitType({ code: '', label: '', order_index: 0 });
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Eroare la crearea tipului de unitate');
+    }
+  });
+
+  const updateUnitTypeMutation = useMutation({
+    mutationFn: ({ id, data }) => apiClient.updateUnitType(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['unit-types']);
+      toast.success('Tipul de unitate a fost actualizat');
+      setIsEditUnitTypeDialogOpen(false);
+      setEditingUnitType(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Eroare la actualizarea tipului de unitate');
+    }
+  });
+
+  const deleteUnitTypeMutation = useMutation({
+    mutationFn: (id) => apiClient.deleteUnitType(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['unit-types']);
+      toast.success('Tipul de unitate a fost șters');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Eroare la ștergerea tipului de unitate');
+    }
+  });
+
+  const handleCreateUnitType = () => {
+    if (!newUnitType.code || !newUnitType.label) {
+      toast.error('Codul și eticheta sunt obligatorii');
+      return;
+    }
+    createUnitTypeMutation.mutate(newUnitType);
+  };
+
+  const handleEditUnitType = (unitType) => {
+    setEditingUnitType(unitType);
+    setEditUnitTypeData({ label: unitType.label, order_index: unitType.order_index });
+    setIsEditUnitTypeDialogOpen(true);
+  };
+
+  const handleUpdateUnitType = () => {
+    if (!editUnitTypeData.label) {
+      toast.error('Eticheta este obligatorie');
+      return;
+    }
+    updateUnitTypeMutation.mutate({ id: editingUnitType.id, data: editUnitTypeData });
+  };
+
+  const handleDeleteUnitType = (id) => {
+    deleteUnitTypeMutation.mutate(id);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
@@ -162,6 +239,10 @@ export default function Settings() {
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Utilizatori
+          </TabsTrigger>
+          <TabsTrigger value="unit-types" className="flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            Tipuri Unitate
           </TabsTrigger>
         </TabsList>
 
@@ -453,6 +534,199 @@ export default function Settings() {
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="unit-types" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Tipuri de Unități</CardTitle>
+                  <CardDescription>
+                    Gestionează tipurile de unități organizaționale disponibile
+                  </CardDescription>
+                </div>
+                <Dialog open={isAddUnitTypeDialogOpen} onOpenChange={setIsAddUnitTypeDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adaugă tip unitate
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adaugă tip unitate nou</DialogTitle>
+                      <DialogDescription>
+                        Creează un nou tip de unitate organizațională
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="code">Cod *</Label>
+                        <Input
+                          id="code"
+                          type="text"
+                          placeholder="ex: departament"
+                          value={newUnitType.code}
+                          onChange={(e) => setNewUnitType({ ...newUnitType, code: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="label">Etichetă *</Label>
+                        <Input
+                          id="label"
+                          type="text"
+                          placeholder="ex: Departament"
+                          value={newUnitType.label}
+                          onChange={(e) => setNewUnitType({ ...newUnitType, label: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="order">Ordine afișare</Label>
+                        <Input
+                          id="order"
+                          type="number"
+                          value={newUnitType.order_index}
+                          onChange={(e) => setNewUnitType({ ...newUnitType, order_index: parseInt(e.target.value) || 0 })}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsAddUnitTypeDialogOpen(false)}>
+                        Anulează
+                      </Button>
+                      <Button onClick={handleCreateUnitType} disabled={createUnitTypeMutation.isPending}>
+                        {createUnitTypeMutation.isPending ? 'Se creează...' : 'Creează tip unitate'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Dialog open={isEditUnitTypeDialogOpen} onOpenChange={setIsEditUnitTypeDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Editează tip unitate</DialogTitle>
+                    <DialogDescription>
+                      Modifică datele tipului de unitate {editingUnitType?.code}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-label">Etichetă *</Label>
+                      <Input
+                        id="edit-label"
+                        type="text"
+                        placeholder="ex: Departament"
+                        value={editUnitTypeData.label}
+                        onChange={(e) => setEditUnitTypeData({ ...editUnitTypeData, label: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-order">Ordine afișare</Label>
+                      <Input
+                        id="edit-order"
+                        type="number"
+                        value={editUnitTypeData.order_index}
+                        onChange={(e) => setEditUnitTypeData({ ...editUnitTypeData, order_index: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditUnitTypeDialogOpen(false)}>
+                      Anulează
+                    </Button>
+                    <Button onClick={handleUpdateUnitType} disabled={updateUnitTypeMutation.isPending}>
+                      {updateUnitTypeMutation.isPending ? 'Se actualizează...' : 'Salvează modificările'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {unitTypesLoading ? (
+                <div className="text-center py-12 text-gray-500">
+                  Se încarcă tipurile de unități...
+                </div>
+              ) : unitTypes.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>Nu există tipuri de unități</p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-center">Cod</TableHead>
+                        <TableHead className="text-center">Etichetă</TableHead>
+                        <TableHead className="text-center">Ordine</TableHead>
+                        <TableHead className="text-center">Tip</TableHead>
+                        <TableHead className="text-center">Acțiuni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {unitTypes.map((unitType) => (
+                        <TableRow key={unitType.id}>
+                          <TableCell className="text-center font-mono">{unitType.code}</TableCell>
+                          <TableCell className="text-center">{unitType.label}</TableCell>
+                          <TableCell className="text-center">{unitType.order_index}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={unitType.is_system ? "secondary" : "default"}>
+                              {unitType.is_system ? 'Sistem' : 'Custom'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {!unitType.is_system && (
+                                <>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    onClick={() => handleEditUnitType(unitType)}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Ești sigur?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Această acțiune nu poate fi anulată. Tipul de unitate <strong>{unitType.code}</strong> va fi șters permanent.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Anulează</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteUnitType(unitType.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Șterge tipul
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </>
+                              )}
+                              {unitType.is_system && (
+                                <span className="text-xs text-gray-400">Protejat</span>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

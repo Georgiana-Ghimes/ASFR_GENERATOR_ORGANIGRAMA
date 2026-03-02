@@ -139,3 +139,13 @@ class User(Base):
     role = Column(String, default="viewer")  # viewer, editor, approver, admin
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class UnitTypeModel(Base):
+    __tablename__ = "unit_types"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code = Column(String(50), unique=True, nullable=False)
+    label = Column(String(100), nullable=False)
+    order_index = Column(Integer, default=0)
+    is_system = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

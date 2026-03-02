@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/api/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Save } from 'lucide-react';
-import { unitTypeLabels } from './UnitCard';
 
 const defaultColors = [
   { label: 'Verde deschis', value: '#86C67C', border: '#6BA85C' },
@@ -21,6 +22,12 @@ const defaultColors = [
 ];
 
 export default function UnitForm({ unit, units, versionId, onSave, onCancel, isReadOnly }) {
+  // Fetch unit types from backend
+  const { data: unitTypes = [] } = useQuery({
+    queryKey: ['unit-types'],
+    queryFn: () => apiClient.listUnitTypes()
+  });
+
   const [formData, setFormData] = useState({
     stas_code: '',
     name: '',
@@ -256,9 +263,13 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(unitTypeLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
+                  {unitTypes
+                    .filter(ut => ut.code !== 'consiliu' && ut.code !== 'legend')
+                    .map((unitType) => (
+                      <SelectItem key={unitType.code} value={unitType.code}>
+                        {unitType.label}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
