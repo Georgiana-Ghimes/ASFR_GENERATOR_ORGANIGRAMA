@@ -87,22 +87,41 @@ export default function OrgChartPage() {
       // Then capture and save snapshot
       try {
         const domtoimage = await import('dom-to-image-more');
-        const chartContainer = document.querySelector('.org-chart-container');
+        const svgElement = document.querySelector('.org-chart-container svg');
         
-        if (chartContainer) {
-          // Wait a bit for any animations to complete
-          await new Promise(resolve => setTimeout(resolve, 500));
+        if (svgElement) {
+          // Get the actual SVG dimensions
+          const bbox = svgElement.getBBox();
+          const padding = 40;
           
-          const imageData = await domtoimage.toPng(chartContainer, {
+          // Create a wrapper div with exact dimensions
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'absolute';
+          wrapper.style.left = '-9999px';
+          wrapper.style.width = `${bbox.width + bbox.x + padding * 2}px`;
+          wrapper.style.height = `${bbox.height + bbox.y + padding * 2}px`;
+          wrapper.style.backgroundColor = '#f9fafb';
+          wrapper.style.padding = `${padding}px`;
+          
+          // Clone SVG and add to wrapper
+          const svgClone = svgElement.cloneNode(true);
+          svgClone.style.display = 'block';
+          wrapper.appendChild(svgClone);
+          document.body.appendChild(wrapper);
+          
+          // Wait a bit for rendering
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Capture the wrapper
+          const imageData = await domtoimage.toPng(wrapper, {
             quality: 1,
             bgcolor: '#f9fafb',
-            style: {
-              transform: 'scale(1)',
-              transformOrigin: 'top left',
-            },
-            width: chartContainer.scrollWidth,
-            height: chartContainer.scrollHeight,
+            width: bbox.width + bbox.x + padding * 2,
+            height: bbox.height + bbox.y + padding * 2,
           });
+          
+          // Clean up
+          document.body.removeChild(wrapper);
           
           await apiClient.saveVersionSnapshot(versionId, imageData);
           console.log('Snapshot saved successfully');
