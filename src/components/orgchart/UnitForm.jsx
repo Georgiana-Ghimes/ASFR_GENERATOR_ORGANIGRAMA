@@ -361,16 +361,6 @@ export default function UnitForm({ unit, units, versionId, onSave, onCancel, isR
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="order_index">Ordine Afișare</Label>
-              <Input
-                id="order_index"
-                type="number"
-                value={formData.order_index}
-                onChange={(e) => setFormData({ ...formData, order_index: parseInt(e.target.value) || 0 })}
-                disabled={isReadOnly}
-              />
-            </div>
           </div>
 
           {!isReadOnly && (

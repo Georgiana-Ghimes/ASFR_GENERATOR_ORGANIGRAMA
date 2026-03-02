@@ -61,7 +61,7 @@ export default function UnitCard({ unit, onClick, isSelected, childCount = 0, to
   
   return (
     <Card
-      onClick={onClick}
+      onClick={() => onClick(unit)}
       className={cn(
         'cursor-pointer transition-all duration-200 border-2 hover:shadow-lg min-w-[180px]',
         colorClass,
