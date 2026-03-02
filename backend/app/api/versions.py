@@ -261,7 +261,9 @@ def restore_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin"))
 ):
-    """Restore an approved version back to draft status"""
+    """Restore an approved version back to draft status and reset custom positions"""
+    from app.models import OrgUnit
+    
     version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
@@ -272,6 +274,14 @@ def restore_version(
     # Change status back to draft
     version.status = "draft"
     # Keep approval history for audit purposes
+    
+    # Reset all custom positions for this version
+    units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
+    for unit in units:
+        unit.custom_x = None
+        unit.custom_y = None
+        unit.custom_width = None
+        unit.custom_height = None
     
     db.commit()
     db.refresh(version)

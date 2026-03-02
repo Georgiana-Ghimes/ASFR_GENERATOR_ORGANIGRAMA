@@ -66,9 +66,10 @@ export default function VersionsPage() {
   });
 
   const unapproveMutation = useMutation({
-    mutationFn: (id) => apiClient.updateVersion(id, { status: 'draft', approved_by: null, approved_at: null }),
+    mutationFn: (id) => apiClient.restoreVersion(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['versions']);
+      queryClient.invalidateQueries(['units']); // Invalidate units too since positions are reset
       toast.success('Aprobarea a fost resetată cu succes');
       setUnapproveDialogOpen(false);
       setVersionToUnapprove(null);

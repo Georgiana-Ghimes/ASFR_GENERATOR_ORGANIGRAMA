@@ -151,9 +151,11 @@ export default function OrgChartPage() {
 
   // Unapprove version mutation
   const unapproveVersionMutation = useMutation({
-    mutationFn: (versionId) => apiClient.updateVersion(versionId, { status: 'draft' }),
+    mutationFn: (versionId) => apiClient.restoreVersion(versionId),
     onSuccess: () => {
       queryClient.invalidateQueries(['versions']);
+      queryClient.invalidateQueries(['units']); // Invalidate units too since positions are reset
+      setRefreshKey(prev => prev + 1); // Force chart refresh
       toast.success('Aprobarea a fost resetată cu succes');
     },
     onError: (error) => {
