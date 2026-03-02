@@ -70,9 +70,11 @@ export default function VersionsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['versions']);
       queryClient.invalidateQueries(['units']); // Invalidate units too since positions are reset
-      toast.success('Aprobarea a fost resetată cu succes');
+      toast.success('Aprobarea a fost resetată cu succes. Pagina se va reîncărca.');
       setUnapproveDialogOpen(false);
       setVersionToUnapprove(null);
+      // Reload page to ensure clean state
+      setTimeout(() => window.location.reload(), 1000);
     },
     onError: (error) => {
       toast.error(error.message || 'Eroare la resetarea aprobării');

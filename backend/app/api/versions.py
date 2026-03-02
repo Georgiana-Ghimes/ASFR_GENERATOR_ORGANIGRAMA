@@ -277,11 +277,16 @@ def restore_version(
     
     # Reset all custom positions for this version
     units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
+    reset_count = 0
     for unit in units:
+        if unit.custom_x is not None or unit.custom_y is not None:
+            reset_count += 1
         unit.custom_x = None
         unit.custom_y = None
         unit.custom_width = None
         unit.custom_height = None
+    
+    print(f"Reset {reset_count} units with custom positions for version {version_id}")
     
     db.commit()
     db.refresh(version)
