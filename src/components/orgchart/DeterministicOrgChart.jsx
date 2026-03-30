@@ -97,6 +97,12 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
         const response = await fetch(`http://localhost:8000/api/layout/${versionId}`);
         const data = await response.json();
         
+        if (!response.ok || !data.layout) {
+          console.error('Layout API error:', data);
+          setLoading(false);
+          return;
+        }
+        
         setLayoutData(data);
         
         // Build aggregates map
@@ -671,7 +677,7 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
       '#F4A43C-full': { bg: '#F4A43C', border: '#E4942C', text: '#000000', stripOnly: false },
     };
     
-    // If unit has a color set, use it
+    // If unit has a color set, use it (exact match including -full suffix)
     if (unit.color && colorMap[unit.color]) {
       return colorMap[unit.color];
     }
@@ -748,10 +754,15 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
       return childCenterX >= centerX && childCenterY < centerY;
     });
     
+    // Track visited nodes to prevent circular reference infinite loops
+    const visitedNodes = new Set();
+    
     // Recursive function to draw edges for children of any node
     // Children connections always come from LEFT side of parent node
     const drawChildrenEdges = (parentNode, children) => {
       if (children.length === 0) return;
+      if (visitedNodes.has(parentNode.unit_id)) return;
+      visitedNodes.add(parentNode.unit_id);
       
       const parentLeft = parentNode.x;
       const parentCenterY = parentNode.y + parentNode.height / 2;
@@ -820,6 +831,8 @@ const DeterministicOrgChart = ({ versionId, orgType = 'codificare', onSelectUnit
     // Function to draw edges for children in top-right quadrant
     const drawTopRightChildrenEdges = (parentNode, children) => {
       if (children.length === 0) return;
+      if (visitedNodes.has('r-' + parentNode.unit_id)) return;
+      visitedNodes.add('r-' + parentNode.unit_id);
       
       const parentRight = parentNode.x + parentNode.width;
       const parentCenterY = parentNode.y + parentNode.height / 2;

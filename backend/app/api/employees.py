@@ -9,7 +9,7 @@ from app.auth import get_current_user, require_role
 
 router = APIRouter()
 
-@router.get("/", response_model=List[EmployeeSchema])
+@router.get("", response_model=List[EmployeeSchema])
 def list_employees(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -27,7 +27,7 @@ def get_employee(
         raise HTTPException(status_code=404, detail="Employee not found")
     return employee
 
-@router.post("/", response_model=EmployeeSchema)
+@router.post("", response_model=EmployeeSchema)
 def create_employee(
     employee_data: EmployeeCreate,
     db: Session = Depends(get_db),

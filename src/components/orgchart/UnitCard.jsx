@@ -48,16 +48,16 @@ export default function UnitCard({ unit, onClick, isSelected, childCount = 0, to
     return null;
   };
   
-  // Check if this unit has children OR is one of the specific parent units
-  const isParentUnit = ['1000', '1100', '1200', '2000', '3000'].includes(unit.stas_code);
-  const hasChildren = allUnits.some(u => u.parent_id === unit.id) || isParentUnit;
+  // Check if this unit has children
+  const hasChildren = allUnits.some(u => u.parent_unit_id === unit.id);
   
   const inheritedColor = getInheritedColor();
   const finalColor = inheritedColor || unit.color;
   const colorClass = finalColor ? '' : unitTypeColors[unit.unit_type] || unitTypeColors.compartiment;
   
-  // Parent units get slightly darker background (60% opacity instead of 20%)
-  const backgroundOpacity = hasChildren ? '99' : '33';
+  // Full opacity if color ends with -full, otherwise lighter
+  const isFullColor = finalColor && finalColor.endsWith('-full');
+  const backgroundOpacity = isFullColor ? '99' : '66';
   
   return (
     <Card
@@ -68,8 +68,8 @@ export default function UnitCard({ unit, onClick, isSelected, childCount = 0, to
         isSelected && 'ring-2 ring-blue-500 ring-offset-2'
       )}
       style={finalColor ? { 
-        backgroundColor: finalColor + backgroundOpacity, 
-        borderColor: finalColor,
+        backgroundColor: finalColor.replace('-full', '') + backgroundOpacity, 
+        borderColor: finalColor.replace('-full', ''),
         color: '#1f2937'
       } : {}}
     >

@@ -10,13 +10,13 @@ from app.auth import get_current_user
 
 router = APIRouter()
 
-@router.get("/", response_model=List[UnitTypeResponse])
+@router.get("", response_model=List[UnitTypeResponse])
 def list_unit_types(db: Session = Depends(get_db)):
     """Get all unit types ordered by order_index"""
     unit_types = db.query(UnitTypeModel).order_by(UnitTypeModel.order_index).all()
     return unit_types
 
-@router.post("/", response_model=UnitTypeResponse)
+@router.post("", response_model=UnitTypeResponse)
 def create_unit_type(
     unit_type: UnitTypeCreate,
     db: Session = Depends(get_db),

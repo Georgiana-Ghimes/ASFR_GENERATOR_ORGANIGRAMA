@@ -9,7 +9,7 @@ from app.auth import get_current_user, require_role
 
 router = APIRouter()
 
-@router.get("/", response_model=List[PositionSchema])
+@router.get("", response_model=List[PositionSchema])
 def list_positions(
     version_id: Optional[UUID] = Query(None),
     unit_id: Optional[UUID] = Query(None),
@@ -34,7 +34,7 @@ def get_position(
         raise HTTPException(status_code=404, detail="Position not found")
     return position
 
-@router.post("/", response_model=PositionSchema)
+@router.post("", response_model=PositionSchema)
 def create_position(
     position_data: PositionCreate,
     db: Session = Depends(get_db),

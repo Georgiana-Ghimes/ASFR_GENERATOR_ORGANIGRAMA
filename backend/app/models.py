@@ -64,7 +64,7 @@ class OrgUnit(Base):
     version_id = Column(UUID(as_uuid=True), ForeignKey("org_versions.id"), nullable=False)
     stas_code = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    unit_type = Column(Enum(UnitType), nullable=False)
+    unit_type = Column(String, nullable=False)
     parent_unit_id = Column(UUID(as_uuid=True), ForeignKey("organizational_units.id"))
     order_index = Column(Integer, default=0)
     leadership_count = Column(Integer, default=0)

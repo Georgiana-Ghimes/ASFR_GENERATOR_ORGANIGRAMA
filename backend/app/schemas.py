@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, date
 from uuid import UUID
-from app.models import UnitType, VersionStatus, EmployeeStatus, PositionType
+from app.models import VersionStatus, EmployeeStatus, PositionType
 
 # Version Schemas
 class OrgVersionBase(BaseModel):
@@ -48,7 +48,7 @@ class OrgVersion(OrgVersionBase):
 class OrgUnitBase(BaseModel):
     stas_code: str
     name: str
-    unit_type: UnitType
+    unit_type: str
     parent_unit_id: Optional[UUID] = None
     order_index: int = 0
     leadership_count: int = 0
@@ -71,7 +71,7 @@ class OrgUnitCreate(OrgUnitBase):
 class OrgUnitUpdate(BaseModel):
     stas_code: Optional[str] = None
     name: Optional[str] = None
-    unit_type: Optional[UnitType] = None
+    unit_type: Optional[str] = None
     parent_unit_id: Optional[UUID] = None
     order_index: Optional[int] = None
     leadership_count: Optional[int] = None

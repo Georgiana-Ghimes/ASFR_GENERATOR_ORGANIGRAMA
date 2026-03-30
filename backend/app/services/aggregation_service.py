@@ -8,10 +8,22 @@ from typing import Dict
 from app.models import OrgUnit, Position
 
 
-def calculate_unit_aggregates(db: Session, unit_id: UUID) -> Dict:
+def calculate_unit_aggregates(db: Session, unit_id: UUID, visited: set = None) -> Dict:
     """
     Calculate aggregates for a single unit
     """
+    if visited is None:
+        visited = set()
+    
+    if unit_id in visited:
+        return {
+            'leadership_positions_count': 0,
+            'execution_positions_count': 0,
+            'total_positions': 0,
+            'recursive_total_subordinates': 0
+        }
+    visited.add(unit_id)
+    
     unit = db.query(OrgUnit).filter(OrgUnit.id == unit_id).first()
     if not unit:
         return {
@@ -30,7 +42,7 @@ def calculate_unit_aggregates(db: Session, unit_id: UUID) -> Dict:
     # Calculate recursive total
     recursive_total = direct_total
     for child in unit.children:
-        child_agg = calculate_unit_aggregates(db, child.id)
+        child_agg = calculate_unit_aggregates(db, child.id, visited)
         recursive_total += child_agg['recursive_total_subordinates']
     
     return {

@@ -43,19 +43,32 @@ def calculate_box_height(unit_name: str) -> int:
         return 60  # 3 grid cells (MAXIMUM)
 
 
-def calculate_subtree_width(db: Session, unit: OrgUnit) -> int:
+def calculate_subtree_width(db: Session, unit: OrgUnit, visited: set = None) -> int:
     """Calculate total width needed for unit and all descendants"""
+    if visited is None:
+        visited = set()
+    
+    if unit.id in visited:
+        return BOX_WIDTH  # Break circular reference
+    visited.add(unit.id)
+    
     if not unit.children:
         return BOX_WIDTH
     
-    children_width = sum(calculate_subtree_width(db, child) for child in unit.children)
+    children_width = sum(calculate_subtree_width(db, child, visited) for child in unit.children)
     children_width += HORIZONTAL_SPACING * (len(unit.children) - 1)
     
     return max(BOX_WIDTH, children_width)
 
 
-def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layout: List[Dict], edges: List[Dict], parent_x: int = None, parent_y: int = None, parent_height: int = None, is_root: bool = False):
+def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layout: List[Dict], edges: List[Dict], parent_x: int = None, parent_y: int = None, parent_height: int = None, is_root: bool = False, visited: set = None):
     """Recursively position unit and children - use custom positions if available"""
+    if visited is None:
+        visited = set()
+    
+    if unit.id in visited:
+        return  # Break circular reference
+    visited.add(unit.id)
     
     # Use custom position if available, otherwise use calculated position
     actual_x = unit.custom_x if unit.custom_x is not None else x
@@ -70,7 +83,7 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
     # Director General always has width of 300px (same as Consiliu), or use custom width
     if unit.custom_width is not None:
         box_width = unit.custom_width
-    elif unit.unit_type.value == 'director_general':
+    elif unit.unit_type == 'director_general':
         box_width = 300
     else:
         box_width = BOX_WIDTH
@@ -86,7 +99,7 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
             'id': str(unit.id),
             'stas_code': unit.stas_code,
             'name': unit.name,
-            'unit_type': unit.unit_type.value,
+            'unit_type': unit.unit_type,
             'parent_unit_id': str(unit.parent_unit_id) if unit.parent_unit_id else None,
             'color': unit.color,
             'leadership_count': unit.leadership_count,
@@ -131,7 +144,7 @@ def position_unit_and_children(db: Session, unit: OrgUnit, x: int, y: int, layou
         child_center_x = current_x + child_width // 2 - BOX_WIDTH // 2
         
         # Recursively position child
-        position_unit_and_children(db, child, child_center_x, child_y, layout, edges, actual_x, actual_y, box_height, False)
+        position_unit_and_children(db, child, child_center_x, child_y, layout, edges, actual_x, actual_y, box_height, False, visited)
         
         current_x += child_width + HORIZONTAL_SPACING
 

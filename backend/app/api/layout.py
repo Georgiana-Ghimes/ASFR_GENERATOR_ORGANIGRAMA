@@ -32,4 +32,6 @@ def get_layout(version_id: UUID, db: Session = Depends(get_db)):
         return layout_data
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

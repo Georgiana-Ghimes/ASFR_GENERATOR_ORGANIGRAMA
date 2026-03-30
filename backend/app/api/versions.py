@@ -9,7 +9,7 @@ from app.auth import get_current_user, require_role
 
 router = APIRouter()
 
-@router.get("/", response_model=List[OrgVersionSchema])
+@router.get("", response_model=List[OrgVersionSchema])
 def list_versions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -55,7 +55,7 @@ def get_version(
         raise HTTPException(status_code=404, detail="Version not found")
     return version
 
-@router.post("/", response_model=OrgVersionSchema)
+@router.post("", response_model=OrgVersionSchema)
 def create_version(
     version_data: OrgVersionCreate,
     db: Session = Depends(get_db),

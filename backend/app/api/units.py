@@ -9,7 +9,7 @@ from app.auth import get_current_user, require_role
 
 router = APIRouter()
 
-@router.get("/", response_model=List[OrgUnitSchema])
+@router.get("", response_model=List[OrgUnitSchema])
 def list_units(
     version_id: Optional[UUID] = Query(None),
     db: Session = Depends(get_db),
@@ -31,7 +31,7 @@ def get_unit(
         raise HTTPException(status_code=404, detail="Unit not found")
     return unit
 
-@router.post("/", response_model=OrgUnitSchema)
+@router.post("", response_model=OrgUnitSchema)
 def create_unit(
     unit_data: OrgUnitCreate,
     db: Session = Depends(get_db),

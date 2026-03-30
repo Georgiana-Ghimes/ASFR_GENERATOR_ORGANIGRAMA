@@ -9,7 +9,7 @@ from app.auth import get_current_user, require_role
 
 router = APIRouter()
 
-@router.get("/", response_model=List[AssignmentSchema])
+@router.get("", response_model=List[AssignmentSchema])
 def list_assignments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -27,7 +27,7 @@ def get_assignment(
         raise HTTPException(status_code=404, detail="Assignment not found")
     return assignment
 
-@router.post("/", response_model=AssignmentSchema)
+@router.post("", response_model=AssignmentSchema)
 def create_assignment(
     assignment_data: PositionAssignmentCreate,
     db: Session = Depends(get_db),
