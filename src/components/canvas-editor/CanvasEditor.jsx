@@ -153,8 +153,26 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
           parsed.customLegend = { x: 450, y: 20, width: 200, height: 300 };
         }
         setFixedElements(parsed);
+        return;
       } catch {
         // ignore parse errors
+      }
+    }
+    // No saved positions for this version — try to copy from any other version
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('fixed_elements_') && key !== `fixed_elements_${versionId}`) {
+        try {
+          const fallback = JSON.parse(localStorage.getItem(key));
+          if (fallback && fallback.consiliu) {
+            if (!fallback.customLegend) {
+              fallback.customLegend = { x: 450, y: 20, width: 200, height: 300 };
+            }
+            setFixedElements(fallback);
+            localStorage.setItem(`fixed_elements_${versionId}`, JSON.stringify(fallback));
+            return;
+          }
+        } catch { /* ignore */ }
       }
     }
   }, [versionId]);

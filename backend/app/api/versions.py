@@ -9,6 +9,97 @@ from app.auth import get_current_user, require_role
 
 router = APIRouter()
 
+
+def _make_units_snapshot(db, version_id):
+    """Create a JSON snapshot of all units for a version."""
+    import json
+    from app.models import OrgUnit
+    units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
+    snapshot = []
+    for u in units:
+        snapshot.append({
+            'id': str(u.id),
+            'stas_code': u.stas_code,
+            'name': u.name,
+            'unit_type': u.unit_type,
+            'parent_unit_id': str(u.parent_unit_id) if u.parent_unit_id else None,
+            'order_index': u.order_index,
+            'leadership_count': u.leadership_count,
+            'execution_count': u.execution_count,
+            'custom_x': u.custom_x,
+            'custom_y': u.custom_y,
+            'custom_width': u.custom_width,
+            'custom_height': u.custom_height,
+            'color': u.color,
+            'director_title': u.director_title,
+            'director_name': u.director_name,
+            'legend_col1': u.legend_col1,
+            'legend_col2': u.legend_col2,
+            'legend_col3': u.legend_col3,
+            'is_rotated': u.is_rotated,
+        })
+    return json.dumps(snapshot)
+
+
+def _save_template(db, snapshot_json):
+    """Save a units template to system_settings."""
+    from sqlalchemy import text
+    from datetime import datetime
+    db.execute(text(
+        "INSERT INTO system_settings (key, value, updated_at) VALUES ('last_units_template', :val, :ts) "
+        "ON CONFLICT (key) DO UPDATE SET value = :val, updated_at = :ts"
+    ), {"val": snapshot_json, "ts": datetime.utcnow()})
+
+
+def _get_template(db):
+    """Get the last saved units template."""
+    from sqlalchemy import text
+    result = db.execute(text("SELECT value FROM system_settings WHERE key = 'last_units_template'")).fetchone()
+    return result[0] if result else None
+
+
+def _create_units_from_snapshot(db, version_id, snapshot_json):
+    """Create units in a version from a JSON snapshot."""
+    import json
+    import uuid as uuid_mod
+    from app.models import OrgUnit
+    snapshot = json.loads(snapshot_json)
+    old_to_new = {}
+    for unit_data in snapshot:
+        new_unit = OrgUnit(
+            id=uuid_mod.uuid4(),
+            version_id=version_id,
+            stas_code=unit_data['stas_code'],
+            name=unit_data['name'],
+            unit_type=unit_data['unit_type'],
+            order_index=unit_data.get('order_index', 0),
+            leadership_count=unit_data.get('leadership_count', 0),
+            execution_count=unit_data.get('execution_count', 0),
+            custom_x=unit_data.get('custom_x'),
+            custom_y=unit_data.get('custom_y'),
+            custom_width=unit_data.get('custom_width'),
+            custom_height=unit_data.get('custom_height'),
+            color=unit_data.get('color'),
+            director_title=unit_data.get('director_title'),
+            director_name=unit_data.get('director_name'),
+            legend_col1=unit_data.get('legend_col1'),
+            legend_col2=unit_data.get('legend_col2'),
+            legend_col3=unit_data.get('legend_col3'),
+            is_rotated=unit_data.get('is_rotated', False),
+            parent_unit_id=None,
+        )
+        db.add(new_unit)
+        db.flush()
+        old_to_new[unit_data['id']] = new_unit.id
+    for unit_data in snapshot:
+        if unit_data.get('parent_unit_id'):
+            new_id = old_to_new.get(unit_data['id'])
+            new_parent = old_to_new.get(unit_data['parent_unit_id'])
+            if new_id and new_parent:
+                u = db.query(OrgUnit).filter(OrgUnit.id == new_id).first()
+                if u:
+                    u.parent_unit_id = new_parent
+
 @router.get("", response_model=List[OrgVersionSchema])
 def list_versions(
     db: Session = Depends(get_db),
@@ -64,6 +155,15 @@ def create_version(
 ):
     version = OrgVersion(**version_data.model_dump())
     db.add(version)
+    db.flush()
+    
+    # If no other versions exist, populate from saved template
+    other_versions = db.query(OrgVersion).filter(OrgVersion.id != version.id).count()
+    if other_versions == 0:
+        template = _get_template(db)
+        if template:
+            _create_units_from_snapshot(db, version.id, template)
+    
     db.commit()
     db.refresh(version)
     return version
@@ -99,34 +199,8 @@ def update_version(
     if is_being_approved:
         version.approved_by = current_user.id
         version.approved_at = datetime.utcnow()
-        # Save JSON snapshot of all units at approval time
-        import json
-        from app.models import OrgUnit
-        units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
-        snapshot = []
-        for u in units:
-            snapshot.append({
-                'id': str(u.id),
-                'stas_code': u.stas_code,
-                'name': u.name,
-                'unit_type': u.unit_type,
-                'parent_unit_id': str(u.parent_unit_id) if u.parent_unit_id else None,
-                'order_index': u.order_index,
-                'leadership_count': u.leadership_count,
-                'execution_count': u.execution_count,
-                'custom_x': u.custom_x,
-                'custom_y': u.custom_y,
-                'custom_width': u.custom_width,
-                'custom_height': u.custom_height,
-                'color': u.color,
-                'director_title': u.director_title,
-                'director_name': u.director_name,
-                'legend_col1': u.legend_col1,
-                'legend_col2': u.legend_col2,
-                'legend_col3': u.legend_col3,
-                'is_rotated': u.is_rotated,
-            })
-        version.units_snapshot = json.dumps(snapshot)
+        version.units_snapshot = _make_units_snapshot(db, version_id)
+        _save_template(db, version.units_snapshot)
     
     # Clear approval tracking when version is unapproved
     if is_being_unapproved:
@@ -147,8 +221,11 @@ def delete_version(
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
     
-    # Allow deletion of any version (including approved ones) for admins
-    # Frontend will show appropriate warnings
+    # Save units as template before deleting (so new versions can use it)
+    snapshot = version.units_snapshot or _make_units_snapshot(db, version_id)
+    if snapshot and len(snapshot) > 2:
+        _save_template(db, snapshot)
+    
     db.delete(version)
     db.commit()
     return {"message": "Version deleted"}
@@ -200,15 +277,12 @@ def clone_version(
 ):
     """Clone a version. If source is approved and has a snapshot, clone from snapshot."""
     from app.models import OrgUnit
-    from datetime import datetime
-    import uuid
     import json
     
     source_version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
     if not source_version:
         raise HTTPException(status_code=404, detail="Version not found")
     
-    # Generate new version number
     latest_versions = db.query(OrgVersion).order_by(OrgVersion.created_date.desc()).limit(5).all()
     version_numbers = [v.version_number for v in latest_versions if v.version_number]
     try:
@@ -231,84 +305,12 @@ def clone_version(
     db.add(new_version)
     db.flush()
     
-    # If source is approved and has a snapshot, clone from snapshot (approved state)
+    # Use snapshot if approved, otherwise clone current units
     if source_version.status == "approved" and source_version.units_snapshot:
-        snapshot = json.loads(source_version.units_snapshot)
-        old_to_new = {}
-        
-        for unit_data in snapshot:
-            new_unit = OrgUnit(
-                id=uuid.uuid4(),
-                version_id=new_version.id,
-                stas_code=unit_data['stas_code'],
-                name=unit_data['name'],
-                unit_type=unit_data['unit_type'],
-                order_index=unit_data.get('order_index', 0),
-                leadership_count=unit_data.get('leadership_count', 0),
-                execution_count=unit_data.get('execution_count', 0),
-                custom_x=unit_data.get('custom_x'),
-                custom_y=unit_data.get('custom_y'),
-                custom_width=unit_data.get('custom_width'),
-                custom_height=unit_data.get('custom_height'),
-                color=unit_data.get('color'),
-                director_title=unit_data.get('director_title'),
-                director_name=unit_data.get('director_name'),
-                legend_col1=unit_data.get('legend_col1'),
-                legend_col2=unit_data.get('legend_col2'),
-                legend_col3=unit_data.get('legend_col3'),
-                is_rotated=unit_data.get('is_rotated', False),
-                parent_unit_id=None,
-            )
-            db.add(new_unit)
-            db.flush()
-            old_to_new[unit_data['id']] = new_unit.id
-        
-        for unit_data in snapshot:
-            if unit_data.get('parent_unit_id'):
-                new_id = old_to_new.get(unit_data['id'])
-                new_parent = old_to_new.get(unit_data['parent_unit_id'])
-                if new_id and new_parent:
-                    u = db.query(OrgUnit).filter(OrgUnit.id == new_id).first()
-                    if u:
-                        u.parent_unit_id = new_parent
+        _create_units_from_snapshot(db, new_version.id, source_version.units_snapshot)
     else:
-        # Clone from current units
-        source_units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
-        unit_id_map = {}
-        
-        for source_unit in source_units:
-            new_unit = OrgUnit(
-                version_id=new_version.id,
-                stas_code=source_unit.stas_code,
-                name=source_unit.name,
-                unit_type=source_unit.unit_type,
-                order_index=source_unit.order_index,
-                leadership_count=source_unit.leadership_count,
-                execution_count=source_unit.execution_count,
-                custom_x=source_unit.custom_x,
-                custom_y=source_unit.custom_y,
-                custom_width=source_unit.custom_width,
-                custom_height=source_unit.custom_height,
-                color=source_unit.color,
-                director_title=source_unit.director_title,
-                director_name=source_unit.director_name,
-                legend_col1=source_unit.legend_col1,
-                legend_col2=source_unit.legend_col2,
-                legend_col3=source_unit.legend_col3,
-                is_rotated=source_unit.is_rotated,
-                parent_unit_id=None,
-            )
-            db.add(new_unit)
-            db.flush()
-            unit_id_map[source_unit.id] = new_unit.id
-        
-        for source_unit in source_units:
-            if source_unit.parent_unit_id:
-                new_unit_id = unit_id_map[source_unit.id]
-                new_parent_id = unit_id_map.get(source_unit.parent_unit_id)
-                if new_parent_id:
-                    u = db.query(OrgUnit).filter(OrgUnit.id == new_unit_id).first()
-                    u.parent_unit_id = new_parent_id
+        snapshot = _make_units_snapshot(db, version_id)
+        _create_units_from_snapshot(db, new_version.id, snapshot)
     
     db.commit()
     db.refresh(new_version)
@@ -322,8 +324,6 @@ def restore_version(
 ):
     """Restore an approved version back to draft, recreating units from the approval snapshot"""
     from app.models import OrgUnit
-    import json
-    import uuid as uuid_mod
     
     version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
     if not version:
@@ -335,54 +335,12 @@ def restore_version(
     if not version.units_snapshot:
         raise HTTPException(status_code=400, detail="No snapshot available for this version")
     
-    # Parse the snapshot
-    snapshot = json.loads(version.units_snapshot)
-    
-    # Delete all current units for this version
+    # Delete all current units
     db.query(OrgUnit).filter(OrgUnit.version_id == version_id).delete()
     db.flush()
     
-    # Recreate units from snapshot
-    old_to_new_id = {}
-    
-    # First pass: create all units without parent
-    for unit_data in snapshot:
-        old_id = unit_data['id']
-        new_unit = OrgUnit(
-            id=uuid_mod.uuid4(),
-            version_id=version_id,
-            stas_code=unit_data['stas_code'],
-            name=unit_data['name'],
-            unit_type=unit_data['unit_type'],
-            order_index=unit_data.get('order_index', 0),
-            leadership_count=unit_data.get('leadership_count', 0),
-            execution_count=unit_data.get('execution_count', 0),
-            custom_x=unit_data.get('custom_x'),
-            custom_y=unit_data.get('custom_y'),
-            custom_width=unit_data.get('custom_width'),
-            custom_height=unit_data.get('custom_height'),
-            color=unit_data.get('color'),
-            director_title=unit_data.get('director_title'),
-            director_name=unit_data.get('director_name'),
-            legend_col1=unit_data.get('legend_col1'),
-            legend_col2=unit_data.get('legend_col2'),
-            legend_col3=unit_data.get('legend_col3'),
-            is_rotated=unit_data.get('is_rotated', False),
-            parent_unit_id=None,
-        )
-        db.add(new_unit)
-        db.flush()
-        old_to_new_id[old_id] = new_unit.id
-    
-    # Second pass: set parent relationships
-    for unit_data in snapshot:
-        if unit_data.get('parent_unit_id'):
-            new_id = old_to_new_id.get(unit_data['id'])
-            new_parent_id = old_to_new_id.get(unit_data['parent_unit_id'])
-            if new_id and new_parent_id:
-                unit = db.query(OrgUnit).filter(OrgUnit.id == new_id).first()
-                if unit:
-                    unit.parent_unit_id = new_parent_id
+    # Recreate from snapshot
+    _create_units_from_snapshot(db, version_id, version.units_snapshot)
     
     # Change status back to draft
     version.status = "draft"

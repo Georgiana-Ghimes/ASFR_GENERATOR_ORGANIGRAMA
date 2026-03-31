@@ -72,7 +72,6 @@ export default function VersionSelector({ versions, selectedVersion, onSelect, o
                   return (
                     <SelectItem key={v.id} value={v.id}>
                       <div className="flex items-center gap-2">
-                        <StatusIcon className="w-4 h-4" />
                         <span>{v.version_number} - {v.name}</span>
                       </div>
                     </SelectItem>

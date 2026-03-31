@@ -271,7 +271,7 @@ export default function VersionsPage() {
                               <div className="flex items-center justify-center gap-2">
                                 <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleViewSnapshot(version.id)}><Eye className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Previzualizare</p></TooltipContent></Tooltip>
                                 <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleDownloadVersionSnapshot(version.id, version.version_number)}><Download className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Descarcă imagine</p></TooltipContent></Tooltip>
-                                {version.status === 'approved' && (
+                                {version.status === 'approved' && versions[0]?.id === version.id && (
                                   <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToUnapprove(version); setUnapproveDialogOpen(true); }} className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"><RotateCcw className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Resetare aprobare</p></TooltipContent></Tooltip>
                                 )}
                                 {version.status === 'approved' && version.has_units_snapshot && (
