@@ -198,21 +198,19 @@ def clone_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("editor"))
 ):
-    """Clone a version with all its units and relationships"""
+    """Clone a version. If source is approved and has a snapshot, clone from snapshot."""
     from app.models import OrgUnit
     from datetime import datetime
     import uuid
+    import json
     
-    # Get source version
     source_version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
     if not source_version:
         raise HTTPException(status_code=404, detail="Version not found")
     
-    # Generate new version number based on latest version
+    # Generate new version number
     latest_versions = db.query(OrgVersion).order_by(OrgVersion.created_date.desc()).limit(5).all()
     version_numbers = [v.version_number for v in latest_versions if v.version_number]
-    
-    # Try to increment version number
     try:
         if version_numbers:
             latest_num = max([float(v) for v in version_numbers if v.replace('.', '').isdigit()])
@@ -222,7 +220,6 @@ def clone_version(
     except:
         new_version_num = f"{source_version.version_number}.1"
     
-    # Create new version
     new_version = OrgVersion(
         version_number=new_version_num,
         name=f"Versiune {new_version_num}",
@@ -232,53 +229,86 @@ def clone_version(
         org_type=source_version.org_type
     )
     db.add(new_version)
-    db.flush()  # Get the new version ID
+    db.flush()
     
-    # Get all units from source version
-    source_units = db.query(OrgUnit).filter(
-        OrgUnit.version_id == version_id
-    ).all()
-    
-    # Map old unit IDs to new unit IDs
-    unit_id_map = {}
-    
-    # First pass: create all units without parent relationships
-    for source_unit in source_units:
-        new_unit = OrgUnit(
-            version_id=new_version.id,
-            stas_code=source_unit.stas_code,
-            name=source_unit.name,
-            unit_type=source_unit.unit_type,
-            order_index=source_unit.order_index,
-            leadership_count=source_unit.leadership_count,
-            execution_count=source_unit.execution_count,
-            custom_x=source_unit.custom_x,
-            custom_y=source_unit.custom_y,
-            custom_width=source_unit.custom_width,
-            custom_height=source_unit.custom_height,
-            color=source_unit.color,
-            director_title=source_unit.director_title,
-            director_name=source_unit.director_name,
-            legend_col1=source_unit.legend_col1,
-            legend_col2=source_unit.legend_col2,
-            legend_col3=source_unit.legend_col3,
-            is_rotated=source_unit.is_rotated,
-            parent_unit_id=None  # Will be set in second pass
-        )
-        db.add(new_unit)
-        db.flush()  # Get the new unit ID
-        unit_id_map[source_unit.id] = new_unit.id
-    
-    # Second pass: update parent relationships
-    for source_unit in source_units:
-        if source_unit.parent_unit_id:
-            new_unit_id = unit_id_map[source_unit.id]
-            new_parent_id = unit_id_map.get(source_unit.parent_unit_id)
-            if new_parent_id:
-                new_unit = db.query(OrgUnit).filter(
-                    OrgUnit.id == new_unit_id
-                ).first()
-                new_unit.parent_unit_id = new_parent_id
+    # If source is approved and has a snapshot, clone from snapshot (approved state)
+    if source_version.status == "approved" and source_version.units_snapshot:
+        snapshot = json.loads(source_version.units_snapshot)
+        old_to_new = {}
+        
+        for unit_data in snapshot:
+            new_unit = OrgUnit(
+                id=uuid.uuid4(),
+                version_id=new_version.id,
+                stas_code=unit_data['stas_code'],
+                name=unit_data['name'],
+                unit_type=unit_data['unit_type'],
+                order_index=unit_data.get('order_index', 0),
+                leadership_count=unit_data.get('leadership_count', 0),
+                execution_count=unit_data.get('execution_count', 0),
+                custom_x=unit_data.get('custom_x'),
+                custom_y=unit_data.get('custom_y'),
+                custom_width=unit_data.get('custom_width'),
+                custom_height=unit_data.get('custom_height'),
+                color=unit_data.get('color'),
+                director_title=unit_data.get('director_title'),
+                director_name=unit_data.get('director_name'),
+                legend_col1=unit_data.get('legend_col1'),
+                legend_col2=unit_data.get('legend_col2'),
+                legend_col3=unit_data.get('legend_col3'),
+                is_rotated=unit_data.get('is_rotated', False),
+                parent_unit_id=None,
+            )
+            db.add(new_unit)
+            db.flush()
+            old_to_new[unit_data['id']] = new_unit.id
+        
+        for unit_data in snapshot:
+            if unit_data.get('parent_unit_id'):
+                new_id = old_to_new.get(unit_data['id'])
+                new_parent = old_to_new.get(unit_data['parent_unit_id'])
+                if new_id and new_parent:
+                    u = db.query(OrgUnit).filter(OrgUnit.id == new_id).first()
+                    if u:
+                        u.parent_unit_id = new_parent
+    else:
+        # Clone from current units
+        source_units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
+        unit_id_map = {}
+        
+        for source_unit in source_units:
+            new_unit = OrgUnit(
+                version_id=new_version.id,
+                stas_code=source_unit.stas_code,
+                name=source_unit.name,
+                unit_type=source_unit.unit_type,
+                order_index=source_unit.order_index,
+                leadership_count=source_unit.leadership_count,
+                execution_count=source_unit.execution_count,
+                custom_x=source_unit.custom_x,
+                custom_y=source_unit.custom_y,
+                custom_width=source_unit.custom_width,
+                custom_height=source_unit.custom_height,
+                color=source_unit.color,
+                director_title=source_unit.director_title,
+                director_name=source_unit.director_name,
+                legend_col1=source_unit.legend_col1,
+                legend_col2=source_unit.legend_col2,
+                legend_col3=source_unit.legend_col3,
+                is_rotated=source_unit.is_rotated,
+                parent_unit_id=None,
+            )
+            db.add(new_unit)
+            db.flush()
+            unit_id_map[source_unit.id] = new_unit.id
+        
+        for source_unit in source_units:
+            if source_unit.parent_unit_id:
+                new_unit_id = unit_id_map[source_unit.id]
+                new_parent_id = unit_id_map.get(source_unit.parent_unit_id)
+                if new_parent_id:
+                    u = db.query(OrgUnit).filter(OrgUnit.id == new_unit_id).first()
+                    u.parent_unit_id = new_parent_id
     
     db.commit()
     db.refresh(new_version)
