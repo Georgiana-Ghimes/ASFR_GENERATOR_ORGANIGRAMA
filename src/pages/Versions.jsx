@@ -22,6 +22,29 @@ import { ro } from 'date-fns/locale';
 import { FileCheck, Clock, Edit3, Eye, Calendar as CalendarIcon, User, Loader2, Trash2, RotateCcw, Image as ImageIcon, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
+function VersionPreview({ versionId, cache, setCache, onClick }) {
+  const [img, setImg] = React.useState(cache[versionId] || null);
+  const [loading, setLoading] = React.useState(false);
+  const loaded = React.useRef(false);
+
+  React.useEffect(() => {
+    if (cache[versionId]) { setImg(cache[versionId]); return; }
+    if (loaded.current) return;
+    loaded.current = true;
+    setLoading(true);
+    apiClient.getVersionSnapshot(versionId).then(data => {
+      if (data.image) {
+        setImg(data.image);
+        setCache(prev => ({ ...prev, [versionId]: data.image }));
+      }
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [versionId, cache, setCache]);
+
+  if (loading) return <Loader2 className="w-4 h-4 animate-spin text-gray-400 mx-auto" />;
+  if (!img) return <ImageIcon className="w-6 h-6 text-gray-300 mx-auto" />;
+  return <img src={img} alt="Preview" className="w-[100px] h-auto border rounded cursor-pointer mx-auto" onClick={onClick} />;
+}
+
 const statusConfig = {
   draft: { label: 'Ciornă', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Edit3 },
   pending_approval: { label: 'În aprobare', color: 'bg-blue-100 text-blue-800 border-blue-200', icon: Clock },
@@ -36,6 +59,7 @@ export default function VersionsPage() {
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
   const [snapshotImage, setSnapshotImage] = useState(null);
   const [loadingSnapshot, setLoadingSnapshot] = useState(false);
+  const [snapshotCache, setSnapshotCache] = useState({});
   const queryClient = useQueryClient();
 
   const { data: versions = [], isLoading } = useQuery({
@@ -85,11 +109,17 @@ export default function VersionsPage() {
   });
 
   const handleViewSnapshot = async (versionId) => {
+    if (snapshotCache[versionId]) {
+      setSnapshotImage(snapshotCache[versionId]);
+      setSnapshotDialogOpen(true);
+      return;
+    }
     setLoadingSnapshot(true);
     setSnapshotDialogOpen(true);
     try {
       const data = await apiClient.getVersionSnapshot(versionId);
       setSnapshotImage(data.image);
+      if (data.image) setSnapshotCache(prev => ({ ...prev, [versionId]: data.image }));
     } catch {
       toast.error('Eroare la încărcarea imaginii');
       setSnapshotDialogOpen(false);
@@ -106,6 +136,25 @@ export default function VersionsPage() {
   const handleDownloadOmti = (image, date) => {
     const link = document.createElement('a');
     link.download = `organigrama_omti_${date}.png`;
+    link.href = image;
+    link.click();
+  };
+
+  const handleDownloadVersionSnapshot = async (versionId, versionNumber) => {
+    let image = snapshotCache[versionId];
+    if (!image) {
+      try {
+        const data = await apiClient.getVersionSnapshot(versionId);
+        image = data.image;
+        if (image) setSnapshotCache(prev => ({ ...prev, [versionId]: image }));
+      } catch {
+        toast.error('Nu există snapshot pentru această versiune');
+        return;
+      }
+    }
+    if (!image) { toast.error('Nu există snapshot'); return; }
+    const link = document.createElement('a');
+    link.download = `organigrama_${versionNumber || 'snapshot'}.png`;
     link.href = image;
     link.click();
   };
@@ -139,6 +188,7 @@ export default function VersionsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b">
+                      <TableHead className="text-center border-r w-[120px]">Preview</TableHead>
                       <TableHead className="text-center border-r">Versiune</TableHead>
                       <TableHead className="text-center border-r">Denumire</TableHead>
                       <TableHead className="text-center border-r">Status</TableHead>
@@ -155,6 +205,9 @@ export default function VersionsPage() {
                       const StatusIcon = status.icon;
                       return (
                         <TableRow key={version.id} className="border-b">
+                          <TableCell className="text-center border-r">
+                            <VersionPreview versionId={version.id} cache={snapshotCache} setCache={setSnapshotCache} onClick={() => handleViewSnapshot(version.id)} />
+                          </TableCell>
                           <TableCell className="font-mono font-medium text-center border-r">{version.version_number}</TableCell>
                           <TableCell className="text-center border-r">{version.name}</TableCell>
                           <TableCell className="text-center border-r">
@@ -202,6 +255,7 @@ export default function VersionsPage() {
                             <TooltipProvider>
                               <div className="flex items-center justify-center gap-2">
                                 <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleViewSnapshot(version.id)}><Eye className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Vezi snapshot</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleDownloadVersionSnapshot(version.id, version.version_number)}><Download className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Descarcă snapshot</p></TooltipContent></Tooltip>
                                 {version.status === 'approved' && (
                                   <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToUnapprove(version); setUnapproveDialogOpen(true); }} className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"><RotateCcw className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Resetare aprobare</p></TooltipContent></Tooltip>
                                 )}
@@ -212,7 +266,7 @@ export default function VersionsPage() {
                         </TableRow>
                       );
                     })}
-                    {versions.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-gray-500">Nu există versiuni</TableCell></TableRow>}
+                    {versions.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-gray-500">Nu există versiuni</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
