@@ -61,7 +61,9 @@ function FixedNodeInner({
   orgType,
 }) {
   const { x, y, width, height } = position;
-  const cursor = isReadOnly ? 'default' : 'grab';
+  // director_legend is always draggable (even in OMTI read-only mode)
+  const isDraggable = !isReadOnly || type === 'director_legend';
+  const cursor = isDraggable ? 'grab' : 'default';
 
   const handleClick = () => {
     // Fixed nodes are not editable via click

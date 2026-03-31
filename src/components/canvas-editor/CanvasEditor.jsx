@@ -543,31 +543,29 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
 
   // --- Add unit from toolbar ---
 
-  const handleAddUnit = useCallback(async () => {
+  const handleAddUnit = useCallback(() => {
     if (isReadOnly) return;
     const pos = calculateNewUnitPosition(null, [], {
       ...viewport.viewport,
       width: containerRef.current?.clientWidth || 800,
       height: containerRef.current?.clientHeight || 600,
     });
-
-    try {
-      await apiClient.createUnit({
+    // Open side panel with a template (no id = create mode)
+    if (onSelectUnit) {
+      onSelectUnit({
+        _isNew: true,
         version_id: versionId,
-        name: 'Unitate nouă',
+        name: '',
         stas_code: '',
         unit_type: 'compartiment',
+        parent_unit_id: null,
         custom_x: Math.round(pos.x),
         custom_y: Math.round(pos.y),
         custom_width: DEFAULT_UNIT_WIDTH,
         custom_height: DEFAULT_UNIT_HEIGHT,
       });
-      queryClient.invalidateQueries({ queryKey: ['units', versionId] });
-      toast.success('Unitate nouă creată cu succes');
-    } catch (error) {
-      toast.error('Eroare la crearea unității: ' + error.message);
     }
-  }, [isReadOnly, viewport.viewport, versionId, queryClient]);
+  }, [isReadOnly, viewport.viewport, versionId, onSelectUnit]);
 
   // --- Fixed node handlers ---
 
@@ -576,7 +574,8 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
 
   const handleFixedNodeMouseDown = useCallback(
     (e, type) => {
-      if (isReadOnly) return;
+      // director_legend is always draggable (even in OMTI read-only)
+      if (isReadOnly && type !== 'director_legend') return;
       e.stopPropagation();
 
       const svg = e.currentTarget.closest('svg');
@@ -747,6 +746,14 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
         if (fe.y + fe.height > maxY) maxY = fe.y + fe.height;
       }
 
+      // Account for director_legend text overflow (OMTI ANEXA text is wider than its rect)
+      const dirFe = fixedElements.director;
+      if (dirFe && orgType === 'omti') {
+        const textOverflow = 200; // estimated overflow of centered long text
+        if (dirFe.x + dirFe.width + textOverflow > maxX) maxX = dirFe.x + dirFe.width + textOverflow;
+        if (dirFe.x - textOverflow < minX) minX = dirFe.x - textOverflow;
+      }
+
       if (!isFinite(minX)) {
         toast.error('Nu există unități de capturat');
         return;
@@ -755,7 +762,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
       const padTop = 20;
       const padBottom = 80;
       const padLeft = 20;
-      const padRight = 100;
+      const padRight = 80;
       const contentWidth = maxX - minX + padLeft + padRight;
       const contentHeight = maxY - minY + padTop + padBottom;
 

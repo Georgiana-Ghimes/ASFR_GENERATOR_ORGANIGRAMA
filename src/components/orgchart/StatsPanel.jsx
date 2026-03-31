@@ -13,30 +13,40 @@ export default function StatsPanel({ units, layoutData }) {
     let deptCount = 0;
     let inspectorCount = 0;
     let serviceCount = 0;
+    let rootRecursive = 0;
+    let rootLeadership = 0;
 
-    // Calculate from layout aggregates (real positions from database)
     if (layoutData && layoutData.layout) {
-      layoutData.layout.forEach(node => {
-        if (node.aggregates) {
-          totalLeadership += node.aggregates.leadership_positions_count || 0;
-          totalExecution += node.aggregates.execution_positions_count || 0;
+      // Find root unit (director_general or first without parent)
+      const rootNode = layoutData.layout.find(n => n.unit?.unit_type === 'director_general')
+        || layoutData.layout.find(n => !n.unit?.parent_unit_id && n.unit?.unit_type !== 'consiliu' && n.unit?.unit_type !== 'legend');
 
-          // Count by type (only leadership positions)
-          const leadershipCount = node.aggregates.leadership_positions_count || 0;
-          if (node.unit.unit_type === 'director_general') {
-            dgCount += leadershipCount;
-          } else if (node.unit.unit_type === 'directie') {
-            directorCount += leadershipCount;
-          } else if (node.unit.unit_type === 'serviciu') {
-            serviceCount += leadershipCount;
-          } else if (node.unit.unit_type === 'inspectorat') {
-            inspectorCount += leadershipCount;
-          }
+      layoutData.layout.forEach(node => {
+        if (!node.aggregates) return;
+        if (node.unit?.unit_type === 'consiliu' || node.unit?.unit_type === 'legend') return;
+
+        const lc = node.aggregates.leadership_positions_count || 0;
+        totalLeadership += lc;
+
+        if (rootNode && node.unit_id === rootNode.unit_id) {
+          rootLeadership = lc;
+          rootRecursive = node.aggregates.recursive_total_subordinates || 0;
+          dgCount += lc;
+        } else if (node.unit?.unit_type === 'directie') {
+          directorCount += lc;
+        } else if (node.unit?.unit_type === 'departament') {
+          deptCount += lc;
+        } else if (node.unit?.unit_type === 'serviciu') {
+          serviceCount += lc;
+        } else if (node.unit?.unit_type === 'inspectorat') {
+          inspectorCount += lc;
         }
       });
     }
 
-    const totalPositions = totalLeadership + totalExecution;
+    // Total = root recursive minus root's own leadership (matches orgchart convention)
+    const totalPositions = rootRecursive > 0 ? rootRecursive - rootLeadership : totalLeadership + totalExecution;
+    totalExecution = totalPositions - totalLeadership;
     
     const unitsByType = units.reduce((acc, u) => {
       acc[u.unit_type] = (acc[u.unit_type] || 0) + 1;

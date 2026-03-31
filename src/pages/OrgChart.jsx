@@ -214,7 +214,23 @@ export default function OrgChartPage() {
   };
 
   const handleSaveUnit = (data) => {
-    if (selectedUnit?.id) {
+    if (selectedUnit?._isNew) {
+      // Create new unit
+      const createData = {
+        ...data,
+        version_id: selectedUnit.version_id,
+        custom_x: selectedUnit.custom_x,
+        custom_y: selectedUnit.custom_y,
+        custom_width: selectedUnit.custom_width,
+        custom_height: selectedUnit.custom_height,
+      };
+      apiClient.createUnit(createData).then(() => {
+        queryClient.invalidateQueries(['units', selectedVersion?.id]);
+        setRefreshKey(prev => prev + 1);
+        toast.success('Unitate creată cu succes');
+        setSelectedUnit(null);
+      }).catch(err => toast.error('Eroare: ' + err.message));
+    } else if (selectedUnit?.id) {
       updateUnitMutation.mutate({ unitId: selectedUnit.id, data });
     }
   };
@@ -305,7 +321,7 @@ export default function OrgChartPage() {
                     <div className="flex items-center gap-2">
                       <Info className="w-5 h-5 text-blue-600" />
                       <h2 className="font-semibold text-gray-900">
-                        {isReadOnly ? 'Detalii Unitate' : 'Editare Unitate'}
+                        {selectedUnit?._isNew ? 'Unitate Nouă' : isReadOnly ? 'Detalii Unitate' : 'Editare Unitate'}
                       </h2>
                     </div>
                     <Button
@@ -320,7 +336,7 @@ export default function OrgChartPage() {
                   {/* Panel Content */}
                   <div className="flex-1 overflow-auto p-6">
                     <UnitForm
-                      unit={selectedUnit}
+                      unit={selectedUnit?._isNew ? null : selectedUnit}
                       units={units}
                       versionId={selectedVersion.id}
                       onSave={handleSaveUnit}
