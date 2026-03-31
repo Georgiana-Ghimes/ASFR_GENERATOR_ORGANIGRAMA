@@ -1,34 +1,25 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { apiClient } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { FileCheck, Clock, Edit3, Eye, Calendar as CalendarIcon, User, Loader2, Trash2, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { FileCheck, Clock, Edit3, Eye, Calendar as CalendarIcon, User, Loader2, Trash2, RotateCcw, Image as ImageIcon, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusConfig = {
@@ -52,6 +43,11 @@ export default function VersionsPage() {
     queryFn: () => apiClient.listVersions(),
   });
 
+  const { data: omtiSnapshots = [], isLoading: loadingOmti } = useQuery({
+    queryKey: ['omti-snapshots'],
+    queryFn: () => apiClient.listOmtiSnapshots(),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => apiClient.deleteVersion(id),
     onSuccess: () => {
@@ -60,59 +56,33 @@ export default function VersionsPage() {
       setDeleteDialogOpen(false);
       setVersionToDelete(null);
     },
-    onError: (error) => {
-      toast.error(error.message || 'Eroare la ștergerea versiunii');
-    },
+    onError: (error) => toast.error(error.message || 'Eroare la ștergerea versiunii'),
   });
 
   const unapproveMutation = useMutation({
     mutationFn: (id) => apiClient.restoreVersion(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['versions']);
-      queryClient.invalidateQueries(['units']); // Invalidate units too since positions are reset
-      toast.success('Aprobarea a fost resetată cu succes. Pagina se va reîncărca.');
+      queryClient.invalidateQueries(['units']);
+      toast.success('Aprobarea a fost resetată cu succes.');
       setUnapproveDialogOpen(false);
       setVersionToUnapprove(null);
-      // Reload page to ensure clean state
       setTimeout(() => window.location.reload(), 1000);
     },
-    onError: (error) => {
-      toast.error(error.message || 'Eroare la resetarea aprobării');
-    },
+    onError: (error) => toast.error(error.message || 'Eroare la resetarea aprobării'),
   });
 
   const updateValidityMutation = useMutation({
     mutationFn: ({ id, validFrom, validUntil }) => apiClient.updateVersionValidity(id, validFrom, validUntil),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['versions']);
-      toast.success('Perioada de validitate actualizată');
-    },
-    onError: (error) => {
-      toast.error(error.message || 'Eroare la actualizarea perioadei');
-    },
+    onSuccess: () => { queryClient.invalidateQueries(['versions']); toast.success('Perioada actualizată'); },
+    onError: (error) => toast.error(error.message || 'Eroare'),
   });
 
-  const handleDeleteClick = (version) => {
-    setVersionToDelete(version);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (versionToDelete) {
-      deleteMutation.mutate(versionToDelete.id);
-    }
-  };
-
-  const handleUnapproveClick = (version) => {
-    setVersionToUnapprove(version);
-    setUnapproveDialogOpen(true);
-  };
-
-  const handleConfirmUnapprove = () => {
-    if (versionToUnapprove) {
-      unapproveMutation.mutate(versionToUnapprove.id);
-    }
-  };
+  const deleteOmtiMutation = useMutation({
+    mutationFn: (id) => apiClient.deleteOmtiSnapshot(id),
+    onSuccess: () => { queryClient.invalidateQueries(['omti-snapshots']); toast.success('Imagine ștearsă'); },
+    onError: (error) => toast.error(error.message || 'Eroare la ștergere'),
+  });
 
   const handleViewSnapshot = async (versionId) => {
     setLoadingSnapshot(true);
@@ -120,7 +90,7 @@ export default function VersionsPage() {
     try {
       const data = await apiClient.getVersionSnapshot(versionId);
       setSnapshotImage(data.image);
-    } catch (error) {
+    } catch {
       toast.error('Eroare la încărcarea imaginii');
       setSnapshotDialogOpen(false);
     } finally {
@@ -128,12 +98,20 @@ export default function VersionsPage() {
     }
   };
 
+  const handleViewOmtiSnapshot = (image) => {
+    setSnapshotImage(image);
+    setSnapshotDialogOpen(true);
+  };
+
+  const handleDownloadOmti = (image, date) => {
+    const link = document.createElement('a');
+    link.download = `organigrama_omti_${date}.png`;
+    link.href = image;
+    link.click();
+  };
+
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
   }
 
   return (
@@ -142,275 +120,212 @@ export default function VersionsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Istoric Versiuni</h1>
-            <p className="text-gray-500">Toate versiunile organigramei</p>
+            <p className="text-gray-500">Versiuni organigrame și imagini generate OMTI</p>
           </div>
           <Link to={createPageUrl('OrgChart')}>
-            <Button>
-              <Eye className="w-4 h-4 mr-2" />
-              Vezi Organigrama
-            </Button>
+            <Button><Eye className="w-4 h-4 mr-2" />Vezi Organigrama</Button>
           </Link>
         </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b">
-                  <TableHead className="text-center border-r">Versiune</TableHead>
-                  <TableHead className="text-center border-r">Denumire</TableHead>
-                  <TableHead className="text-center border-r">Status</TableHead>
-                  <TableHead className="text-center border-r">De la</TableHead>
-                  <TableHead className="text-center border-r">Până la</TableHead>
-                  <TableHead className="text-center min-w-[180px] border-r">Aprobat de</TableHead>
-                  <TableHead className="text-center border-r">Data Aprobare</TableHead>
-                  <TableHead className="text-center">Acțiuni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {versions.map((version) => {
-                  const status = statusConfig[version.status];
-                  const StatusIcon = status.icon;
-                  
-                  return (
-                    <TableRow key={version.id} className="border-b">
-                      <TableCell className="font-mono font-medium text-center border-r">
-                        {version.version_number}
-                      </TableCell>
-                      <TableCell className="text-center border-r">{version.name}</TableCell>
-                      <TableCell className="text-center border-r">
-                        <Badge className={`${status.color} border`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {status.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center border-r">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 px-2">
-                              <CalendarIcon className="w-3 h-3 mr-1" />
-                              {version.valid_from ? format(new Date(version.valid_from), 'dd MMM yyyy', { locale: ro }) : 'Selectează'}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={version.valid_from ? new Date(version.valid_from) : undefined}
-                              onSelect={(date) => {
-                                if (date) {
-                                  updateValidityMutation.mutate({
-                                    id: version.id,
-                                    validFrom: format(date, 'yyyy-MM-dd'),
-                                    validUntil: version.valid_until ? format(new Date(version.valid_until), 'yyyy-MM-dd') : null
-                                  });
-                                }
-                              }}
-                              locale={ro}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </TableCell>
-                      <TableCell className="text-center border-r">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 px-2">
-                              <CalendarIcon className="w-3 h-3 mr-1" />
-                              {version.valid_until ? format(new Date(version.valid_until), 'dd MMM yyyy', { locale: ro }) : 'Selectează'}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={version.valid_until ? new Date(version.valid_until) : undefined}
-                              onSelect={(date) => {
-                                if (date) {
-                                  updateValidityMutation.mutate({
-                                    id: version.id,
-                                    validFrom: version.valid_from ? format(new Date(version.valid_from), 'yyyy-MM-dd') : null,
-                                    validUntil: format(date, 'yyyy-MM-dd')
-                                  });
-                                }
-                              }}
-                              locale={ro}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </TableCell>
-                      <TableCell className="min-w-[180px] text-center border-r">
-                        {version.approved_by_name ? (
-                          <div className="flex items-center justify-center gap-1 text-gray-600">
-                            <User className="w-3 h-3 flex-shrink-0" />
-                            <span className="whitespace-nowrap">{version.approved_by_name}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center border-r">
-                        {version.approved_at ? (
-                          format(new Date(version.approved_at), 'dd MMM yyyy', { locale: ro })
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <TooltipProvider>
-                          <div className="flex items-center justify-center gap-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleViewSnapshot(version.id)}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Vezi snapshot organigrama</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            {version.status === 'approved' && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleUnapproveClick(version)}
-                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                                  >
-                                    <RotateCcw className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Resetare aprobare</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleDeleteClick(version)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Șterge versiunea</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </TooltipProvider>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {versions.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                      Nu există versiuni
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="versions">
+          <TabsList>
+            <TabsTrigger value="versions">Versiuni Organigramă</TabsTrigger>
+            <TabsTrigger value="omti">Imagini Generate OMTI</TabsTrigger>
+          </TabsList>
 
-        {/* Delete Confirmation Dialog */}
+          <TabsContent value="versions">
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b">
+                      <TableHead className="text-center border-r">Versiune</TableHead>
+                      <TableHead className="text-center border-r">Denumire</TableHead>
+                      <TableHead className="text-center border-r">Status</TableHead>
+                      <TableHead className="text-center border-r">De la</TableHead>
+                      <TableHead className="text-center border-r">Până la</TableHead>
+                      <TableHead className="text-center min-w-[180px] border-r">Aprobat de</TableHead>
+                      <TableHead className="text-center border-r">Data Aprobare</TableHead>
+                      <TableHead className="text-center">Acțiuni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {versions.map((version) => {
+                      const status = statusConfig[version.status];
+                      const StatusIcon = status.icon;
+                      return (
+                        <TableRow key={version.id} className="border-b">
+                          <TableCell className="font-mono font-medium text-center border-r">{version.version_number}</TableCell>
+                          <TableCell className="text-center border-r">{version.name}</TableCell>
+                          <TableCell className="text-center border-r">
+                            <Badge className={`${status.color} border`}><StatusIcon className="w-3 h-3 mr-1" />{status.label}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center border-r">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 px-2">
+                                  <CalendarIcon className="w-3 h-3 mr-1" />
+                                  {version.valid_from ? format(new Date(version.valid_from), 'dd MMM yyyy', { locale: ro }) : 'Selectează'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={version.valid_from ? new Date(version.valid_from) : undefined}
+                                  onSelect={(date) => date && updateValidityMutation.mutate({ id: version.id, validFrom: format(date, 'yyyy-MM-dd'), validUntil: version.valid_until ? format(new Date(version.valid_until), 'yyyy-MM-dd') : null })}
+                                  locale={ro} />
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
+                          <TableCell className="text-center border-r">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 px-2">
+                                  <CalendarIcon className="w-3 h-3 mr-1" />
+                                  {version.valid_until ? format(new Date(version.valid_until), 'dd MMM yyyy', { locale: ro }) : 'Selectează'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={version.valid_until ? new Date(version.valid_until) : undefined}
+                                  onSelect={(date) => date && updateValidityMutation.mutate({ id: version.id, validFrom: version.valid_from ? format(new Date(version.valid_from), 'yyyy-MM-dd') : null, validUntil: format(date, 'yyyy-MM-dd') })}
+                                  locale={ro} />
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
+                          <TableCell className="min-w-[180px] text-center border-r">
+                            {version.approved_by_name ? (
+                              <div className="flex items-center justify-center gap-1 text-gray-600"><User className="w-3 h-3 flex-shrink-0" /><span className="whitespace-nowrap">{version.approved_by_name}</span></div>
+                            ) : <span className="text-gray-400">—</span>}
+                          </TableCell>
+                          <TableCell className="text-center border-r">
+                            {version.approved_at ? format(new Date(version.approved_at), 'dd MMM yyyy', { locale: ro }) : <span className="text-gray-400">—</span>}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <TooltipProvider>
+                              <div className="flex items-center justify-center gap-2">
+                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleViewSnapshot(version.id)}><Eye className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Vezi snapshot</p></TooltipContent></Tooltip>
+                                {version.status === 'approved' && (
+                                  <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToUnapprove(version); setUnapproveDialogOpen(true); }} className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"><RotateCcw className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Resetare aprobare</p></TooltipContent></Tooltip>
+                                )}
+                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToDelete(version); setDeleteDialogOpen(true); }} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Șterge</p></TooltipContent></Tooltip>
+                              </div>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {versions.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-gray-500">Nu există versiuni</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="omti">
+            <Card>
+              <CardContent className="p-0">
+                {loadingOmti ? (
+                  <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+                ) : omtiSnapshots.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <p className="text-gray-500">Nu există imagini OMTI generate.</p>
+                    <p className="text-gray-400 text-sm mt-1">Generează un snapshot din pagina Organigramă la anexa OMTI.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b">
+                        <TableHead className="text-center border-r w-[120px]">Preview</TableHead>
+                        <TableHead className="text-center border-r">Versiune</TableHead>
+                        <TableHead className="text-center border-r">Data generării</TableHead>
+                        <TableHead className="text-center">Acțiuni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {omtiSnapshots.map((snap) => (
+                        <TableRow key={snap.id} className="border-b">
+                          <TableCell className="text-center border-r">
+                            <img
+                              src={snap.image}
+                              alt="OMTI preview"
+                              className="w-[100px] h-auto border rounded cursor-pointer mx-auto"
+                              onClick={() => handleViewOmtiSnapshot(snap.image)}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center border-r">{snap.version_name || '—'}</TableCell>
+                          <TableCell className="text-center border-r">
+                            {format(new Date(snap.created_at), 'dd MMM yyyy, HH:mm', { locale: ro })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <TooltipProvider>
+                                <Tooltip><TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" onClick={() => handleViewOmtiSnapshot(snap.image)}><Eye className="w-4 h-4" /></Button>
+                                </TooltipTrigger><TooltipContent><p>Vezi imagine</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" onClick={() => handleDownloadOmti(snap.image, format(new Date(snap.created_at), 'yyyy-MM-dd_HHmm'))}><Download className="w-4 h-4" /></Button>
+                                </TooltipTrigger><TooltipContent><p>Descarcă</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" onClick={() => deleteOmtiMutation.mutate(snap.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
+                                </TooltipTrigger><TooltipContent><p>Șterge</p></TooltipContent></Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Delete Version Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmare ștergere</AlertDialogTitle>
               <AlertDialogDescription>
-                Sigur doriți să ștergeți versiunea <span className="font-semibold">{versionToDelete?.version_number}</span> ({versionToDelete?.name})?
-                <br /><br />
+                Sigur doriți să ștergeți versiunea <span className="font-semibold">{versionToDelete?.version_number}</span>?
                 {versionToDelete?.status === 'approved' && (
-                  <div className="bg-red-50 border border-red-200 rounded p-2 mb-2">
-                    <span className="text-red-800 font-semibold">⚠️ ATENȚIE: Această versiune este APROBATĂ!</span>
-                    <br />
-                    Ștergerea unei versiuni aprobate poate afecta rapoartele și istoricul oficial.
-                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded p-2 mt-2"><span className="text-red-800 font-semibold">⚠️ Versiune APROBATĂ!</span></div>
                 )}
-                Această acțiune va șterge permanent versiunea și toate datele asociate (unități, posturi, etc.).
-                <br />
-                <span className="font-semibold text-red-600">Această acțiune NU poate fi anulată!</span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Anulare</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirmDelete}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Se șterge...
-                  </>
-                ) : (
-                  'Șterge'
-                )}
+              <AlertDialogAction onClick={() => versionToDelete && deleteMutation.mutate(versionToDelete.id)} className="bg-red-600 hover:bg-red-700" disabled={deleteMutation.isPending}>
+                {deleteMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Se șterge...</> : 'Șterge'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Unapprove Confirmation Dialog */}
+        {/* Unapprove Dialog */}
         <AlertDialog open={unapproveDialogOpen} onOpenChange={setUnapproveDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Resetare aprobare</AlertDialogTitle>
-              <AlertDialogDescription>
-                Sunteți sigur că doriți să resetați aprobarea versiunii <span className="font-semibold">{versionToUnapprove?.version_number}</span> ({versionToUnapprove?.name})?
-                <br /><br />
-                Versiunea va reveni la starea de <span className="font-semibold">ciornă</span> și va putea fi editată din nou.
-              </AlertDialogDescription>
+              <AlertDialogDescription>Versiunea va reveni la starea de ciornă.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Anulare</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirmUnapprove}
-                className="bg-orange-600 hover:bg-orange-700"
-                disabled={unapproveMutation.isPending}
-              >
-                {unapproveMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Se resetează...
-                  </>
-                ) : (
-                  'Confirmă resetarea'
-                )}
+              <AlertDialogAction onClick={() => versionToUnapprove && unapproveMutation.mutate(versionToUnapprove.id)} className="bg-orange-600 hover:bg-orange-700" disabled={unapproveMutation.isPending}>
+                {unapproveMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Se resetează...</> : 'Confirmă'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Snapshot Dialog */}
+        {/* Snapshot Preview Dialog */}
         <Dialog open={snapshotDialogOpen} onOpenChange={setSnapshotDialogOpen}>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Snapshot Organigramă</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Snapshot Organigramă</DialogTitle></DialogHeader>
             <div className="flex items-center justify-center p-4">
-              {loadingSnapshot ? (
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              ) : snapshotImage ? (
-                <img 
-                  src={snapshotImage} 
-                  alt="Snapshot organigramă" 
-                  className="max-w-full h-auto border rounded"
-                />
+              {loadingSnapshot ? <Loader2 className="w-8 h-8 animate-spin text-blue-600" /> : snapshotImage ? (
+                <img src={snapshotImage} alt="Snapshot" className="max-w-full h-auto border rounded" />
               ) : (
-                <div className="text-center py-12">
-                  <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-500">Nu există snapshot disponibil pentru această versiune</p>
-                </div>
+                <div className="text-center py-12"><ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" /><p className="text-gray-500">Nu există snapshot</p></div>
               )}
             </div>
           </DialogContent>

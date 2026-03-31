@@ -28,7 +28,7 @@ import {
  * Fetches units + layout data, wires up viewport/selection/drag/resize hooks,
  * and renders CanvasViewport, CanvasToolbar, Minimap, and ContextMenu.
  */
-export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgType = 'codificare' }) {
+export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgType = 'codificare', onSnapshot }) {
   const queryClient = useQueryClient();
   const containerRef = useRef(null);
   const svgRef = useRef(null);
@@ -684,6 +684,166 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
     viewport.actions,
   ]);
 
+  // --- Snapshot capture ---
+
+  const handleCaptureSnapshot = useCallback(async () => {
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+
+    try {
+      toast.info('Se capturează snapshot-ul...');
+
+      const svgClone = svgElement.cloneNode(true);
+
+      // Include both unit positions AND fixed element positions in bounding box
+      // Account for rotated units (width/height swap visually)
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+      for (const unit of units) {
+        const p = positions[unit.id];
+        if (!p) continue;
+        const isRotated = unit.is_rotated;
+        if (isRotated) {
+          // Rotated -90° around center: visual bounds expand
+          const cx = p.x + p.width / 2;
+          const cy = p.y + p.height / 2;
+          const halfW = p.height / 2; // swapped
+          const halfH = p.width / 2;  // swapped
+          if (cx - halfW < minX) minX = cx - halfW;
+          if (cy - halfH < minY) minY = cy - halfH;
+          if (cx + halfW > maxX) maxX = cx + halfW;
+          if (cy + halfH > maxY) maxY = cy + halfH;
+        } else {
+          if (p.x < minX) minX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.x + p.width > maxX) maxX = p.x + p.width;
+          if (p.y + p.height > maxY) maxY = p.y + p.height;
+        }
+      }
+
+      for (const fe of Object.values(fixedElements)) {
+        if (fe.x < minX) minX = fe.x;
+        if (fe.y < minY) minY = fe.y;
+        if (fe.x + fe.width > maxX) maxX = fe.x + fe.width;
+        if (fe.y + fe.height > maxY) maxY = fe.y + fe.height;
+      }
+
+      if (!isFinite(minX)) {
+        toast.error('Nu există unități de capturat');
+        return;
+      }
+
+      const padTop = 20;
+      const padBottom = 80;
+      const padLeft = 20;
+      const padRight = 100;
+      const contentWidth = maxX - minX + padLeft + padRight;
+      const contentHeight = maxY - minY + padTop + padBottom;
+
+      svgClone.setAttribute('width', contentWidth);
+      svgClone.setAttribute('height', contentHeight);
+      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      svgClone.removeAttribute('style');
+
+      // Embed default font styles so they survive serialization
+      const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+      styleEl.textContent = `
+        text { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        foreignObject div { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+      `;
+      svgClone.insertBefore(styleEl, svgClone.firstChild);
+
+      const transformGroup = svgClone.querySelector('g[transform]');
+      if (transformGroup) {
+        transformGroup.setAttribute('transform', `translate(${padLeft - minX}, ${padTop - minY}) scale(1)`);
+      }
+
+      const gridRect = svgClone.querySelector('rect[fill="url(#grid)"]');
+      if (gridRect) gridRect.setAttribute('fill', '#ffffff');
+
+      // Remove all resize handles from snapshot
+      svgClone.querySelectorAll('g[style*="nwse-resize"]').forEach(el => el.remove());
+      svgClone.querySelectorAll('[style*="nwse-resize"]').forEach(el => el.remove());
+
+      // Inline computed styles from original foreignObject elements onto clone
+      // This preserves text wrapping, font sizes, flexbox layout etc.
+      const originalFOs = svgElement.querySelectorAll('foreignObject');
+      const clonedFOs = svgClone.querySelectorAll('foreignObject');
+      const importantProps = [
+        'display', 'flex-direction', 'align-items', 'justify-content', 'text-align',
+        'font-size', 'font-weight', 'font-family', 'color', 'line-height',
+        'padding', 'margin', 'width', 'height', 'overflow', 'word-wrap',
+        'overflow-wrap', 'hyphens', 'white-space', 'border', 'background-color',
+        'box-sizing', 'opacity', 'user-select',
+      ];
+
+      for (let i = 0; i < originalFOs.length && i < clonedFOs.length; i++) {
+        const origElements = originalFOs[i].querySelectorAll('*');
+        const cloneElements = clonedFOs[i].querySelectorAll('*');
+        for (let j = 0; j < origElements.length && j < cloneElements.length; j++) {
+          const computed = window.getComputedStyle(origElements[j]);
+          let inlineStyle = '';
+          for (const prop of importantProps) {
+            inlineStyle += `${prop}:${computed.getPropertyValue(prop)};`;
+          }
+          cloneElements[j].setAttribute('style', inlineStyle);
+          cloneElements[j].setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+        }
+        // Also set xmlns on the foreignObject's direct children
+        const divs = clonedFOs[i].querySelectorAll('div');
+        divs.forEach(div => {
+          div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+        });
+      }
+
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgClone);
+
+      // Use inline data URL to avoid tainted canvas
+      const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = contentWidth * 2;
+        canvas.height = contentHeight * 2;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, contentWidth, contentHeight);
+        ctx.drawImage(img, 0, 0, contentWidth, contentHeight);
+
+        const imageData = canvas.toDataURL('image/png');
+
+        // Download locally as PNG
+        const link = document.createElement('a');
+        link.download = `organigrama_${new Date().toISOString().slice(0, 10)}.png`;
+        link.href = imageData;
+        link.click();
+
+        // Save to server
+        try {
+          if (onSnapshot) {
+            await onSnapshot(versionId, imageData);
+          } else {
+            await apiClient.saveVersionSnapshot(versionId, imageData);
+          }
+          toast.success('Snapshot salvat');
+        } catch (err) {
+          toast.error('Eroare la salvarea snapshot-ului: ' + err.message);
+        }
+      };
+      img.onerror = () => {
+        toast.error('Eroare la generarea imaginii');
+      };
+      img.src = svgDataUrl;
+    } catch (error) {
+      console.error('Failed to capture snapshot:', error);
+      toast.error('Eroare la capturarea snapshot-ului: ' + error.message);
+    }
+  }, [versionId, positions, onSnapshot]);
+
   // --- Render ---
 
   return (
@@ -735,6 +895,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
         onResetZoom={viewport.actions.resetZoom}
         isReadOnly={isReadOnly}
         onAddUnit={handleAddUnit}
+        onCaptureSnapshot={handleCaptureSnapshot}
       />
 
       {/* @ts-ignore */}

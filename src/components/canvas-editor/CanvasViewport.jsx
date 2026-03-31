@@ -44,6 +44,15 @@ function CanvasViewportInner(
   },
   ref
 ) {
+  // Attach wheel handler with { passive: false } to allow preventDefault
+  React.useEffect(() => {
+    const el = ref?.current || null;
+    if (!el || !onViewportWheel) return;
+    const handler = (e) => onViewportWheel(e);
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, [ref, onViewportWheel]);
+
   return (
     <svg
       ref={ref}
@@ -53,7 +62,6 @@ function CanvasViewportInner(
       onMouseDown={onViewportMouseDown}
       onMouseMove={onViewportMouseMove}
       onMouseUp={onViewportMouseUp}
-      onWheel={onViewportWheel}
     >
       {/* Background grid pattern */}
       <defs>

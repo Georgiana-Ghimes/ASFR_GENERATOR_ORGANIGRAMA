@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ZoomIn, ZoomOut, Maximize, RotateCcw, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, RotateCcw, Plus, ChevronUp, ChevronDown, Camera } from 'lucide-react';
 
 const wrapperStyle = /** @type {React.CSSProperties} */ ({
   position: 'absolute',
@@ -93,6 +93,7 @@ function CanvasToolbarInner({
   onResetZoom,
   isReadOnly,
   onAddUnit,
+  onCaptureSnapshot,
 }) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -134,6 +135,11 @@ function CanvasToolbarInner({
             </button>
           </>
         )}
+
+        <div style={separatorStyle} />
+        <button style={btnStyle} onClick={onCaptureSnapshot} title="Salvează Snapshot" aria-label="Salvează Snapshot">
+          <Camera size={18} />
+        </button>
       </div>
 
       <button

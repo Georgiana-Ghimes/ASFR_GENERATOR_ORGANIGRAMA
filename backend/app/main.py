@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from app.api import versions, units, positions, employees, assignments, auth, layout, users, unit_types
+from app.api import versions, units, positions, employees, assignments, auth, layout, users, unit_types, omti_snapshots
 
 app = FastAPI(
     title="Organigrama API",
@@ -36,6 +36,7 @@ app.include_router(employees.router, prefix="/api/employees", tags=["employees"]
 app.include_router(assignments.router, prefix="/api/assignments", tags=["assignments"])
 app.include_router(layout.router, prefix="/api", tags=["layout"])
 app.include_router(unit_types.router, prefix="/api/unit-types", tags=["unit-types"])
+app.include_router(omti_snapshots.router, prefix="/api/omti-snapshots", tags=["omti-snapshots"])
 
 @app.get("/")
 def root():

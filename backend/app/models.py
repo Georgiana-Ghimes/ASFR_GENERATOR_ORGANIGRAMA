@@ -150,3 +150,14 @@ class UnitTypeModel(Base):
     order_index = Column(Integer, default=0)
     is_system = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class OmtiSnapshot(Base):
+    __tablename__ = "omti_snapshots"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    version_id = Column(UUID(as_uuid=True), ForeignKey("org_versions.id"), nullable=False)
+    image = Column(Text, nullable=False)  # Base64 encoded PNG
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    version = relationship("OrgVersion")

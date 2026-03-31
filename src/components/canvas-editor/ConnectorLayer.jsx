@@ -20,11 +20,16 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
   const visitedNodes = new Set();
 
   // Calculate canvas bounds
+  // Use DB positions (custom_x/y) for center calculation to keep it stable during drag
   let maxX = 1400;
   let maxY = 900;
-  for (const pos of Object.values(positions || {})) {
-    maxX = Math.max(maxX, pos.x + (pos.width || 0) + 100);
-    maxY = Math.max(maxY, pos.y + (pos.height || 0) + 120);
+  for (const unit of units) {
+    const ux = unit.custom_x ?? 0;
+    const uy = unit.custom_y ?? 0;
+    const uw = unit.custom_width ?? 320;
+    const uh = unit.custom_height ?? 45;
+    maxX = Math.max(maxX, ux + uw + 100);
+    maxY = Math.max(maxY, uy + uh + 120);
   }
   const centerX = maxX / 2;
   const centerY = maxY / 2;
@@ -471,14 +476,21 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
     const dirCX = directorPos.x + directorPos.width / 2;
     const dirBottom = directorPos.y + directorPos.height;
 
-    // Vertical line from director bottom to centerY
+    // Distribution Y: 20px above the topmost bottom child
+    const bottomChildYs = bottomChildren.map(c => {
+      const p = positions?.[c.id];
+      return p ? p.y : Infinity;
+    });
+    const distributionY = Math.min(...bottomChildYs) - 20;
+
+    // Vertical line from director bottom to distribution Y
     lines.push(
       <line
         key="director-bottom-v"
         x1={dirCX}
         y1={dirBottom}
         x2={dirCX}
-        y2={centerY}
+        y2={distributionY}
         stroke="#374151"
         strokeWidth="2"
       />
@@ -491,14 +503,14 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
     const minX = Math.min(dirCX, ...childCXs);
     const bMaxX = Math.max(dirCX, ...childCXs);
 
-    // Horizontal distribution line on centerY
+    // Horizontal distribution line
     lines.push(
       <line
         key="director-bottom-h"
         x1={minX}
-        y1={centerY}
+        y1={distributionY}
         x2={bMaxX}
-        y2={centerY}
+        y2={distributionY}
         stroke="#374151"
         strokeWidth="2"
       />
@@ -514,7 +526,7 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
         <line
           key={`bottom-branch-${child.id}`}
           x1={childCX}
-          y1={centerY}
+          y1={distributionY}
           x2={childCX}
           y2={childTop}
           stroke="#374151"

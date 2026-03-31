@@ -308,6 +308,24 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // OMTI Snapshots
+  async listOmtiSnapshots() {
+    return this.request('/omti-snapshots');
+  }
+
+  async createOmtiSnapshot(versionId, image) {
+    return this.request('/omti-snapshots', {
+      method: 'POST',
+      body: JSON.stringify({ version_id: versionId, image }),
+    });
+  }
+
+  async deleteOmtiSnapshot(id) {
+    return this.request(`/omti-snapshots/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
