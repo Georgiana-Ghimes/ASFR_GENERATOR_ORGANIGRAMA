@@ -137,7 +137,7 @@ function CanvasToolbarInner({
         )}
 
         <div style={separatorStyle} />
-        <button style={btnStyle} onClick={onCaptureSnapshot} title="Salvează Snapshot" aria-label="Salvează Snapshot">
+        <button style={btnStyle} onClick={onCaptureSnapshot} title="Salvează imagine organigramă" aria-label="Salvează imagine organigramă">
           <Camera size={18} />
         </button>
       </div>

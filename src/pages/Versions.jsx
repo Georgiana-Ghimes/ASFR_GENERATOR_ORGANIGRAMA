@@ -148,11 +148,11 @@ export default function VersionsPage() {
         image = data.image;
         if (image) setSnapshotCache(prev => ({ ...prev, [versionId]: image }));
       } catch {
-        toast.error('Nu există snapshot pentru această versiune');
+        toast.error('Nu există imagine pentru această versiune');
         return;
       }
     }
-    if (!image) { toast.error('Nu există snapshot'); return; }
+    if (!image) { toast.error('Nu există imagine'); return; }
     const link = document.createElement('a');
     link.download = `organigrama_${versionNumber || 'snapshot'}.png`;
     link.href = image;
@@ -188,7 +188,7 @@ export default function VersionsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b">
-                      <TableHead className="text-center border-r w-[120px]">Preview</TableHead>
+                      <TableHead className="text-center border-r w-[120px]">Previzualizare</TableHead>
                       <TableHead className="text-center border-r">Versiune</TableHead>
                       <TableHead className="text-center border-r">Denumire</TableHead>
                       <TableHead className="text-center border-r">Status</TableHead>
@@ -254,8 +254,8 @@ export default function VersionsPage() {
                           <TableCell className="text-center">
                             <TooltipProvider>
                               <div className="flex items-center justify-center gap-2">
-                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleViewSnapshot(version.id)}><Eye className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Vezi snapshot</p></TooltipContent></Tooltip>
-                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleDownloadVersionSnapshot(version.id, version.version_number)}><Download className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Descarcă snapshot</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleViewSnapshot(version.id)}><Eye className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Previzualizare</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => handleDownloadVersionSnapshot(version.id, version.version_number)}><Download className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Descarcă imagine</p></TooltipContent></Tooltip>
                                 {version.status === 'approved' && (
                                   <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToUnapprove(version); setUnapproveDialogOpen(true); }} className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"><RotateCcw className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Resetare aprobare</p></TooltipContent></Tooltip>
                                 )}
@@ -282,13 +282,13 @@ export default function VersionsPage() {
                   <div className="text-center py-12">
                     <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                     <p className="text-gray-500">Nu există imagini OMTI generate.</p>
-                    <p className="text-gray-400 text-sm mt-1">Generează un snapshot din pagina Organigramă la anexa OMTI.</p>
+                    <p className="text-gray-400 text-sm mt-1">Generează o imagine din pagina Organigramă la anexa OMTI.</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow className="border-b">
-                        <TableHead className="text-center border-r w-[120px]">Preview</TableHead>
+                        <TableHead className="text-center border-r w-[120px]">Previzualizare</TableHead>
                         <TableHead className="text-center border-r">Versiune</TableHead>
                         <TableHead className="text-center border-r">Data generării</TableHead>
                         <TableHead className="text-center">Acțiuni</TableHead>
@@ -374,12 +374,12 @@ export default function VersionsPage() {
         {/* Snapshot Preview Dialog */}
         <Dialog open={snapshotDialogOpen} onOpenChange={setSnapshotDialogOpen}>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
-            <DialogHeader><DialogTitle>Snapshot Organigramă</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Imagine Organigramă</DialogTitle></DialogHeader>
             <div className="flex items-center justify-center p-4">
               {loadingSnapshot ? <Loader2 className="w-8 h-8 animate-spin text-blue-600" /> : snapshotImage ? (
                 <img src={snapshotImage} alt="Snapshot" className="max-w-full h-auto border rounded" />
               ) : (
-                <div className="text-center py-12"><ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" /><p className="text-gray-500">Nu există snapshot</p></div>
+                <div className="text-center py-12"><ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" /><p className="text-gray-500">Nu există imagine</p></div>
               )}
             </div>
           </DialogContent>

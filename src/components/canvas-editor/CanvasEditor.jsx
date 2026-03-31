@@ -691,7 +691,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
     if (!svgElement) return;
 
     try {
-      toast.info('Se capturează snapshot-ul...');
+      toast.info('Se generează imaginea...');
 
       const svgClone = svgElement.cloneNode(true);
 
@@ -829,9 +829,9 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
           } else {
             await apiClient.saveVersionSnapshot(versionId, imageData);
           }
-          toast.success('Snapshot salvat');
+          toast.success('Imagine salvată');
         } catch (err) {
-          toast.error('Eroare la salvarea snapshot-ului: ' + err.message);
+          toast.error('Eroare la salvarea imaginii: ' + err.message);
         }
       };
       img.onerror = () => {
@@ -840,7 +840,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
       img.src = svgDataUrl;
     } catch (error) {
       console.error('Failed to capture snapshot:', error);
-      toast.error('Eroare la capturarea snapshot-ului: ' + error.message);
+      toast.error('Eroare la generarea imaginii: ' + error.message);
     }
   }, [versionId, positions, onSnapshot]);
 
