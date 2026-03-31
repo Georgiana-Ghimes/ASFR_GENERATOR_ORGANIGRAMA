@@ -248,6 +248,15 @@ export default function OrgChartPage() {
               onSelect={handleVersionSelect}
               onApprove={handleApproveVersion}
               onNewVersion={handleCloneVersion}
+              onRename={async (versionId, newName) => {
+                try {
+                  await apiClient.updateVersion(versionId, { name: newName });
+                  queryClient.invalidateQueries(['versions']);
+                  toast.success('Numele versiunii a fost actualizat');
+                } catch (error) {
+                  toast.error('Eroare: ' + error.message);
+                }
+              }}
               isLoading={loadingVersions}
             />
           </div>

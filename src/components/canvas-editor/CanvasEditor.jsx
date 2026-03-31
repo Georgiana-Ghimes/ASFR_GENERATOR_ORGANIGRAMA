@@ -573,7 +573,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
         director_legend: 'director',
         custom_legend: 'customLegend',
         stats_legend: 'legend',
-        header: null,
+        header: 'header1',
         header_editable: 'header2',
       };
       const key = keyMap[type];
@@ -617,7 +617,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
         director_legend: 'director',
         custom_legend: 'customLegend',
         stats_legend: 'legend',
-        header: null,
+        header: 'header1',
         header_editable: 'header2',
       };
       const key = keyMap[type];
