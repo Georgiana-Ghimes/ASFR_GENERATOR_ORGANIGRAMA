@@ -32,7 +32,8 @@ def list_versions(
             "valid_until": version.valid_until,
             "approved_by": version.approved_by,
             "approved_at": version.approved_at,
-            "approved_by_name": None
+            "approved_by_name": None,
+            "has_units_snapshot": version.units_snapshot is not None and len(version.units_snapshot or '') > 2,
         }
         
         if version.approved_by:
@@ -98,6 +99,34 @@ def update_version(
     if is_being_approved:
         version.approved_by = current_user.id
         version.approved_at = datetime.utcnow()
+        # Save JSON snapshot of all units at approval time
+        import json
+        from app.models import OrgUnit
+        units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
+        snapshot = []
+        for u in units:
+            snapshot.append({
+                'id': str(u.id),
+                'stas_code': u.stas_code,
+                'name': u.name,
+                'unit_type': u.unit_type,
+                'parent_unit_id': str(u.parent_unit_id) if u.parent_unit_id else None,
+                'order_index': u.order_index,
+                'leadership_count': u.leadership_count,
+                'execution_count': u.execution_count,
+                'custom_x': u.custom_x,
+                'custom_y': u.custom_y,
+                'custom_width': u.custom_width,
+                'custom_height': u.custom_height,
+                'color': u.color,
+                'director_title': u.director_title,
+                'director_name': u.director_name,
+                'legend_col1': u.legend_col1,
+                'legend_col2': u.legend_col2,
+                'legend_col3': u.legend_col3,
+                'is_rotated': u.is_rotated,
+            })
+        version.units_snapshot = json.dumps(snapshot)
     
     # Clear approval tracking when version is unapproved
     if is_being_unapproved:
@@ -261,8 +290,10 @@ def restore_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin"))
 ):
-    """Restore an approved version back to draft status and reset custom positions"""
+    """Restore an approved version back to draft, recreating units from the approval snapshot"""
     from app.models import OrgUnit
+    import json
+    import uuid as uuid_mod
     
     version = db.query(OrgVersion).filter(OrgVersion.id == version_id).first()
     if not version:
@@ -271,22 +302,62 @@ def restore_version(
     if version.status != "approved":
         raise HTTPException(status_code=400, detail="Only approved versions can be restored")
     
+    if not version.units_snapshot:
+        raise HTTPException(status_code=400, detail="No snapshot available for this version")
+    
+    # Parse the snapshot
+    snapshot = json.loads(version.units_snapshot)
+    
+    # Delete all current units for this version
+    db.query(OrgUnit).filter(OrgUnit.version_id == version_id).delete()
+    db.flush()
+    
+    # Recreate units from snapshot
+    old_to_new_id = {}
+    
+    # First pass: create all units without parent
+    for unit_data in snapshot:
+        old_id = unit_data['id']
+        new_unit = OrgUnit(
+            id=uuid_mod.uuid4(),
+            version_id=version_id,
+            stas_code=unit_data['stas_code'],
+            name=unit_data['name'],
+            unit_type=unit_data['unit_type'],
+            order_index=unit_data.get('order_index', 0),
+            leadership_count=unit_data.get('leadership_count', 0),
+            execution_count=unit_data.get('execution_count', 0),
+            custom_x=unit_data.get('custom_x'),
+            custom_y=unit_data.get('custom_y'),
+            custom_width=unit_data.get('custom_width'),
+            custom_height=unit_data.get('custom_height'),
+            color=unit_data.get('color'),
+            director_title=unit_data.get('director_title'),
+            director_name=unit_data.get('director_name'),
+            legend_col1=unit_data.get('legend_col1'),
+            legend_col2=unit_data.get('legend_col2'),
+            legend_col3=unit_data.get('legend_col3'),
+            is_rotated=unit_data.get('is_rotated', False),
+            parent_unit_id=None,
+        )
+        db.add(new_unit)
+        db.flush()
+        old_to_new_id[old_id] = new_unit.id
+    
+    # Second pass: set parent relationships
+    for unit_data in snapshot:
+        if unit_data.get('parent_unit_id'):
+            new_id = old_to_new_id.get(unit_data['id'])
+            new_parent_id = old_to_new_id.get(unit_data['parent_unit_id'])
+            if new_id and new_parent_id:
+                unit = db.query(OrgUnit).filter(OrgUnit.id == new_id).first()
+                if unit:
+                    unit.parent_unit_id = new_parent_id
+    
     # Change status back to draft
     version.status = "draft"
-    # Keep approval history for audit purposes
-    
-    # Reset all custom positions for this version
-    units = db.query(OrgUnit).filter(OrgUnit.version_id == version_id).all()
-    reset_count = 0
-    for unit in units:
-        if unit.custom_x is not None or unit.custom_y is not None:
-            reset_count += 1
-        unit.custom_x = None
-        unit.custom_y = None
-        unit.custom_width = None
-        unit.custom_height = None
-    
-    print(f"Reset {reset_count} units with custom positions for version {version_id}")
+    version.approved_by = None
+    version.approved_at = None
     
     db.commit()
     db.refresh(version)

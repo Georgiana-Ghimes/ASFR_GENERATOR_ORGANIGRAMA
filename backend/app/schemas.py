@@ -40,6 +40,7 @@ class OrgVersion(OrgVersionBase):
     approved_by: Optional[UUID] = None
     approved_at: Optional[datetime] = None
     approved_by_name: Optional[str] = None
+    has_units_snapshot: Optional[bool] = False
     
     class Config:
         from_attributes = True

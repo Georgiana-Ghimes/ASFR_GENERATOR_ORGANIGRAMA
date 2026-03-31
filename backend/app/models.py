@@ -53,6 +53,7 @@ class OrgVersion(Base):
     approved_by = Column(String)
     approved_date = Column(DateTime)
     snapshot_image = Column(Text)  # Base64 encoded image or file path
+    units_snapshot = Column(Text)  # JSON snapshot of all units at approval time
     
     units = relationship("OrgUnit", back_populates="version", cascade="all, delete-orphan")
     positions = relationship("Position", back_populates="version", cascade="all, delete-orphan")

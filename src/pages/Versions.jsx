@@ -56,6 +56,8 @@ export default function VersionsPage() {
   const [versionToDelete, setVersionToDelete] = useState(null);
   const [unapproveDialogOpen, setUnapproveDialogOpen] = useState(false);
   const [versionToUnapprove, setVersionToUnapprove] = useState(null);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [versionToRestore, setVersionToRestore] = useState(null);
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
   const [snapshotImage, setSnapshotImage] = useState(null);
   const [loadingSnapshot, setLoadingSnapshot] = useState(false);
@@ -100,6 +102,19 @@ export default function VersionsPage() {
     mutationFn: ({ id, validFrom, validUntil }) => apiClient.updateVersionValidity(id, validFrom, validUntil),
     onSuccess: () => { queryClient.invalidateQueries(['versions']); toast.success('Perioada actualizată'); },
     onError: (error) => toast.error(error.message || 'Eroare'),
+  });
+
+  const restoreFromSnapshotMutation = useMutation({
+    mutationFn: (id) => apiClient.restoreVersion(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['versions']);
+      queryClient.invalidateQueries(['units']);
+      toast.success('Organigrama a fost restaurată la starea de la aprobare.');
+      setRestoreDialogOpen(false);
+      setVersionToRestore(null);
+      setTimeout(() => window.location.reload(), 1000);
+    },
+    onError: (error) => toast.error(error.message || 'Eroare la restaurare'),
   });
 
   const deleteOmtiMutation = useMutation({
@@ -259,6 +274,9 @@ export default function VersionsPage() {
                                 {version.status === 'approved' && (
                                   <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToUnapprove(version); setUnapproveDialogOpen(true); }} className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"><RotateCcw className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Resetare aprobare</p></TooltipContent></Tooltip>
                                 )}
+                                {version.status === 'approved' && version.has_units_snapshot && (
+                                  <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToRestore(version); setRestoreDialogOpen(true); }} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"><RotateCcw className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Revenire la această versiune</p></TooltipContent></Tooltip>
+                                )}
                                 <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToDelete(version); setDeleteDialogOpen(true); }} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Șterge</p></TooltipContent></Tooltip>
                               </div>
                             </TooltipProvider>
@@ -366,6 +384,33 @@ export default function VersionsPage() {
               <AlertDialogCancel>Anulare</AlertDialogCancel>
               <AlertDialogAction onClick={() => versionToUnapprove && unapproveMutation.mutate(versionToUnapprove.id)} className="bg-orange-600 hover:bg-orange-700" disabled={unapproveMutation.isPending}>
                 {unapproveMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Se resetează...</> : 'Confirmă'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Restore from Snapshot Dialog */}
+        <AlertDialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>⚠️ Revenire la versiunea aprobată</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div>
+                  <p className="mb-3">
+                    Sunteți sigur că doriți să reveniți la starea organigramei de la momentul aprobării versiunii <span className="font-semibold">{versionToRestore?.version_number}</span>?
+                  </p>
+                  <div className="bg-red-50 border border-red-200 rounded p-3 mb-3">
+                    <p className="text-red-800 font-semibold mb-1">⚠️ ATENȚIE:</p>
+                    <p className="text-red-700">Toate modificările făcute după aprobare vor fi pierdute definitiv. Unitățile, pozițiile, dimensiunile și ierarhia vor fi restaurate exact cum erau la momentul aprobării.</p>
+                  </div>
+                  <p className="text-gray-600">Versiunea va reveni la starea de <span className="font-semibold">ciornă</span> și va putea fi editată din nou.</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anulare</AlertDialogCancel>
+              <AlertDialogAction onClick={() => versionToRestore && restoreFromSnapshotMutation.mutate(versionToRestore.id)} className="bg-red-600 hover:bg-red-700" disabled={restoreFromSnapshotMutation.isPending}>
+                {restoreFromSnapshotMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Se restaurează...</> : 'Da, revin la versiunea aprobată'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
