@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { X, Building2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
-import DeterministicOrgChart from '@/components/orgchart/DeterministicOrgChart';
+import CanvasEditor from '@/components/canvas-editor/CanvasEditor';
 import VersionSelector from '@/components/orgchart/VersionSelector';
 import StatsPanel from '@/components/orgchart/StatsPanel';
 import UnitForm from '@/components/orgchart/UnitForm';
@@ -194,12 +194,11 @@ export default function OrgChartOMTIPage() {
                 selectedUnit ? 'mr-[500px]' : 'mr-0'
               }`}
             >
-              <DeterministicOrgChart
-                key={refreshKey}
+              <CanvasEditor
                 versionId={selectedVersion.id}
-                orgType="omti"
                 onSelectUnit={handleSelectUnit}
                 isReadOnly={true}
+                orgType="omti"
               />
             </div>
 
