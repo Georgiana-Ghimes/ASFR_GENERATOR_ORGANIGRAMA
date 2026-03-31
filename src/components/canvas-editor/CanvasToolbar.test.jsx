@@ -45,7 +45,7 @@ describe('CanvasToolbar', () => {
   it('calls onFitToContent when Fit to Content button is clicked', () => {
     const onFitToContent = vi.fn();
     renderToolbar({ onFitToContent });
-    fireEvent.click(screen.getByLabelText('Fit to Content'));
+    fireEvent.click(screen.getByLabelText('Încadrare'));
     expect(onFitToContent).toHaveBeenCalledOnce();
   });
 

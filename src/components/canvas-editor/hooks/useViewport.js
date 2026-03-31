@@ -62,15 +62,36 @@ export function useViewport() {
     setPanY(0);
   }, []);
 
-  const fitToContent = useCallback((units, containerWidth = 800, containerHeight = 600) => {
-    if (!units || units.length === 0) {
+  const fitToContent = useCallback((units, containerWidth = 800, containerHeight = 600, fixedElements = null) => {
+    if ((!units || units.length === 0) && !fixedElements) {
       resetZoom();
       return;
     }
 
-    const bbox = calculateBoundingBox(units);
-    const contentWidth = bbox.maxX - bbox.minX;
-    const contentHeight = bbox.maxY - bbox.minY;
+    // Calculate bounding box including both units and fixed elements
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    if (units) {
+      const bbox = calculateBoundingBox(units);
+      if (bbox.minX < minX) minX = bbox.minX;
+      if (bbox.minY < minY) minY = bbox.minY;
+      if (bbox.maxX > maxX) maxX = bbox.maxX;
+      if (bbox.maxY > maxY) maxY = bbox.maxY;
+    }
+
+    if (fixedElements) {
+      for (const fe of Object.values(fixedElements)) {
+        if (fe.x < minX) minX = fe.x;
+        if (fe.y < minY) minY = fe.y;
+        if (fe.x + fe.width > maxX) maxX = fe.x + fe.width;
+        if (fe.y + fe.height > maxY) maxY = fe.y + fe.height;
+      }
+    }
+
+    if (!isFinite(minX)) { resetZoom(); return; }
+
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
 
     if (contentWidth === 0 && contentHeight === 0) {
       resetZoom();
@@ -85,8 +106,8 @@ export function useViewport() {
     const scaleY = availableHeight / contentHeight;
     const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.min(scaleX, scaleY)));
 
-    const newPanX = padding + (availableWidth - contentWidth * newZoom) / 2 - bbox.minX * newZoom;
-    const newPanY = padding + (availableHeight - contentHeight * newZoom) / 2 - bbox.minY * newZoom;
+    const newPanX = padding + (availableWidth - contentWidth * newZoom) / 2 - minX * newZoom;
+    const newPanY = padding + (availableHeight - contentHeight * newZoom) / 2 - minY * newZoom;
 
     setZoom(newZoom);
     setPanX(newPanX);

@@ -118,7 +118,7 @@ function CanvasToolbarInner({
 
         <div style={separatorStyle} />
 
-        <button style={btnStyle} onClick={onFitToContent} title="Fit to Content" aria-label="Fit to Content">
+        <button style={btnStyle} onClick={onFitToContent} title="Încadrare" aria-label="Încadrare">
           <Maximize size={18} />
         </button>
 

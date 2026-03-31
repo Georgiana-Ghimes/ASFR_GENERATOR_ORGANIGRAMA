@@ -75,7 +75,7 @@ describe('CanvasEditor', () => {
     renderEditor();
     expect(screen.getByLabelText('Zoom In')).toBeTruthy();
     expect(screen.getByLabelText('Zoom Out')).toBeTruthy();
-    expect(screen.getByLabelText('Fit to Content')).toBeTruthy();
+    expect(screen.getByLabelText('Încadrare')).toBeTruthy();
     expect(screen.getByLabelText('Reset Zoom')).toBeTruthy();
   });
 

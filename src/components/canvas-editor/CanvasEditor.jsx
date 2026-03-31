@@ -686,7 +686,8 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
         viewport.actions.fitToContent(
           units,
           containerRef.current?.clientWidth,
-          containerRef.current?.clientHeight
+          containerRef.current?.clientHeight,
+          fixedElements
         );
       }
     };
@@ -907,7 +908,8 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
           viewport.actions.fitToContent(
             units,
             containerRef.current?.clientWidth,
-            containerRef.current?.clientHeight
+            containerRef.current?.clientHeight,
+            fixedElements
           )
         }
         onResetZoom={viewport.actions.resetZoom}
