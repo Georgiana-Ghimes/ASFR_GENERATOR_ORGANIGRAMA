@@ -72,21 +72,36 @@ function FixedNodeInner({
   };
 
   if (type === 'stats_legend') {
-    let totalLeadership = 0, totalExecution = 0;
-    let dgCount = 0, directorCount = 0, inspectorCount = 0, serviceCount = 0;
+    let totalLeadership = 0;
+    let dgCount = 0, directorCount = 0, inspectorCount = 0, serviceCount = 0, deptCount = 0;
+    let rootRecursive = 0, rootLeadership = 0;
     const unitList = units || [];
     const aggMap = aggregatesMap || {};
+
+    // Find the root unit (director_general, or unit without parent excluding consiliu/legend)
+    const rootUnit = unitList.find(u => u.unit_type === 'director_general')
+      || unitList.find(u => !u.parent_unit_id && u.unit_type !== 'consiliu' && u.unit_type !== 'legend');
+
     unitList.forEach((u) => {
-      if (u.unit_type === 'consiliu' || u.stas_code === '330') return;
-      const agg = aggMap[u.id] || { leadership_positions_count: 0, execution_positions_count: 0 };
+      if (u.unit_type === 'consiliu' || u.unit_type === 'legend' || u.stas_code === '330') return;
+      const agg = aggMap[u.id] || { leadership_positions_count: 0, execution_positions_count: 0, recursive_total_subordinates: 0 };
       totalLeadership += agg.leadership_positions_count;
-      totalExecution += agg.execution_positions_count;
-      if (u.unit_type === 'director_general') dgCount += agg.leadership_positions_count;
+
+      if (rootUnit && u.id === rootUnit.id) {
+        rootLeadership = agg.leadership_positions_count;
+        rootRecursive = agg.recursive_total_subordinates;
+        dgCount += agg.leadership_positions_count;
+      }
       else if (u.unit_type === 'directie') directorCount += agg.leadership_positions_count;
+      else if (u.unit_type === 'departament') deptCount += agg.leadership_positions_count;
       else if (u.unit_type === 'serviciu') serviceCount += agg.leadership_positions_count;
       else if (u.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
     });
-    const totalPosts = totalLeadership + totalExecution;
+
+    // Total = root's recursive total minus root's own leadership
+    // This gives the correct total matching the orgchart photo convention
+    const totalPosts = rootRecursive > 0 ? rootRecursive - rootLeadership : totalLeadership;
+    const totalExecution = totalPosts - totalLeadership;
 
     return (
       <g transform={`translate(${x}, ${y})`} style={{ cursor }} onMouseDown={onMouseDown}>
@@ -98,6 +113,7 @@ function FixedNodeInner({
               <div className="font-bold mb-0.5">Funcții de conducere: {totalLeadership}</div>
               <div className="font-bold ml-2">- Director general: {dgCount}</div>
               <div className="font-bold ml-2">- Director: {directorCount}</div>
+              <div className="font-bold ml-2">- Șef departament: {deptCount}</div>
               <div className="font-bold ml-2">- Inspector șef: {inspectorCount}</div>
               <div className="font-bold ml-2">- Șef serviciu: {serviceCount}</div>
               <div className="font-bold mt-0.5">Posturi de execuție: {totalExecution}</div>

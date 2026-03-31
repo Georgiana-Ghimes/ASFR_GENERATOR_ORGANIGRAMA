@@ -102,10 +102,10 @@ function UnitNodeInner({
     recursive_total_subordinates: 0,
   };
   const leadershipCount = agg.leadership_positions_count;
-  const executionCount =
-    agg.recursive_total_subordinates > agg.total_positions
-      ? agg.recursive_total_subordinates - agg.leadership_positions_count
-      : agg.execution_positions_count;
+  // Column 3: recursive total for all units, minus own leadership for root (director_general)
+  const executionCount = isDirectorGeneral
+    ? agg.recursive_total_subordinates - agg.leadership_positions_count
+    : agg.recursive_total_subordinates;
 
   // OMTI vs codificare layout constants
   const stripWidth = isOmti ? 48.5 : 73.5;

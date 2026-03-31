@@ -33,10 +33,9 @@ def calculate_unit_aggregates(db: Session, unit_id: UUID, visited: set = None) -
             'recursive_total_subordinates': 0
         }
     
-    # Count direct positions
-    positions = db.query(Position).filter(Position.unit_id == unit_id).all()
-    leadership_count = sum(1 for p in positions if p.is_leadership)
-    execution_count = sum(1 for p in positions if not p.is_leadership)
+    # Count direct positions from unit fields
+    leadership_count = unit.leadership_count or 0
+    execution_count = unit.execution_count or 0
     direct_total = leadership_count + execution_count
     
     # Calculate recursive total

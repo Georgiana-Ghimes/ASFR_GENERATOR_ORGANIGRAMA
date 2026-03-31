@@ -119,8 +119,8 @@ describe('FixedNode', () => {
         { id: 'u2', unit_type: 'directie', stas_code: '200' },
       ];
       const aggregatesMap = {
-        u1: { leadership_positions_count: 1, execution_positions_count: 5 },
-        u2: { leadership_positions_count: 2, execution_positions_count: 10 },
+        u1: { leadership_positions_count: 1, execution_positions_count: 5, recursive_total_subordinates: 18 },
+        u2: { leadership_positions_count: 2, execution_positions_count: 10, recursive_total_subordinates: 12 },
       };
       const { container } = renderFixed({
         type: 'stats_legend',
@@ -129,7 +129,8 @@ describe('FixedNode', () => {
       });
       const fo = container.querySelector('foreignObject');
       expect(fo).not.toBeNull();
-      expect(fo.textContent).toContain('TOTAL POSTURI: 18');
+      // Total = DG recursive (18) - DG leadership (1) = 17
+      expect(fo.textContent).toContain('TOTAL POSTURI: 17');
       expect(fo.textContent).toContain('Director general: 1');
       expect(fo.textContent).toContain('Director: 2');
     });
@@ -137,11 +138,11 @@ describe('FixedNode', () => {
     it('excludes consiliu units from totals', () => {
       const units = [
         { id: 'u1', unit_type: 'consiliu', stas_code: '330' },
-        { id: 'u2', unit_type: 'directie', stas_code: '200' },
+        { id: 'u2', unit_type: 'director_general', stas_code: '100' },
       ];
       const aggregatesMap = {
-        u1: { leadership_positions_count: 5, execution_positions_count: 10 },
-        u2: { leadership_positions_count: 2, execution_positions_count: 8 },
+        u1: { leadership_positions_count: 5, execution_positions_count: 10, recursive_total_subordinates: 15 },
+        u2: { leadership_positions_count: 1, execution_positions_count: 8, recursive_total_subordinates: 9 },
       };
       const { container } = renderFixed({
         type: 'stats_legend',
@@ -149,7 +150,8 @@ describe('FixedNode', () => {
         aggregatesMap,
       });
       const fo = container.querySelector('foreignObject');
-      expect(fo.textContent).toContain('TOTAL POSTURI: 10');
+      // Total = DG recursive (9) - DG leadership (1) = 8
+      expect(fo.textContent).toContain('TOTAL POSTURI: 8');
     });
   });
 
