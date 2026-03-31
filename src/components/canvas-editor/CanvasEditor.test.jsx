@@ -73,10 +73,10 @@ describe('CanvasEditor', () => {
 
   it('renders CanvasToolbar with zoom controls', () => {
     renderEditor();
-    expect(screen.getByLabelText('Zoom In')).toBeTruthy();
-    expect(screen.getByLabelText('Zoom Out')).toBeTruthy();
+    expect(screen.getByLabelText('Mărire')).toBeTruthy();
+    expect(screen.getByLabelText('Micșorare')).toBeTruthy();
     expect(screen.getByLabelText('Încadrare')).toBeTruthy();
-    expect(screen.getByLabelText('Reset Zoom')).toBeTruthy();
+    expect(screen.getByLabelText('Resetare zoom')).toBeTruthy();
   });
 
   it('shows Adaugă Unitate button when not read-only', () => {
@@ -154,7 +154,7 @@ describe('CanvasEditor', () => {
   it('handles keyboard shortcut Ctrl+0 for reset zoom', () => {
     renderEditor();
     // Zoom in first
-    fireEvent.click(screen.getByLabelText('Zoom In'));
+    fireEvent.click(screen.getByLabelText('Mărire'));
     // Then reset
     fireEvent.keyDown(window, { key: '0', ctrlKey: true });
     expect(screen.getByText('100%')).toBeTruthy();

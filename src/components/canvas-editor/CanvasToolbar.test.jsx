@@ -31,14 +31,14 @@ describe('CanvasToolbar', () => {
   it('calls onZoomOut when Zoom Out button is clicked', () => {
     const onZoomOut = vi.fn();
     renderToolbar({ onZoomOut });
-    fireEvent.click(screen.getByLabelText('Zoom Out'));
+    fireEvent.click(screen.getByLabelText('Micșorare'));
     expect(onZoomOut).toHaveBeenCalledOnce();
   });
 
   it('calls onZoomIn when Zoom In button is clicked', () => {
     const onZoomIn = vi.fn();
     renderToolbar({ onZoomIn });
-    fireEvent.click(screen.getByLabelText('Zoom In'));
+    fireEvent.click(screen.getByLabelText('Mărire'));
     expect(onZoomIn).toHaveBeenCalledOnce();
   });
 
@@ -52,7 +52,7 @@ describe('CanvasToolbar', () => {
   it('calls onResetZoom when Reset Zoom button is clicked', () => {
     const onResetZoom = vi.fn();
     renderToolbar({ onResetZoom });
-    fireEvent.click(screen.getByLabelText('Reset Zoom'));
+    fireEvent.click(screen.getByLabelText('Resetare zoom'));
     expect(onResetZoom).toHaveBeenCalledOnce();
   });
 
@@ -80,12 +80,12 @@ describe('CanvasToolbar', () => {
 
   it('shows toggle button to hide/show toolbar', () => {
     renderToolbar();
-    expect(screen.getByLabelText('Ascunde toolbar')).toBeTruthy();
+    expect(screen.getByLabelText('Ascunde bara de instrumente')).toBeTruthy();
   });
 
   it('hides toolbar content when toggle is clicked', () => {
     renderToolbar();
-    fireEvent.click(screen.getByLabelText('Ascunde toolbar'));
-    expect(screen.getByLabelText('Arată toolbar')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Ascunde bara de instrumente'));
+    expect(screen.getByLabelText('Arată bara de instrumente')).toBeTruthy();
   });
 });

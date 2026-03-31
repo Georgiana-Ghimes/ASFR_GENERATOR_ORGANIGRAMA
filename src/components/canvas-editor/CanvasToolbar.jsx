@@ -106,13 +106,13 @@ function CanvasToolbarInner({
         : 'translateX(-50%) translateY(calc(-100% + 18px))',
     }}>
       <div style={toolbarStyle}>
-        <button style={btnStyle} onClick={onZoomOut} title="Zoom Out" aria-label="Zoom Out">
+        <button style={btnStyle} onClick={onZoomOut} title="Micșorare" aria-label="Micșorare">
           <ZoomOut size={18} />
         </button>
 
         <span style={zoomTextStyle}>{Math.round(zoom * 200) + '%'}</span>
 
-        <button style={btnStyle} onClick={onZoomIn} title="Zoom In" aria-label="Zoom In">
+        <button style={btnStyle} onClick={onZoomIn} title="Mărire" aria-label="Mărire">
           <ZoomIn size={18} />
         </button>
 
@@ -122,7 +122,7 @@ function CanvasToolbarInner({
           <Maximize size={18} />
         </button>
 
-        <button style={btnStyle} onClick={onResetZoom} title="Reset Zoom" aria-label="Reset Zoom">
+        <button style={btnStyle} onClick={onResetZoom} title="Resetare zoom" aria-label="Resetare zoom">
           <RotateCcw size={18} />
         </button>
 
@@ -145,8 +145,8 @@ function CanvasToolbarInner({
       <button
         style={toggleBtnStyle}
         onClick={() => setIsOpen(prev => !prev)}
-        title={isOpen ? 'Ascunde toolbar' : 'Arată toolbar'}
-        aria-label={isOpen ? 'Ascunde toolbar' : 'Arată toolbar'}
+        title={isOpen ? 'Ascunde bara de instrumente' : 'Arată bara de instrumente'}
+        aria-label={isOpen ? 'Ascunde bara de instrumente' : 'Arată bara de instrumente'}
       >
         {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
