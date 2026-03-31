@@ -109,7 +109,7 @@ function CanvasToolbarInner({
           <ZoomOut size={18} />
         </button>
 
-        <span style={zoomTextStyle}>{Math.round(zoom * 100) + '%'}</span>
+        <span style={zoomTextStyle}>{Math.round(zoom * 200) + '%'}</span>
 
         <button style={btnStyle} onClick={onZoomIn} title="Zoom In" aria-label="Zoom In">
           <ZoomIn size={18} />

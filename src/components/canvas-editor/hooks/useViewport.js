@@ -8,7 +8,7 @@ import { ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, calculateBoundingBox, DEFAULT_UNIT_WIDTH
 export function useViewport() {
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
-  const [zoom, setZoom] = useState(1.0);
+  const [zoom, setZoom] = useState(0.5);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
@@ -57,7 +57,7 @@ export function useViewport() {
   // --- Actions ---
 
   const resetZoom = useCallback(() => {
-    setZoom(1.0);
+    setZoom(0.5);
     setPanX(0);
     setPanY(0);
   }, []);

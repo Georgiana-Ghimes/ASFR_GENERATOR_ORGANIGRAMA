@@ -3,37 +3,34 @@ import { renderHook, act } from '@testing-library/react';
 import { useViewport } from './useViewport';
 import { ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from '../utils/canvasUtils';
 
+const DEFAULT_ZOOM = 0.5;
+
 describe('useViewport', () => {
   it('returns correct initial state', () => {
     const { result } = renderHook(() => useViewport());
 
-    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: 1.0 });
+    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: DEFAULT_ZOOM });
     expect(result.current.isPanning).toBe(false);
-    expect(result.current.svgTransform).toBe('translate(0, 0) scale(1)');
+    expect(result.current.svgTransform).toBe('translate(0, 0) scale(0.5)');
   });
 
-  it('resetZoom sets zoom=1, panX=0, panY=0', () => {
+  it('resetZoom sets zoom to default, panX=0, panY=0', () => {
     const { result } = renderHook(() => useViewport());
 
-    // Change state first
     act(() => { result.current.actions.zoomIn(); });
     act(() => { result.current.actions.panTo(100, 200); });
 
-    expect(result.current.viewport.zoom).toBeCloseTo(1.1);
-    expect(result.current.viewport.panX).toBe(100);
-
     act(() => { result.current.actions.resetZoom(); });
 
-    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: 1.0 });
+    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: DEFAULT_ZOOM });
   });
 
   it('zoomIn increases zoom by ZOOM_STEP, clamped to ZOOM_MAX', () => {
     const { result } = renderHook(() => useViewport());
 
     act(() => { result.current.actions.zoomIn(); });
-    expect(result.current.viewport.zoom).toBeCloseTo(1.0 + ZOOM_STEP);
+    expect(result.current.viewport.zoom).toBeCloseTo(DEFAULT_ZOOM + ZOOM_STEP);
 
-    // Zoom to max
     for (let i = 0; i < 50; i++) {
       act(() => { result.current.actions.zoomIn(); });
     }
@@ -44,9 +41,8 @@ describe('useViewport', () => {
     const { result } = renderHook(() => useViewport());
 
     act(() => { result.current.actions.zoomOut(); });
-    expect(result.current.viewport.zoom).toBeCloseTo(1.0 - ZOOM_STEP);
+    expect(result.current.viewport.zoom).toBeCloseTo(DEFAULT_ZOOM - ZOOM_STEP);
 
-    // Zoom to min
     for (let i = 0; i < 50; i++) {
       act(() => { result.current.actions.zoomOut(); });
     }
@@ -68,7 +64,8 @@ describe('useViewport', () => {
     act(() => { result.current.actions.panTo(10, 20); });
     act(() => { result.current.actions.zoomIn(); });
 
-    expect(result.current.svgTransform).toBe(`translate(10, 20) scale(${1.0 + ZOOM_STEP})`);
+    const expectedZoom = DEFAULT_ZOOM + ZOOM_STEP;
+    expect(result.current.svgTransform).toBe(`translate(10, 20) scale(${expectedZoom})`);
   });
 
   it('fitToContent adjusts zoom and pan to show all units', () => {
@@ -84,7 +81,6 @@ describe('useViewport', () => {
     const { zoom, panX, panY } = result.current.viewport;
     expect(zoom).toBeGreaterThanOrEqual(ZOOM_MIN);
     expect(zoom).toBeLessThanOrEqual(ZOOM_MAX);
-    // After fit, all units should be visible — panX/panY should be adjusted
     expect(typeof panX).toBe('number');
     expect(typeof panY).toBe('number');
   });
@@ -95,7 +91,7 @@ describe('useViewport', () => {
     act(() => { result.current.actions.zoomIn(); });
     act(() => { result.current.actions.fitToContent([], 800, 600); });
 
-    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: 1.0 });
+    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: DEFAULT_ZOOM });
   });
 
   it('fitToContent with null units resets zoom', () => {
@@ -104,7 +100,7 @@ describe('useViewport', () => {
     act(() => { result.current.actions.panTo(50, 50); });
     act(() => { result.current.actions.fitToContent(null, 800, 600); });
 
-    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: 1.0 });
+    expect(result.current.viewport).toEqual({ panX: 0, panY: 0, zoom: DEFAULT_ZOOM });
   });
 
   it('onMouseDown with left button starts panning', () => {

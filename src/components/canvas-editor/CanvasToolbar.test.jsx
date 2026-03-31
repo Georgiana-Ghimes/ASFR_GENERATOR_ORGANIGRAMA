@@ -20,11 +20,11 @@ function renderToolbar(overrides = {}) {
 describe('CanvasToolbar', () => {
   it('displays zoom percentage', () => {
     renderToolbar({ zoom: 0.75 });
-    expect(screen.getByText('75%')).toBeTruthy();
+    expect(screen.getByText('150%')).toBeTruthy();
   });
 
-  it('displays 100% at zoom 1.0', () => {
-    renderToolbar({ zoom: 1.0 });
+  it('displays 100% at zoom 0.5', () => {
+    renderToolbar({ zoom: 0.5 });
     expect(screen.getByText('100%')).toBeTruthy();
   });
 
@@ -74,8 +74,8 @@ describe('CanvasToolbar', () => {
   });
 
   it('rounds zoom percentage correctly', () => {
-    renderToolbar({ zoom: 1.555 });
-    expect(screen.getByText('156%')).toBeTruthy();
+    renderToolbar({ zoom: 0.777 });
+    expect(screen.getByText('155%')).toBeTruthy();
   });
 
   it('shows toggle button to hide/show toolbar', () => {

@@ -470,6 +470,12 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
       height: containerRef.current?.clientHeight || 600,
     });
 
+    // Inherit parent color (strip -full suffix for strip-only mode)
+    let childColor = parent.color || null;
+    if (childColor && childColor.endsWith('-full')) {
+      childColor = childColor.replace('-full', '');
+    }
+
     try {
       await apiClient.createUnit({
         version_id: versionId,
@@ -481,6 +487,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
         custom_y: Math.round(pos.y),
         custom_width: DEFAULT_UNIT_WIDTH,
         custom_height: DEFAULT_UNIT_HEIGHT,
+        color: childColor,
       });
       queryClient.invalidateQueries({ queryKey: ['units', versionId] });
       toast.success('Unitate copil creată cu succes');
