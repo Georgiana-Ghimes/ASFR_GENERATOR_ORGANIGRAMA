@@ -591,15 +591,6 @@ export default function Settings() {
                           onChange={(e) => setNewUnitType({ ...newUnitType, label: e.target.value })}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="order">Ordine afișare</Label>
-                        <Input
-                          id="order"
-                          type="number"
-                          value={newUnitType.order_index}
-                          onChange={(e) => setNewUnitType({ ...newUnitType, order_index: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setIsAddUnitTypeDialogOpen(false)}>
@@ -633,15 +624,6 @@ export default function Settings() {
                         onChange={(e) => setEditUnitTypeData({ ...editUnitTypeData, label: e.target.value })}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-order">Ordine afișare</Label>
-                      <Input
-                        id="edit-order"
-                        type="number"
-                        value={editUnitTypeData.order_index}
-                        onChange={(e) => setEditUnitTypeData({ ...editUnitTypeData, order_index: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsEditUnitTypeDialogOpen(false)}>
@@ -670,7 +652,6 @@ export default function Settings() {
                       <TableRow>
                         <TableHead className="text-center">Cod</TableHead>
                         <TableHead className="text-center">Etichetă</TableHead>
-                        <TableHead className="text-center">Ordine</TableHead>
                         <TableHead className="text-center">Tip</TableHead>
                         <TableHead className="text-center">Acțiuni</TableHead>
                       </TableRow>
@@ -680,7 +661,6 @@ export default function Settings() {
                         <TableRow key={unitType.id}>
                           <TableCell className="text-center font-mono">{unitType.code}</TableCell>
                           <TableCell className="text-center">{unitType.label}</TableCell>
-                          <TableCell className="text-center">{unitType.order_index}</TableCell>
                           <TableCell className="text-center">
                             <Badge variant={unitType.is_system ? "secondary" : "default"}>
                               {unitType.is_system ? 'Sistem' : 'Custom'}

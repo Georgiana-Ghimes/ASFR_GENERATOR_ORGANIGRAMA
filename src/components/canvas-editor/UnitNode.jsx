@@ -113,8 +113,9 @@ function UnitNodeInner({
   const numbersNameDividerX = isOmti ? 50 : 75;
   const leadershipTextX = isOmti ? 12.5 : 37.5;
   const executionTextX = isOmti ? 37.5 : 62.5;
-  const foX = isOmti ? 54 : 79;
-  const foWidthOffset = isOmti ? 58 : 83;
+  // Text area uses same dimensions in both modes for consistency
+  const foX = 79;
+  const foWidthOffset = 83;
 
   // Dynamic font sizing for unit name
   const availableWidth = width - foWidthOffset - 14;
