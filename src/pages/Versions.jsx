@@ -277,7 +277,9 @@ export default function VersionsPage() {
                                 {version.status === 'approved' && version.has_units_snapshot && (
                                   <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToRestore(version); setRestoreDialogOpen(true); }} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"><RotateCcw className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Revenire la această versiune</p></TooltipContent></Tooltip>
                                 )}
-                                <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToDelete(version); setDeleteDialogOpen(true); }} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Șterge</p></TooltipContent></Tooltip>
+                                {versions.length > 1 && (
+                                  <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={() => { setVersionToDelete(version); setDeleteDialogOpen(true); }} className="text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button></TooltipTrigger><TooltipContent><p>Șterge</p></TooltipContent></Tooltip>
+                                )}
                               </div>
                             </TooltipProvider>
                           </TableCell>

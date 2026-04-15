@@ -221,7 +221,12 @@ def delete_version(
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
     
-    # Save units as template before deleting (so new versions can use it)
+    # Prevent deleting the last remaining version
+    total_versions = db.query(OrgVersion).count()
+    if total_versions <= 1:
+        raise HTTPException(status_code=400, detail="Nu poți șterge ultima versiune rămasă")
+    
+    # Save units as template before deleting
     snapshot = version.units_snapshot or _make_units_snapshot(db, version_id)
     if snapshot and len(snapshot) > 2:
         _save_template(db, snapshot)
