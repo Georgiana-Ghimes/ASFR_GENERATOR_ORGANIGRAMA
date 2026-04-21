@@ -45,5 +45,3 @@ dist-ssr
 
 # Deployment
 deployment/
-!deployment/PRODUCTION-SETUP-ORGANIGRAMA.md
-!deployment/MANUAL-TESTS.md
