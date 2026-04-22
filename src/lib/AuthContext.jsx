@@ -72,9 +72,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password, turnstileToken) => {
+  const login = async (email, password) => {
     try {
-      await apiClient.login(email, password, turnstileToken);
+      await apiClient.login(email, password);
       // Save login timestamp
       localStorage.setItem('login_time', Date.now().toString());
       await checkAuth();

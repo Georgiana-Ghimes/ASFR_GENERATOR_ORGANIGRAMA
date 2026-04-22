@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import Turnstile from 'react-turnstile';
 import logo from '@/assets/ASFR-emboss.png';
 
 export default function LoginPage() {
@@ -18,39 +17,25 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
-  const [turnstileKey, setTurnstileKey] = useState(0);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!turnstileToken) {
-      setErrorMessage('Vă rugăm să completați verificarea de securitate');
-      return;
-    }
-    
     setIsLoading(true);
-    setErrorMessage(''); // Clear previous errors
+    setErrorMessage('');
 
     try {
-      const result = await login(email, password, turnstileToken);
+      const result = await login(email, password);
       if (result.success) {
         toast.success('Autentificare reușită!');
         navigate('/');
       } else {
-        // Display the error message from backend
         setErrorMessage(result.error || 'Email sau parolă incorectă');
-        // Reset Turnstile on error by changing key
-        setTurnstileToken('');
-        setTurnstileKey(prev => prev + 1);
       }
     } catch (error) {
       setErrorMessage('Eroare la autentificare');
-      // Reset Turnstile on error by changing key
-      setTurnstileToken('');
-      setTurnstileKey(prev => prev + 1);
     } finally {
       setIsLoading(false);
     }
@@ -119,21 +104,10 @@ export default function LoginPage() {
                 Ține-mă minte
               </Label>
             </div>
-            <div className="flex justify-center">
-              <Turnstile
-                key={turnstileKey}
-                sitekey="0x4AAAAAAChSWo8mCM9XyW3m"
-                theme="light"
-                language="ro"
-                onVerify={(token) => setTurnstileToken(token)}
-                onError={() => setTurnstileToken('')}
-                onExpire={() => setTurnstileToken('')}
-              />
-            </div>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || !turnstileToken}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <>

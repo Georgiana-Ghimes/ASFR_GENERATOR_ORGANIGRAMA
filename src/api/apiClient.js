@@ -55,10 +55,10 @@ class ApiClient {
   }
 
   // Auth
-  async login(email, password, turnstileToken) {
+  async login(email, password) {
     const data = await this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password, turnstile_token: turnstileToken }),
+      body: JSON.stringify({ email, password }),
     });
     this.setToken(data.access_token);
     return data;

@@ -183,7 +183,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-    turnstile_token: str
+    turnstile_token: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
