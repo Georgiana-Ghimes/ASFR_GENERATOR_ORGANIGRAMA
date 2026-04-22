@@ -326,6 +326,18 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Layout
+  async getLayout(versionId) {
+    return this.request(`/layout/${versionId}`);
+  }
+
+  // Chart title
+  async updateChartTitle(versionId, title) {
+    return this.request(`/versions/${versionId}/chart-title?title=${encodeURIComponent(title)}`, {
+      method: 'PATCH',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

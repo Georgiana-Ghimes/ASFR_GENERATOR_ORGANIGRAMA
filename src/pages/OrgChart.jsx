@@ -36,8 +36,7 @@ export default function OrgChartPage() {
     
     const fetchLayout = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/layout/${selectedVersion.id}`);
-        const data = await response.json();
+        const data = await apiClient.getLayout(selectedVersion.id);
         setLayoutData(data);
       } catch (error) {
         console.error('Failed to fetch layout:', error);

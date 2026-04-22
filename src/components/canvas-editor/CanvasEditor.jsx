@@ -54,8 +54,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
 
     const fetchLayout = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/layout/${versionId}`);
-        const data = await response.json();
+        const data = await apiClient.getLayout(versionId);
         if (cancelled) return;
         setLayoutData(data);
 
@@ -75,10 +74,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
 
     const fetchVersion = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/versions/${versionId}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
-        });
-        const versionInfo = await response.json();
+        const versionInfo = await apiClient.getVersion(versionId);
         if (cancelled) return;
         if (versionInfo.chart_title) {
           setChartTitle(versionInfo.chart_title);
@@ -98,21 +94,9 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
 
   const saveChartTitle = useCallback(async (newTitle) => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/versions/${versionId}/chart-title?title=${encodeURIComponent(newTitle)}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setChartTitle(data.chart_title);
-        setEditableTitle(data.chart_title);
-      }
+      const data = await apiClient.updateChartTitle(versionId, newTitle);
+      setChartTitle(data.chart_title);
+      setEditableTitle(data.chart_title);
     } catch (error) {
       console.error('Failed to save chart title:', error);
       setEditableTitle(chartTitle);
