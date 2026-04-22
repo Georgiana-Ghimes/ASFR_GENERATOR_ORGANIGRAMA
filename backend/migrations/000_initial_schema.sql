@@ -187,12 +187,14 @@ CREATE TABLE IF NOT EXISTS system_settings (
 
 INSERT INTO unit_types (code, label, order_index, is_system) VALUES
     ('director_general', 'Director General', 1, TRUE),
-    ('directie', 'Direcție', 2, TRUE),
-    ('departament', 'Departament', 3, TRUE),
+    ('directie', 'Direcție', 2, FALSE),
+    ('departament', 'Departament', 3, FALSE),
     ('serviciu', 'Serviciu', 4, FALSE),
     ('compartiment', 'Compartiment', 5, FALSE),
-    ('inspectorat', 'Inspectorat', 6, TRUE),
-    ('birou', 'Birou', 7, TRUE),
+    ('inspectorat', 'Inspectorat', 6, FALSE),
+    ('birou', 'Birou', 7, FALSE),
     ('consiliu', 'Consiliu de Conducere', 8, TRUE),
-    ('legend', 'Legendă', 9, TRUE)
+    ('legend', 'Legendă', 9, TRUE),
+    ('consilieri', 'Consilieri', 10, FALSE),
+    ('dispecerat', 'Dispecerat', 11, FALSE)
 ON CONFLICT (code) DO NOTHING;
