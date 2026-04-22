@@ -24,6 +24,7 @@ import {
   X,
   ChevronRight,
   Layers,
+  FileDown,
 } from 'lucide-react';
 
 const navigation = [
@@ -104,6 +105,19 @@ export default function Layout({ children, currentPageName }) {
               );
             })}
           </nav>
+
+          {/* Documentation download */}
+          <div className="px-4 pb-2">
+            <a
+              href="/Ghid_Utilizare.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <FileDown className="w-5 h-5 text-gray-400" />
+              Descarcă documentația
+            </a>
+          </div>
 
           {/* User section */}
           <div className="p-4 border-t">
