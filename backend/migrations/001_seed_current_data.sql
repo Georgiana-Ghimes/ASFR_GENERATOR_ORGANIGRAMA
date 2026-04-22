@@ -1,125 +1,220 @@
 -- ============================================================================
 -- ASFR Generator Organigramă — Seed: versiunea curentă cu toate unitățile
 -- Migrare: 001_seed_current_data.sql
--- Conține: versiunea 49/23.01.2026 cu 37 unități, useri, tipuri unitate
+-- Conține: versiunea 49/23.01.2026 cu 37 unități, 2 useri
 -- ============================================================================
 
---
--- PostgreSQL database dump
---
+-- ============================================================================
+-- VERSIUNE
+-- ============================================================================
 
--- restrict removed for compatibility
+INSERT INTO org_versions (id, version_number, name, status, notes, chart_title, org_type, created_date)
+VALUES (
+    '8ee3c3ff-de57-4fc1-ba18-29897a43ae89',
+    '49/23.01.2026',
+    'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 49/23.01.2026',
+    'draft',
+    NULL,
+    'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 49/23.01.2026',
+    'codificare',
+    '2026-03-02 12:46:21.505751'
+) ON CONFLICT (id) DO NOTHING;
 
--- Dumped from database version 18.1
--- Dumped by pg_dump version 18.1
+-- ============================================================================
+-- UNITĂȚI ORGANIZAȚIONALE (37 unități)
+-- ============================================================================
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
+-- Director General (root)
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, director_title, director_name, is_rotated)
+VALUES ('a160ee41-55b9-4dbc-8f4d-1513b2e74c63', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1000', 'DIRECTOR GENERAL', 'director_general', NULL, 0, 1, 0, '#86C67C-full', 1000, 200, 60, 380, 'DIRECTOR GENERAL', 'Petru BOGDAN', false)
+ON CONFLICT (id) DO NOTHING;
 
---
--- Data for Name: org_versions; Type: TABLE DATA; Schema: public; Owner: -
---
+-- Consilieri Director General
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('7f3ccfca-4fae-4684-9f1a-6a3b6ab4602a', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1001', 'CONSILIERI DIRECTOR GENERAL', 'consilieri', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 2, '#86C67C', 300, 200, 60, 320, false)
+ON CONFLICT (id) DO NOTHING;
 
-SET SESSION AUTHORIZATION DEFAULT;
+-- Compartiment Audit Intern
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('e3650618-9a54-4b8d-b938-494ba0804037', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1002', 'COMPARTIMENT AUDIT INTERN', 'compartiment', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 3, '#86C67C', 300, 280, 60, 320, false)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.org_versions DISABLE TRIGGER ALL;
+-- Serviciul Juridic
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('71ac44e4-92d6-4ff0-bdb4-df8f9b38b817', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1010', 'SERVICIUL JURIDIC', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 3, '#86C67C', 1420, 360, 60, 320, false)
+ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.org_versions VALUES ('8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '49/23.01.2026', 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 49/23.01.2026', 'draft', NULL, '2026-03-02 12:46:21.505751', NULL, NULL, NULL, 'CODIFICAREA STRUCTURILOR DIN ANEXA LA OMTI NR. 49/23.01.2026', 'codificare', NULL, NULL, NULL, NULL, '[{"id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "stas_code": "2000", "name": "DIREC\u021aIA INSPECTORATE DE SIGURAN\u021a\u0102 FEROVIAR\u0102 \u0218I CERTIFICARE PERSONAL", "unit_type": "directie", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 0, "custom_x": 1040, "custom_y": 780, "custom_width": 760, "custom_height": 100, "color": "#8CB4D4-full", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "c00534eb-3066-4d6f-b8ac-7271b76cd31d", "stas_code": "1100", "name": "DIREC\u021aIA ECONOMIC\u0102", "unit_type": "directie", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 14, "custom_x": 160, "custom_y": 780, "custom_width": 420, "custom_height": 100, "color": "#E8B4D4-full", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "46ceca9e-f908-4b08-96a0-9d2c7bc734de", "stas_code": "2001", "name": "COMPARTIMENT INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 BUCURE\u0218TI", "unit_type": "compartiment", "parent_unit_id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "order_index": 0, "leadership_count": 0, "execution_count": 2, "custom_x": 900, "custom_y": 1380, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "3a11938e-d279-4e49-9657-65f4276f60d5", "stas_code": "1010", "name": "SERVICIUL JURIDIC", "unit_type": "serviciu", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 3, "custom_x": 1420, "custom_y": 360, "custom_width": 320, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "898ee510-2935-4fba-8c29-9801a27f4056", "stas_code": "1120", "name": "SERVICIUL TEHNIC ADMINISTRATIV ACHIZI\u021aII", "unit_type": "", "parent_unit_id": "c00534eb-3066-4d6f-b8ac-7271b76cd31d", "order_index": 0, "leadership_count": 1, "execution_count": 3, "custom_x": 20, "custom_y": 1060, "custom_width": 360, "custom_height": 80, "color": "#E8B4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "0a79a865-5945-447d-8435-4dd22a51ef9b", "stas_code": "1001", "name": "CONSILIERI DIRECTOR GENERAL", "unit_type": "consilieri", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 0, "execution_count": 2, "custom_x": 300, "custom_y": 200, "custom_width": 320, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "b76fb098-6a41-4f21-8071-bda7448ab089", "stas_code": "1101", "name": "COMPARTIMENT CONTROL FINANCIAR PREVENTIV", "unit_type": "compartiment", "parent_unit_id": "c00534eb-3066-4d6f-b8ac-7271b76cd31d", "order_index": 0, "leadership_count": 0, "execution_count": 2, "custom_x": 200, "custom_y": 1420, "custom_width": 340, "custom_height": 80, "color": "#E8B4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "97c64399-01db-442e-aa06-62a78b09e5f9", "stas_code": "2010", "name": "INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 CRAIOVA", "unit_type": "inspectorat", "parent_unit_id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "order_index": 0, "leadership_count": 1, "execution_count": 12, "custom_x": 1000, "custom_y": 1040, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "0bd4820b-5ed2-4583-8026-9a6b79fc343e", "stas_code": "1102", "name": "COMPARTIMENT FINANCIAR SALARII \u0218I BUGET", "unit_type": "compartiment", "parent_unit_id": "c00534eb-3066-4d6f-b8ac-7271b76cd31d", "order_index": 0, "leadership_count": 0, "execution_count": 6, "custom_x": 300, "custom_y": 1420, "custom_width": 340, "custom_height": 80, "color": "#E8B4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "26ddc60b-e3f0-4a21-a9a6-ca9c323e9ebe", "stas_code": "1103", "name": "COMPARTIMENT CONTABILITATE, FACTURARE, CASIERIE", "unit_type": "compartiment", "parent_unit_id": "c00534eb-3066-4d6f-b8ac-7271b76cd31d", "order_index": 0, "leadership_count": 0, "execution_count": 6, "custom_x": 400, "custom_y": 1420, "custom_width": 340, "custom_height": 80, "color": "#E8B4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "2e9979b1-4956-4484-a9f2-86d4b42a71fa", "stas_code": "1200", "name": "DEPARTAMENT CERTIFICARE ERI", "unit_type": "departament", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 0, "custom_x": 620, "custom_y": 780, "custom_width": 380, "custom_height": 100, "color": "#F4E03C-full", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "cd388337-1dc7-445a-9ecf-ffd716976b79", "stas_code": "1210", "name": "SERVICIUL CERTIFICARE ENTIT\u0102\u021aI RESPONSABILE CU \u00ceNTRE\u021aINEREA VEHICULELOR FEROVIARE", "unit_type": "serviciu", "parent_unit_id": "2e9979b1-4956-4484-a9f2-86d4b42a71fa", "order_index": 0, "leadership_count": 1, "execution_count": 10, "custom_x": 560, "custom_y": 1060, "custom_width": 360, "custom_height": 80, "color": "#F4E03C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "8e7de0b9-b839-492d-9517-d8ca51b9a567", "stas_code": "1220", "name": "SERVICIUL CERTIFICARE ERI FUNC\u021aII \u00ceNTRE\u021aINERE, AUTORIZARE PUNERE PE PIA\u021a\u0102 VEHICULE FEROVIARE", "unit_type": "serviciu", "parent_unit_id": "2e9979b1-4956-4484-a9f2-86d4b42a71fa", "order_index": 0, "leadership_count": 1, "execution_count": 10, "custom_x": 700, "custom_y": 1060, "custom_width": 360, "custom_height": 80, "color": "#F4E03C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "6446a95f-8d83-4c37-bfc3-680183cddd51", "stas_code": "2020", "name": "INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 TIMI\u0218OARA", "unit_type": "inspectorat", "parent_unit_id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "order_index": 0, "leadership_count": 1, "execution_count": 13, "custom_x": 1120, "custom_y": 1040, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "0b6c6fa4-43bd-4a0b-8fc3-c56141a727ef", "stas_code": "2030", "name": "INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 CLUJ", "unit_type": "inspectorat", "parent_unit_id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "order_index": 0, "leadership_count": 1, "execution_count": 10, "custom_x": 1240, "custom_y": 1040, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "1e9f4f7f-bc42-411e-8eb3-15da2be32cf0", "stas_code": "2031", "name": "COMPARTIMENT INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 BRA\u0218OV", "unit_type": "compartiment", "parent_unit_id": "0b6c6fa4-43bd-4a0b-8fc3-c56141a727ef", "order_index": 0, "leadership_count": 0, "execution_count": 8, "custom_x": 1240, "custom_y": 1380, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "stas_code": "1000", "name": "DIRECTOR GENERAL", "unit_type": "director_general", "parent_unit_id": null, "order_index": 0, "leadership_count": 1, "execution_count": 0, "custom_x": 1000, "custom_y": 200, "custom_width": 380, "custom_height": 60, "color": "#86C67C-full", "director_title": "DIRECTOR GENERAL", "director_name": "Petru BOGDAN", "legend_col1": null, "legend_col2": null, "legend_col3": null, "is_rotated": false}, {"id": "e3650618-9a54-4b8d-b938-494ba0804037", "stas_code": "1002", "name": "COMPARTIMENT AUDIT INTERN", "unit_type": "compartiment", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 0, "execution_count": 3, "custom_x": 300, "custom_y": 280, "custom_width": 320, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "f512596f-d5ac-41b7-97c6-266f5e13dd85", "stas_code": "2040", "name": "INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 IA\u0218I", "unit_type": "inspectorat", "parent_unit_id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "order_index": 0, "leadership_count": 1, "execution_count": 10, "custom_x": 1360, "custom_y": 1040, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "bb7ddee3-4423-4685-b5a6-28e4d882d00c", "stas_code": "1021", "name": "COMPARTIMENT REGISTRATUR\u0102, ARHIV\u0102", "unit_type": "compartiment", "parent_unit_id": "92e8bb89-5981-438a-9ae7-a7d1a3e509a9", "order_index": 0, "leadership_count": 0, "execution_count": 3, "custom_x": 1800, "custom_y": 200, "custom_width": 380, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "f2f7fc19-c6d2-43ea-957c-1cfb5f0ff4fe", "stas_code": "1022", "name": "COMPARTIMENT SSM, SU", "unit_type": "compartiment", "parent_unit_id": "92e8bb89-5981-438a-9ae7-a7d1a3e509a9", "order_index": 0, "leadership_count": 0, "execution_count": 2, "custom_x": 1800, "custom_y": 280, "custom_width": 380, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "731a61d1-c814-49c9-9a32-5bd2321b221c", "stas_code": "1011", "name": "COMPARTIMENT REGLEMENT\u0102RI DE SIGURAN\u021a\u0102 FEROVIAR\u0102", "unit_type": "compartiment", "parent_unit_id": "3a11938e-d279-4e49-9657-65f4276f60d5", "order_index": 0, "leadership_count": 0, "execution_count": 4, "custom_x": 1800, "custom_y": 360, "custom_width": 380, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "8d49659a-9271-4c2d-8c29-1714161d19a4", "stas_code": "1040", "name": "SERVICIUL CONTROL \u0218I SIGURAN\u021aA CIRCULA\u021aIEI", "unit_type": "serviciu", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 10, "custom_x": 1420, "custom_y": 520, "custom_width": 320, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "92e8bb89-5981-438a-9ae7-a7d1a3e509a9", "stas_code": "1020", "name": "SERVICIUL RESURSE UMANE", "unit_type": "serviciu", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 5, "custom_x": 1420, "custom_y": 200, "custom_width": 320, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "88e6ad15-ebc3-4ea7-8ff8-58560a6099e0", "stas_code": "1031", "name": "DISPECERAT 112", "unit_type": "dispecerat", "parent_unit_id": "d5a427fa-315c-42cd-a460-ec4701aab871", "order_index": 0, "leadership_count": 0, "execution_count": 5, "custom_x": 300, "custom_y": 360, "custom_width": 320, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "c3059627-99b3-47eb-a890-5b46d9b738ef", "stas_code": "3002", "name": "COMPARTIMENT EVALUARE SISTEM MANAGEMENT RISC", "unit_type": "compartiment", "parent_unit_id": "ff58199a-b568-4587-b0d9-f3be61e95a06", "order_index": 0, "leadership_count": 0, "execution_count": 5, "custom_x": 2000, "custom_y": 1300, "custom_width": 280, "custom_height": 80, "color": "#F4A43C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "d5a427fa-315c-42cd-a460-ec4701aab871", "stas_code": "1030", "name": "SERVICIUL COMUNICARE", "unit_type": "serviciu", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 6, "custom_x": 660, "custom_y": 360, "custom_width": 300, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "e4ee6a68-8481-490f-9f03-14351d6b81fb", "stas_code": "1012", "name": "COMPARTIMENT DREPTURI C\u0102L\u0102TORI", "unit_type": "compartiment", "parent_unit_id": "3a11938e-d279-4e49-9657-65f4276f60d5", "order_index": 0, "leadership_count": 0, "execution_count": 3, "custom_x": 1800, "custom_y": 440, "custom_width": 380, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "d1571827-062d-49cc-8205-e8b6f5b675d6", "stas_code": "2041", "name": "COMPARTIMENT INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 GALA\u021aI", "unit_type": "compartiment", "parent_unit_id": "f512596f-d5ac-41b7-97c6-266f5e13dd85", "order_index": 0, "leadership_count": 0, "execution_count": 9, "custom_x": 1360, "custom_y": 1380, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "55bf2b83-1269-4bb4-98b5-ed5d0ef05da0", "stas_code": "2050", "name": "INSPECTORATUL DE SIGURAN\u021a\u0102 FEROVIAR\u0102 CONSTAN\u021aA", "unit_type": "inspectorat", "parent_unit_id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "order_index": 0, "leadership_count": 1, "execution_count": 10, "custom_x": 1480, "custom_y": 1040, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "85f267f7-9e32-417f-89eb-93d0c06bbe27", "stas_code": "2060", "name": "SERVICIUL CERTIFICARE MECANICI DE LOCOMOTIV\u0102, AUTORIZARE/ATESTARE PERSONAL", "unit_type": "serviciu", "parent_unit_id": "2283ae2b-1abd-452e-ad5f-1a46bebd26fe", "order_index": 0, "leadership_count": 1, "execution_count": 10, "custom_x": 1600, "custom_y": 1040, "custom_width": 320, "custom_height": 80, "color": "#8CB4D4", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "ff58199a-b568-4587-b0d9-f3be61e95a06", "stas_code": "3000", "name": "DIREC\u021aIA LICEN\u021aIERE FEROVIAR\u0102, AUTORIZARE DE SIGURAN\u021a\u0102 \u0218I EVALUARE INDEPENDENT\u0102", "unit_type": "directie", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 1, "execution_count": 0, "custom_x": 1920, "custom_y": 780, "custom_width": 460, "custom_height": 100, "color": "#F4A43C-full", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "9f1e6c4e-582f-4bda-a591-a15978f0fa40", "stas_code": "3001", "name": "COMPARTIMENT LICEN\u021aE FEROVIARE", "unit_type": "compartiment", "parent_unit_id": "ff58199a-b568-4587-b0d9-f3be61e95a06", "order_index": 0, "leadership_count": 0, "execution_count": 9, "custom_x": 1900, "custom_y": 1300, "custom_width": 280, "custom_height": 80, "color": "#F4A43C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "46ee113c-0501-470b-b9ae-0140ba90f81e", "stas_code": "3003", "name": "COMPARTIMENT AUTORIZARE DE SIGURAN\u021a\u0102 / AUTORIZARE DE PUNERE \u00ceN FUNC\u021aIUNE", "unit_type": "compartiment", "parent_unit_id": "ff58199a-b568-4587-b0d9-f3be61e95a06", "order_index": 0, "leadership_count": 0, "execution_count": 4, "custom_x": 2100, "custom_y": 1300, "custom_width": 280, "custom_height": 80, "color": "#F4A43C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "96ee2b5b-99e5-43eb-8b0c-2335a32824e7", "stas_code": "3004", "name": "COMPARTIMENT LINII FERATE INDUSTRIALE", "unit_type": "compartiment", "parent_unit_id": "ff58199a-b568-4587-b0d9-f3be61e95a06", "order_index": 0, "leadership_count": 0, "execution_count": 8, "custom_x": 2200, "custom_y": 1300, "custom_width": 280, "custom_height": 80, "color": "#F4A43C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": true}, {"id": "4946f1b0-55d7-40ed-881e-1a2b767c967f", "stas_code": "1051", "name": "COMPARTIMENT CERTIFICARE OTF, RECUNOA\u0218TERE CENTRE DE FORMARE", "unit_type": "compartiment", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 0, "execution_count": 4, "custom_x": 1800, "custom_y": 600, "custom_width": 380, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}, {"id": "dd4395d8-6802-463a-a2ca-bbdefa177a82", "stas_code": "1052", "name": "COMPARTIMENT CERTIFICARE OMF", "unit_type": "compartiment", "parent_unit_id": "79d938b2-cbc4-457b-8632-ec7480fb26f4", "order_index": 0, "leadership_count": 0, "execution_count": 2, "custom_x": 1800, "custom_y": 680, "custom_width": 380, "custom_height": 60, "color": "#86C67C", "director_title": "", "director_name": "", "legend_col1": "", "legend_col2": "", "legend_col3": "", "is_rotated": false}]');
+-- Compartiment Reglementări de Siguranță Feroviară
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('2e997c50-2501-4fa0-bc1d-2ea590bdf6a6', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1011', 'COMPARTIMENT REGLEMENTĂRI DE SIGURANȚĂ FEROVIARĂ', 'compartiment', '71ac44e4-92d6-4ff0-bdb4-df8f9b38b817', 0, 0, 4, '#86C67C', 1800, 360, 60, 380, false)
+ON CONFLICT (id) DO NOTHING;
 
+-- Compartiment Drepturi Călători
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('46b2bcc4-3131-4460-adcb-0682623384fd', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1012', 'COMPARTIMENT DREPTURI CĂLĂTORI', 'compartiment', '71ac44e4-92d6-4ff0-bdb4-df8f9b38b817', 0, 0, 3, '#86C67C', 1800, 440, 60, 380, false)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.org_versions ENABLE TRIGGER ALL;
+-- Serviciul Resurse Umane
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('bf849b5e-30a2-48bf-8e82-eb02697b54e4', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1020', 'SERVICIUL RESURSE UMANE', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 5, '#86C67C', 1420, 200, 60, 320, false)
+ON CONFLICT (id) DO NOTHING;
 
---
--- Data for Name: organizational_units; Type: TABLE DATA; Schema: public; Owner: -
---
+-- Compartiment Registratură, Arhivă
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('2234d770-490c-4fa3-b88d-8471aee1cf20', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1021', 'COMPARTIMENT REGISTRATURĂ, ARHIVĂ', 'compartiment', 'bf849b5e-30a2-48bf-8e82-eb02697b54e4', 0, 0, 3, '#86C67C', 1800, 200, 60, 380, false)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.organizational_units DISABLE TRIGGER ALL;
+-- Compartiment SSM, SU
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('5dbff5ac-8a67-4bce-ad0f-8ef53b6843fa', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1022', 'COMPARTIMENT SSM, SU', 'compartiment', 'bf849b5e-30a2-48bf-8e82-eb02697b54e4', 0, 0, 2, '#86C67C', 1800, 280, 60, 380, false)
+ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.organizational_units VALUES ('a160ee41-55b9-4dbc-8f4d-1513b2e74c63', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1000', 'DIRECTOR GENERAL', 'director_general', NULL, 0, 1, 0, '#86C67C-full', 1000, 200, 60, 380, 'DIRECTOR GENERAL', 'Petru BOGDAN', NULL, NULL, NULL, false);
-INSERT INTO public.organizational_units VALUES ('0daa4235-ba45-49c6-ba52-22bc888aa850', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3003', 'COMPARTIMENT AUTORIZARE DE SIGURANȚĂ / AUTORIZARE DE PUNERE ÎN FUNCȚIUNE', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 4, '#F4A43C', 2100, 1300, 80, 280, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('118ad10a-f9df-4b27-8c0a-a71baf879dd0', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2040', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ IAȘI', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1360, 1040, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1100', 'DIRECȚIA ECONOMICĂ', 'directie', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 14, '#E8B4D4-full', 160, 780, 100, 420, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('2234d770-490c-4fa3-b88d-8471aee1cf20', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1021', 'COMPARTIMENT REGISTRATURĂ, ARHIVĂ', 'compartiment', 'bf849b5e-30a2-48bf-8e82-eb02697b54e4', 0, 0, 3, '#86C67C', 1800, 200, 60, 380, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('2e997c50-2501-4fa0-bc1d-2ea590bdf6a6', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1011', 'COMPARTIMENT REGLEMENTĂRI DE SIGURANȚĂ FEROVIARĂ', 'compartiment', '71ac44e4-92d6-4ff0-bdb4-df8f9b38b817', 0, 0, 4, '#86C67C', 1800, 360, 60, 380, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('2fb34ab5-a18b-4396-9869-8f3bfecefff1', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3002', 'COMPARTIMENT EVALUARE SISTEM MANAGEMENT RISC', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 5, '#F4A43C', 2000, 1300, 80, 280, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('34222070-2c23-4b91-be93-8b9293e86ba3', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3004', 'COMPARTIMENT LINII FERATE INDUSTRIALE', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 8, '#F4A43C', 2200, 1300, 80, 280, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('3a36a479-b6df-4dbf-a7c4-3058661352cc', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2030', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ CLUJ', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1240, 1040, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('3da9ea26-9702-4a69-84c8-38e78a0663ab', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1220', 'SERVICIUL CERTIFICARE ERI FUNCȚII ÎNTREȚINERE, AUTORIZARE PUNERE PE PIAȚĂ VEHICULE FEROVIARE', 'serviciu', 'ea8641a9-ebce-4c02-8f93-8844a5506232', 0, 1, 10, '#F4E03C', 700, 1060, 80, 360, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('46b2bcc4-3131-4460-adcb-0682623384fd', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1012', 'COMPARTIMENT DREPTURI CĂLĂTORI', 'compartiment', '71ac44e4-92d6-4ff0-bdb4-df8f9b38b817', 0, 0, 3, '#86C67C', 1800, 440, 60, 380, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('5b93bb6a-2e36-4ae9-8562-b30da4ee9112', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1102', 'COMPARTIMENT FINANCIAR SALARII ȘI BUGET', 'compartiment', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 0, 6, '#E8B4D4', 300, 1420, 80, 340, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('5dbff5ac-8a67-4bce-ad0f-8ef53b6843fa', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1022', 'COMPARTIMENT SSM, SU', 'compartiment', 'bf849b5e-30a2-48bf-8e82-eb02697b54e4', 0, 0, 2, '#86C67C', 1800, 280, 60, 380, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('701893c4-ecd5-40e5-b1fe-6e8894140558', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1030', 'SERVICIUL COMUNICARE', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 6, '#86C67C', 660, 360, 60, 300, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('71ac44e4-92d6-4ff0-bdb4-df8f9b38b817', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1010', 'SERVICIUL JURIDIC', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 3, '#86C67C', 1420, 360, 60, 320, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('90e4ffd0-315b-4654-97a6-89cb38240f0a', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1052', 'COMPARTIMENT CERTIFICARE OMF', 'compartiment', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 2, '#86C67C', 1800, 680, 60, 380, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('78b2c54c-0cbe-48f0-90c1-74d8ba73d6a5', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2050', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ CONSTANȚA', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1480, 1040, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('7b43a8c9-86c7-486b-a909-f3715a7b4ae4', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1101', 'COMPARTIMENT CONTROL FINANCIAR PREVENTIV', 'compartiment', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 0, 2, '#E8B4D4', 200, 1420, 80, 340, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('7f3ccfca-4fae-4684-9f1a-6a3b6ab4602a', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1001', 'CONSILIERI DIRECTOR GENERAL', 'consilieri', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 2, '#86C67C', 300, 200, 60, 320, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('8a5dae9c-82ac-40dc-8773-3a22c84c6fec', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1210', 'SERVICIUL CERTIFICARE ENTITĂȚI RESPONSABILE CU ÎNTREȚINEREA VEHICULELOR FEROVIARE', 'serviciu', 'ea8641a9-ebce-4c02-8f93-8844a5506232', 0, 1, 10, '#F4E03C', 560, 1060, 80, 360, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('8ae83804-2ad3-4649-a813-34a412cedaeb', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3000', 'DIRECȚIA LICENȚIERE FEROVIARĂ, AUTORIZARE DE SIGURANȚĂ ȘI EVALUARE INDEPENDENTĂ', 'directie', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 0, '#F4A43C-full', 1920, 780, 100, 460, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('9f8fbe1c-97aa-4baf-8b5e-e407f0a7c951', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2001', 'COMPARTIMENT INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ BUCUREȘTI', 'compartiment', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 0, 2, '#8CB4D4', 900, 1380, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('a1698231-1c70-4933-bd41-fcaf74faf0e9', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2031', 'COMPARTIMENT INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ BRAȘOV', 'compartiment', '3a36a479-b6df-4dbf-a7c4-3058661352cc', 0, 0, 8, '#8CB4D4', 1240, 1380, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('a501221e-f7ee-45cb-a3b4-ed2c220a30d3', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1031', 'DISPECERAT 112', 'dispecerat', '701893c4-ecd5-40e5-b1fe-6e8894140558', 0, 0, 5, '#86C67C', 300, 360, 60, 320, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('a6f1f9f8-cb77-452f-9ea1-ad051aa3f130', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1051', 'COMPARTIMENT CERTIFICARE OTF, RECUNOAȘTERE CENTRE DE FORMARE', 'compartiment', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 4, '#86C67C', 1800, 600, 60, 380, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('ab2f90e0-1ae8-45c4-853f-fb9b5c57b8f5', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3001', 'COMPARTIMENT LICENȚE FEROVIARE', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 9, '#F4A43C', 1900, 1300, 80, 280, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('b8537d67-0c63-4587-853d-24589865a97b', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1103', 'COMPARTIMENT CONTABILITATE, FACTURARE, CASIERIE', 'compartiment', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 0, 6, '#E8B4D4', 400, 1420, 80, 340, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('bf849b5e-30a2-48bf-8e82-eb02697b54e4', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1020', 'SERVICIUL RESURSE UMANE', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 5, '#86C67C', 1420, 200, 60, 320, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('c2800185-9269-4339-8938-ed281effc4f4', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2000', 'DIRECȚIA INSPECTORATE DE SIGURANȚĂ FEROVIARĂ ȘI CERTIFICARE PERSONAL', 'directie', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 0, '#8CB4D4-full', 1040, 780, 100, 760, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('c449cfa5-7d90-4492-b997-f2a4afc11b3f', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2020', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ TIMIȘOARA', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 13, '#8CB4D4', 1120, 1040, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('ce135c38-d2cc-4927-beb9-12ca7ccd3f97', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2060', 'SERVICIUL CERTIFICARE MECANICI DE LOCOMOTIVĂ, AUTORIZARE/ATESTARE PERSONAL', 'serviciu', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1600, 1040, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('ea8641a9-ebce-4c02-8f93-8844a5506232', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1200', 'DEPARTAMENT CERTIFICARE ERI', 'departament', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 0, '#F4E03C-full', 620, 780, 100, 380, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('ee21e567-e9a3-4170-8ed0-9689a86ece83', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1120', 'SERVICIUL TEHNIC ADMINISTRATIV ACHIZIȚII', '', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 1, 3, '#E8B4D4', 20, 1060, 80, 360, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('f0c84abf-835b-44bd-b16c-119fcb9b9f2d', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2010', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ CRAIOVA', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 12, '#8CB4D4', 1000, 1040, 80, 320, '', '', '', '', '', true);
-INSERT INTO public.organizational_units VALUES ('f1ec6876-dd27-4d4b-a5ed-6ce49abd2d5e', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1002', 'COMPARTIMENT AUDIT INTERN', 'compartiment', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 3, '#86C67C', 300, 280, 60, 320, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('f88ba1b3-a8cb-463c-adb9-0eaa6f3b5d86', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1040', 'SERVICIUL CONTROL ȘI SIGURANȚA CIRCULAȚIEI', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 10, '#86C67C', 1420, 520, 60, 320, '', '', '', '', '', false);
-INSERT INTO public.organizational_units VALUES ('f9456608-39d0-45da-839a-a2dd948cbc7e', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2041', 'COMPARTIMENT INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ GALAȚI', 'compartiment', '118ad10a-f9df-4b27-8c0a-a71baf879dd0', 0, 0, 9, '#8CB4D4', 1360, 1380, 80, 320, '', '', '', '', '', true);
+-- Serviciul Comunicare
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('701893c4-ecd5-40e5-b1fe-6e8894140558', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1030', 'SERVICIUL COMUNICARE', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 6, '#86C67C', 660, 360, 60, 300, false)
+ON CONFLICT (id) DO NOTHING;
 
+-- Dispecerat 112
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('a501221e-f7ee-45cb-a3b4-ed2c220a30d3', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1031', 'DISPECERAT 112', 'dispecerat', '701893c4-ecd5-40e5-b1fe-6e8894140558', 0, 0, 5, '#86C67C', 300, 360, 60, 320, false)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.organizational_units ENABLE TRIGGER ALL;
+-- Serviciul Control și Siguranța Circulației
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('8d49659a-9271-4c2d-8c29-1714161d19a4', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1040', 'SERVICIUL CONTROL ȘI SIGURANȚA CIRCULAȚIEI', 'serviciu', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 10, '#86C67C', 1420, 520, 60, 320, false)
+ON CONFLICT (id) DO NOTHING;
 
---
--- Data for Name: unit_types; Type: TABLE DATA; Schema: public; Owner: -
---
+-- Compartiment Certificare OTF
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('a6f1f9f8-cb77-452f-9ea1-ad051aa3f130', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1051', 'COMPARTIMENT CERTIFICARE OTF, RECUNOAȘTERE CENTRE DE FORMARE', 'compartiment', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 4, '#86C67C', 1800, 600, 60, 380, false)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.unit_types DISABLE TRIGGER ALL;
+-- Compartiment Certificare OMF
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('90e4ffd0-315b-4654-97a6-89cb38240f0a', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1052', 'COMPARTIMENT CERTIFICARE OMF', 'compartiment', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 0, 2, '#86C67C', 1800, 680, 60, 380, false)
+ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.unit_types VALUES ('26090995-38f5-4899-840e-c4b8b91201ee', 'director_general', 'Director General', 1, true, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('d8ee03c1-411a-4540-b4da-c78aade7e9b5', 'consilieri', 'Consilieri', 4, false, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('c018053f-fadb-413f-a37d-a9e949a28c3f', 'dispecerat', 'Dispecerat', 5, false, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('73664f79-e063-44a5-867a-afc4fbcab8cd', 'departament', 'Departament', 6, false, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('0cd18476-7971-4b7f-a636-ebb5ef9b3de1', 'directie', 'Direcție', 7, false, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('68907a0e-8975-4227-ab90-6d0636f381c0', 'inspectorat', 'Inspectorat', 8, false, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('3ec3b447-591c-485d-9d2d-c570e1bb9d8b', 'consiliu', 'Consiliu de Conducere', 99, true, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('c728547d-bca4-46ee-9054-62cf28225ed9', 'legend', 'Legendă', 100, true, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('70093191-bb4c-4484-b82a-6a85feeb39df', 'serviciu', 'Serviciu', 2, false, '2026-02-26 14:47:12.346677');
-INSERT INTO public.unit_types VALUES ('36c1906b-d2b6-4b26-96b4-d92e63fc2549', 'compartiment', 'Compartiment', 3, false, '2026-02-26 14:47:12.346677');
+-- Direcția Economică
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1100', 'DIRECȚIA ECONOMICĂ', 'directie', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 14, '#E8B4D4-full', 160, 780, 100, 420, false)
+ON CONFLICT (id) DO NOTHING;
 
+-- Compartiment Control Financiar Preventiv
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('7b43a8c9-86c7-486b-a909-f3715a7b4ae4', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1101', 'COMPARTIMENT CONTROL FINANCIAR PREVENTIV', 'compartiment', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 0, 2, '#E8B4D4', 200, 1420, 80, 340, true)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.unit_types ENABLE TRIGGER ALL;
+-- Compartiment Financiar Salarii și Buget
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('5b93bb6a-2e36-4ae9-8562-b30da4ee9112', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1102', 'COMPARTIMENT FINANCIAR SALARII ȘI BUGET', 'compartiment', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 0, 6, '#E8B4D4', 300, 1420, 80, 340, true)
+ON CONFLICT (id) DO NOTHING;
 
---
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
---
+-- Compartiment Contabilitate, Facturare, Casierie
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('b8537d67-0c63-4587-853d-24589865a97b', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1103', 'COMPARTIMENT CONTABILITATE, FACTURARE, CASIERIE', 'compartiment', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 0, 6, '#E8B4D4', 400, 1420, 80, 340, true)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.users DISABLE TRIGGER ALL;
+-- Serviciul Tehnic Administrativ Achiziții
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('898ee510-2935-4fba-8c29-9801a27f4056', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1120', 'SERVICIUL TEHNIC ADMINISTRATIV ACHIZIȚII', '', '1d8c1c2c-a093-431d-aa30-4c3f51b9a1d6', 0, 1, 3, '#E8B4D4', 20, 1060, 80, 360, true)
+ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.users VALUES ('5f31d2fb-a708-41ad-987c-3b93b320182a', 'georgiana.ghimes@sigurantaferoviara.ro', '$pbkdf2-sha256$29000$zRljDIFwTolxbk3JWcv5vw$.Z8idljYoYDD.Gn6FC6DazCTIEF42Cg0TxCAn0rfFPw', 'admin', true, '2026-02-24 08:00:52.410301', 'Georgiana Ghimeș');
-INSERT INTO public.users VALUES ('625f5e4b-6a33-4991-bbf3-a952ea4e40d2', 'bogdan.petru@sigurantaferoviara.ro', '$pbkdf2-sha256$29000$hfD.X6vV2vs/ByAkJIQwBg$Wh6XLQ4.KMSg7WmPEsR8e3DpV/e3j6c.LpGeHIuQ9Ic', 'admin', true, '2026-02-24 11:45:24.329515', 'Petru Bogdan');
+-- Departament Certificare ERI
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('ea8641a9-ebce-4c02-8f93-8844a5506232', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1200', 'DEPARTAMENT CERTIFICARE ERI', 'departament', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 0, '#F4E03C-full', 620, 780, 100, 380, false)
+ON CONFLICT (id) DO NOTHING;
 
+-- Serviciul Certificare Entități Responsabile
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('8a5dae9c-82ac-40dc-8773-3a22c84c6fec', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1210', 'SERVICIUL CERTIFICARE ENTITĂȚI RESPONSABILE CU ÎNTREȚINEREA VEHICULELOR FEROVIARE', 'serviciu', 'ea8641a9-ebce-4c02-8f93-8844a5506232', 0, 1, 10, '#F4E03C', 560, 1060, 80, 360, true)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.users ENABLE TRIGGER ALL;
+-- Serviciul Certificare ERI Funcții Întreținere
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('3da9ea26-9702-4a69-84c8-38e78a0663ab', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '1220', 'SERVICIUL CERTIFICARE ERI FUNCȚII ÎNTREȚINERE, AUTORIZARE PUNERE PE PIAȚĂ VEHICULE FEROVIARE', 'serviciu', 'ea8641a9-ebce-4c02-8f93-8844a5506232', 0, 1, 10, '#F4E03C', 700, 1060, 80, 360, true)
+ON CONFLICT (id) DO NOTHING;
 
---
--- PostgreSQL database dump complete
---
+-- Direcția Inspectorate de Siguranță Feroviară
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('c2800185-9269-4339-8938-ed281effc4f4', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2000', 'DIRECȚIA INSPECTORATE DE SIGURANȚĂ FEROVIARĂ ȘI CERTIFICARE PERSONAL', 'directie', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 0, '#8CB4D4-full', 1040, 780, 100, 760, false)
+ON CONFLICT (id) DO NOTHING;
 
-\unrestrict weRWUU1BbC8yEC3DeAaHNQTW3UnwQS4h95FegwWk8mqKW1TM5FFPn13slq9Mann
+-- Compartiment ISF București
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('9f8fbe1c-97aa-4baf-8b5e-e407f0a7c951', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2001', 'COMPARTIMENT INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ BUCUREȘTI', 'compartiment', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 0, 2, '#8CB4D4', 900, 1380, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
 
+-- ISF Craiova
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('97c64399-01db-442e-aa06-62a78b09e5f9', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2010', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ CRAIOVA', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 12, '#8CB4D4', 1000, 1040, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ISF Timișoara
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('c449cfa5-7d90-4492-b997-f2a4afc11b3f', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2020', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ TIMIȘOARA', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 13, '#8CB4D4', 1120, 1040, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ISF Cluj
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('3a36a479-b6df-4dbf-a7c4-3058661352cc', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2030', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ CLUJ', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1240, 1040, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Compartiment ISF Brașov
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('a1698231-1c70-4933-bd41-fcaf74faf0e9', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2031', 'COMPARTIMENT INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ BRAȘOV', 'compartiment', '3a36a479-b6df-4dbf-a7c4-3058661352cc', 0, 0, 8, '#8CB4D4', 1240, 1380, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ISF Iași
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('118ad10a-f9df-4b27-8c0a-a71baf879dd0', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2040', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ IAȘI', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1360, 1040, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Compartiment ISF Galați
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('d1571827-062d-49cc-8205-e8b6f5b675d6', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2041', 'COMPARTIMENT INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ GALAȚI', 'compartiment', '118ad10a-f9df-4b27-8c0a-a71baf879dd0', 0, 0, 9, '#8CB4D4', 1360, 1380, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ISF Constanța
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('78b2c54c-0cbe-48f0-90c1-74d8ba73d6a5', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2050', 'INSPECTORATUL DE SIGURANȚĂ FEROVIARĂ CONSTANȚA', 'inspectorat', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1480, 1040, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Serviciul Certificare Mecanici
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('ce135c38-d2cc-4927-beb9-12ca7ccd3f97', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '2060', 'SERVICIUL CERTIFICARE MECANICI DE LOCOMOTIVĂ, AUTORIZARE/ATESTARE PERSONAL', 'serviciu', 'c2800185-9269-4339-8938-ed281effc4f4', 0, 1, 10, '#8CB4D4', 1600, 1040, 80, 320, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Direcția Licențiere Feroviară
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('8ae83804-2ad3-4649-a813-34a412cedaeb', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3000', 'DIRECȚIA LICENȚIERE FEROVIARĂ, AUTORIZARE DE SIGURANȚĂ ȘI EVALUARE INDEPENDENTĂ', 'directie', 'a160ee41-55b9-4dbc-8f4d-1513b2e74c63', 0, 1, 0, '#F4A43C-full', 1920, 780, 100, 460, false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Compartiment Licențe Feroviare
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('ab2f90e0-1ae8-45c4-853f-fb9b5c57b8f5', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3001', 'COMPARTIMENT LICENȚE FEROVIARE', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 9, '#F4A43C', 1900, 1300, 80, 280, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Compartiment Evaluare Sistem Management Risc
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('2fb34ab5-a18b-4396-9869-8f3bfecefff1', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3002', 'COMPARTIMENT EVALUARE SISTEM MANAGEMENT RISC', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 5, '#F4A43C', 2000, 1300, 80, 280, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Compartiment Autorizare de Siguranță
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('0daa4235-ba45-49c6-ba52-22bc888aa850', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3003', 'COMPARTIMENT AUTORIZARE DE SIGURANȚĂ / AUTORIZARE DE PUNERE ÎN FUNCȚIUNE', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 4, '#F4A43C', 2100, 1300, 80, 280, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Compartiment Linii Ferate Industriale
+INSERT INTO organizational_units (id, version_id, stas_code, name, unit_type, parent_unit_id, order_index, leadership_count, execution_count, color, custom_x, custom_y, custom_height, custom_width, is_rotated)
+VALUES ('34222070-2c23-4b91-be93-8b9293e86ba3', '8ee3c3ff-de57-4fc1-ba18-29897a43ae89', '3004', 'COMPARTIMENT LINII FERATE INDUSTRIALE', 'compartiment', '8ae83804-2ad3-4649-a813-34a412cedaeb', 0, 0, 8, '#F4A43C', 2200, 1300, 80, 280, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================================
+-- UTILIZATORI
+-- ============================================================================
+
+INSERT INTO users (id, email, hashed_password, role, active, created_at, full_name)
+VALUES
+    ('5f31d2fb-a708-41ad-987c-3b93b320182a', 'georgiana.ghimes@sigurantaferoviara.ro', '$pbkdf2-sha256$29000$zRljDIFwTolxbk3JWcv5vw$.Z8idljYoYDD.Gn6FC6DazCTIEF42Cg0TxCAn0rfFPw', 'admin', true, '2026-02-24 08:00:52.410301', 'Georgiana Ghimeș'),
+    ('625f5e4b-6a33-4991-bbf3-a952ea4e40d2', 'bogdan.petru@sigurantaferoviara.ro', '$pbkdf2-sha256$29000$hfD.X6vV2vs/ByAkJIQwBg$Wh6XLQ4.KMSg7WmPEsR8e3DpV/e3j6c.LpGeHIuQ9Ic', 'admin', true, '2026-02-24 11:45:24.329515', 'Petru Bogdan')
+ON CONFLICT (id) DO NOTHING;
