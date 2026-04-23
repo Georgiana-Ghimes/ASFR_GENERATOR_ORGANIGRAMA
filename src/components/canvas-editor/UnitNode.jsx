@@ -196,7 +196,7 @@ function UnitNodeInner({
           textAnchor="middle"
           dominantBaseline="central"
           letterSpacing="1"
-          transform={`rotate(-90, 12.5, ${height / 2})`}
+          transform={unit.is_rotated ? '' : `rotate(-90, 12.5, ${height / 2})`}
         >
           {unit.stas_code}
         </text>
@@ -211,7 +211,13 @@ function UnitNodeInner({
         fill="#000000"
         textAnchor="middle"
         dominantBaseline={isDirectorGeneral ? 'central' : 'auto'}
-        transform={isDirectorGeneral ? `rotate(-90, ${leadershipTextX}, ${height / 2})` : ''}
+        transform={
+          isDirectorGeneral
+            ? `rotate(-90, ${leadershipTextX}, ${height / 2})`
+            : unit.is_rotated
+              ? `rotate(90, ${leadershipTextX}, ${height / 2 + 4})`
+              : ''
+        }
       >
         {leadershipCount}
       </text>
@@ -225,7 +231,13 @@ function UnitNodeInner({
         fill="#000000"
         textAnchor="middle"
         dominantBaseline={isDirectorGeneral ? 'central' : 'auto'}
-        transform={isDirectorGeneral ? `rotate(-90, ${executionTextX}, ${height / 2})` : ''}
+        transform={
+          isDirectorGeneral
+            ? `rotate(-90, ${executionTextX}, ${height / 2})`
+            : unit.is_rotated
+              ? `rotate(90, ${executionTextX}, ${height / 2 + 4})`
+              : ''
+        }
       >
         {executionCount}
       </text>
