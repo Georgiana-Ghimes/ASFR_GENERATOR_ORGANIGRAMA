@@ -28,7 +28,7 @@ import {
  * Fetches units + layout data, wires up viewport/selection/drag/resize hooks,
  * and renders CanvasViewport, CanvasToolbar, Minimap, and ContextMenu.
  */
-export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgType = 'codificare', onSnapshot }) {
+export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgType = 'codificare', onSnapshot, refreshKey: externalRefreshKey }) {
   const queryClient = useQueryClient();
   const containerRef = useRef(null);
   const svgRef = useRef(null);
@@ -88,7 +88,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
     fetchLayout();
     fetchVersion();
     return () => { cancelled = true; };
-  }, [versionId]);
+  }, [versionId, externalRefreshKey]);
 
   // --- Identify special units ---
 

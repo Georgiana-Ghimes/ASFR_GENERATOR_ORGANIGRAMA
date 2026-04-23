@@ -304,6 +304,7 @@ export default function OrgChartPage() {
                 versionId={selectedVersion.id}
                 onSelectUnit={handleSelectUnit}
                 isReadOnly={isReadOnly}
+                refreshKey={refreshKey}
               />
             </div>
 

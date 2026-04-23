@@ -198,6 +198,7 @@ export default function OrgChartOMTIPage() {
                 onSelectUnit={handleSelectUnit}
                 isReadOnly={true}
                 orgType="omti"
+                refreshKey={refreshKey}
                 onSnapshot={async (vId, imageData) => {
                   await apiClient.createOmtiSnapshot(vId, imageData);
                 }}
