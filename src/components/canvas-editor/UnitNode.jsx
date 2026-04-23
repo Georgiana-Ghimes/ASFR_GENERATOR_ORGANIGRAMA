@@ -18,6 +18,8 @@ const colorMap = {
   '#B07CD8-full': { bg: '#B07CD8', stripOnly: false },
   '#5CB8B2': { bg: '#5CB8B2', stripOnly: true },
   '#5CB8B2-full': { bg: '#5CB8B2', stripOnly: false },
+  '#E8837C': { bg: '#E8837C', stripOnly: true },
+  '#E8837C-full': { bg: '#E8837C', stripOnly: false },
 };
 
 function getUnitColor(unit) {
