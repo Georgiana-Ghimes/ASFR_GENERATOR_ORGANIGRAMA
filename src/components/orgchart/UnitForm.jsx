@@ -21,6 +21,8 @@ const defaultColors = [
   { label: 'Portocaliu complet', value: '#F4A43C-full', border: '#E4942C' },
   { label: 'Violet', value: '#B07CD8', border: '#906CB8' },
   { label: 'Violet complet', value: '#B07CD8-full', border: '#906CB8' },
+  { label: 'Turcoaz', value: '#5CB8B2', border: '#4A9A95' },
+  { label: 'Turcoaz complet', value: '#5CB8B2-full', border: '#4A9A95' },
 ];
 
 export default function UnitForm({ unit, units, versionId, onSave, onCancel, isReadOnly }) {
