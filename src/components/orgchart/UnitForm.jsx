@@ -25,6 +25,8 @@ const defaultColors = [
   { label: 'Turcoaz complet', value: '#5CB8B2-full', border: '#4A9A95' },
   { label: 'Roșu pastel', value: '#E8837C', border: '#D0706A' },
   { label: 'Roșu pastel complet', value: '#E8837C-full', border: '#D0706A' },
+  { label: 'Gri deschis', value: '#C8C8C8', border: '#A8A8A8' },
+  { label: 'Gri deschis complet', value: '#C8C8C8-full', border: '#A8A8A8' },
 ];
 
 export default function UnitForm({ unit, units, versionId, onSave, onCancel, isReadOnly }) {
