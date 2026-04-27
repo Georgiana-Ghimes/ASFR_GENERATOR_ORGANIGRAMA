@@ -100,9 +100,8 @@ function FixedNodeInner({
       else if (u.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
     });
 
-    // Total = root's recursive total minus root's own leadership
-    // This gives the correct total matching the orgchart photo convention
-    const totalPosts = rootRecursive > 0 ? rootRecursive - rootLeadership : totalLeadership;
+    // Total = root's recursive total (includes DG's own leadership post)
+    const totalPosts = rootRecursive > 0 ? rootRecursive : totalLeadership;
     const totalExecution = totalPosts - totalLeadership;
 
     return (
