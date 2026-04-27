@@ -44,8 +44,8 @@ export default function StatsPanel({ units, layoutData }) {
       });
     }
 
-    // Total = root recursive minus root's own leadership (matches orgchart convention)
-    const totalPositions = rootRecursive > 0 ? rootRecursive - rootLeadership : totalLeadership + totalExecution;
+    // Total = root recursive total (includes DG's own leadership post)
+    const totalPositions = rootRecursive > 0 ? rootRecursive : totalLeadership + totalExecution;
     totalExecution = totalPositions - totalLeadership;
     
     const unitsByType = units.reduce((acc, u) => {
