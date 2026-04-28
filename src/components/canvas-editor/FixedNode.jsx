@@ -74,40 +74,14 @@ function FixedNodeInner({
   };
 
   if (type === 'stats_legend') {
-    let totalLeadership = 0;
-    let dgCount = 0, directorCount = 0, inspectorCount = 0, serviceCount = 0, deptCount = 0;
-    let rootRecursive = 0, rootLeadership = 0;
-    const unitList = units || [];
-    const aggMap = aggregatesMap || {};
-
-    // Find the root unit (director_general, or unit without parent excluding consiliu/legend)
-    const rootUnit = unitList.find(u => u.unit_type === 'director_general')
-      || unitList.find(u => !u.parent_unit_id && u.unit_type !== 'consiliu' && u.unit_type !== 'legend');
-
-    unitList.forEach((u) => {
-      if (u.unit_type === 'consiliu' || u.unit_type === 'legend' || u.stas_code === '330') return;
-      const agg = aggMap[u.id] || { leadership_positions_count: 0, execution_positions_count: 0, recursive_total_subordinates: 0 };
-      totalLeadership += agg.leadership_positions_count;
-
-      if (rootUnit && u.id === rootUnit.id) {
-        rootLeadership = agg.leadership_positions_count;
-        rootRecursive = agg.recursive_total_subordinates;
-        dgCount += agg.leadership_positions_count;
-      }
-      else if (u.unit_type === 'directie') directorCount += agg.leadership_positions_count;
-      else if (u.unit_type === 'departament') deptCount += agg.leadership_positions_count;
-      else if (u.unit_type === 'serviciu') serviceCount += agg.leadership_positions_count;
-      else if (u.unit_type === 'inspectorat') inspectorCount += agg.leadership_positions_count;
-    });
-
     // HARDCODED values — to be fixed later with proper dynamic calculation
-    const totalPosts = 230;
     const totalLeadership = 19;
     const dgCount = 1;
     const directorCount = 3;
     const deptCount = 3;
     const inspectorCount = 5;
     const serviceCount = 7;
+    const totalPosts = 230;
     const totalExecution = 211;
 
     return (
