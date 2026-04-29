@@ -603,7 +603,9 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
 
   const handleFixedResizeMouseDown = useCallback(
     (e, type) => {
-      if (isReadOnly) return;
+      // Allow resize for header and director_legend even in OMTI read-only
+      const alwaysResizable = ['header', 'director_legend'];
+      if (isReadOnly && !alwaysResizable.includes(type)) return;
       e.stopPropagation();
       e.preventDefault();
 
@@ -775,6 +777,7 @@ export default function CanvasEditor({ versionId, onSelectUnit, isReadOnly, orgT
       // Remove all resize handles from snapshot
       svgClone.querySelectorAll('g[style*="nwse-resize"]').forEach(el => el.remove());
       svgClone.querySelectorAll('[style*="nwse-resize"]').forEach(el => el.remove());
+      svgClone.querySelectorAll('.resize-handle-no-print').forEach(el => el.remove());
 
       // Inline computed styles from original foreignObject elements onto clone
       // This preserves text wrapping, font sizes, flexbox layout etc.

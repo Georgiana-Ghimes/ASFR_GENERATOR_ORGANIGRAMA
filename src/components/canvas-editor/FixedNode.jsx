@@ -29,10 +29,10 @@ function getDynamicFontSize(elementKey, baseFontSize, currentWidth, currentHeigh
 /**
  * Resize handle — gray triangle in bottom-right corner.
  */
-function ResizeHandle({ width, height, isReadOnly, onResizeMouseDown }) {
-  if (isReadOnly) return null;
+function ResizeHandle({ width, height, isReadOnly, onResizeMouseDown, forceShow }) {
+  if (isReadOnly && !forceShow) return null;
   return (
-    <g onMouseDown={onResizeMouseDown} style={{ cursor: 'nwse-resize' }}>
+    <g onMouseDown={onResizeMouseDown} style={{ cursor: 'nwse-resize' }} className="resize-handle-no-print">
       <path
         d={`M ${width - 10} ${height} L ${width} ${height} L ${width} ${height - 10} Z`}
         fill="#9ca3af"
@@ -136,7 +136,7 @@ function FixedNodeInner({
           <text x={width / 2} y={3 * height / 4} textAnchor="middle" fontSize={directorFontSize} fontWeight="bold" fill="#000000" style={{ pointerEvents: 'none' }}>
             NR. ........................ din ........................
           </text>
-          <ResizeHandle width={width} height={height} isReadOnly={isReadOnly} onResizeMouseDown={handleResize} />
+          <ResizeHandle width={width} height={height} isReadOnly={isReadOnly} forceShow={isOmti} onResizeMouseDown={handleResize} />
         </g>
       );
     }
@@ -194,7 +194,7 @@ function FixedNodeInner({
         <text x={width / 2} y={height / 2 + 4} textAnchor="middle" fontSize={getDynamicFontSize('header1', 14, width, height)} fontWeight="bold" fill="#000000" style={{ pointerEvents: 'none' }}>
           {unit?.name || ''}
         </text>
-        <ResizeHandle width={width} height={height} isReadOnly={isReadOnly} onResizeMouseDown={handleResize} />
+        <ResizeHandle width={width} height={height} isReadOnly={isReadOnly} forceShow={orgType === 'omti'} onResizeMouseDown={handleResize} />
       </g>
     );
   }
