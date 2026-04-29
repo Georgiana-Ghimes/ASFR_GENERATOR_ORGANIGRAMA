@@ -512,17 +512,37 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
       const childCY = childPos.y + childPos.height / 2;
       const childLeftX = childPos.x;
 
-      lines.push(
-        <line
-          key={`tr-branch-${child.id}`}
-          x1={distributionX}
-          y1={childCY}
-          x2={childLeftX}
-          y2={childCY}
-          stroke="#374151"
-          strokeWidth="2"
-        />
-      );
+      // Check if this child is part of a visual group (1004, 1005)
+      const groupedCodes = ['1004', '1005'];
+      const isGrouped = groupedCodes.includes(child.stas_code);
+      const groupSiblings = isGrouped ? topRightChildren.filter(c => groupedCodes.includes(c.stas_code)) : [];
+
+      if (isGrouped && groupSiblings.length >= 2) {
+        const subDistX = distributionX - 15;
+        lines.push(
+          <line
+            key={`tr-branch-${child.id}`}
+            x1={subDistX}
+            y1={childCY}
+            x2={childLeftX}
+            y2={childCY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+      } else {
+        lines.push(
+          <line
+            key={`tr-branch-${child.id}`}
+            x1={distributionX}
+            y1={childCY}
+            x2={childLeftX}
+            y2={childCY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+      }
 
       // Handle grandchildren
       const grandchildren = units.filter(u => u.parent_unit_id === child.id);
@@ -530,6 +550,46 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
         drawTopRightChildrenEdges(child.id, childPos, grandchildren);
       }
     });
+
+    // Draw sub-distribution line for grouped units (1004, 1005) in top-right
+    {
+      const groupedCodes = ['1004', '1005'];
+      const groupedChildren = topRightChildren.filter(c => groupedCodes.includes(c.stas_code));
+      if (groupedChildren.length >= 2) {
+        const subDistX = distributionX - 15;
+        const groupCYs = groupedChildren.map(c => {
+          const p = positions?.[c.id];
+          return p ? p.y + p.height / 2 : 0;
+        }).filter(y => y > 0);
+        const groupMinY = Math.min(...groupCYs);
+        const groupMaxY = Math.max(...groupCYs);
+
+        lines.push(
+          <line
+            key="group-tr-1004-1005-v"
+            x1={subDistX}
+            y1={groupMinY}
+            x2={subDistX}
+            y2={groupMaxY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+
+        const groupMidY = (groupMinY + groupMaxY) / 2;
+        lines.push(
+          <line
+            key="group-tr-1004-1005-h"
+            x1={distributionX}
+            y1={groupMidY}
+            x2={subDistX}
+            y2={groupMidY}
+            stroke="#374151"
+            strokeWidth="2"
+          />
+        );
+      }
+    }
   }
 
   // ========== 3. Handle BOTTOM quadrant children ==========
