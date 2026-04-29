@@ -518,7 +518,10 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
       const groupSiblings = isGrouped ? topRightChildren.filter(c => groupedCodes.includes(c.stas_code)) : [];
 
       if (isGrouped && groupSiblings.length >= 2) {
-        const subDistX = distributionX + 15;
+        // Align sub-distribution with the distribution line of unit 1020's children
+        const unit1020 = units.find(u => u.stas_code === '1020');
+        const pos1020 = unit1020 ? positions?.[unit1020.id] : null;
+        const subDistX = pos1020 ? pos1020.x + pos1020.width + 20 : distributionX + 15;
         lines.push(
           <line
             key={`tr-branch-${child.id}`}
@@ -556,7 +559,9 @@ function ConnectorLayerInner({ units, positions, consiliuPosition }) {
       const groupedCodes = ['1004', '1005'];
       const groupedChildren = topRightChildren.filter(c => groupedCodes.includes(c.stas_code));
       if (groupedChildren.length >= 2) {
-        const subDistX = distributionX + 15;
+        const unit1020 = units.find(u => u.stas_code === '1020');
+        const pos1020 = unit1020 ? positions?.[unit1020.id] : null;
+        const subDistX = pos1020 ? pos1020.x + pos1020.width + 20 : distributionX + 15;
         const groupCYs = groupedChildren.map(c => {
           const p = positions?.[c.id];
           return p ? p.y + p.height / 2 : 0;
