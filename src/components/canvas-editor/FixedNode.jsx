@@ -82,7 +82,7 @@ function FixedNodeInner({
     const inspectorCount = 5;
     const serviceCount = 7;
     const totalPosts = 230;
-    const totalExecution = 212;
+    const totalExecution = 211;
 
     return (
       <g transform={`translate(${x}, ${y})`} style={{ cursor }} onMouseDown={onMouseDown}>
