@@ -75,10 +75,10 @@ function FixedNodeInner({
 
   if (type === 'stats_legend') {
     // HARDCODED values — to be fixed later with proper dynamic calculation
-    const totalLeadership = 19;
+    const totalLeadership = 18;
     const dgCount = 1;
     const directorCount = 3;
-    const deptCount = 3;
+    const deptCount = 2;
     const inspectorCount = 5;
     const serviceCount = 7;
     const totalPosts = 230;
